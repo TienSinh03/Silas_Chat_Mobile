@@ -9,6 +9,8 @@ import ConversationScreen from "./src/pages/ConversationScreen";
 import TabBottom from "./src/navigation/TabBottom";
 import SingleChatScreen from "./src/pages/SingleChatScreen";
 import DetailSingleChatScreen from "./src/pages/DetailSingleChatScreen";
+import GroupChatScreen from "./src/pages/GroupChatScreen";
+import DetailGroupChatScreen from "./src/pages/DetailGroupChatScreen";
 import { BottomTabBar } from "@react-navigation/bottom-tabs";
 
 const Stack = createStackNavigator();
@@ -44,6 +46,16 @@ export default function App() {
                 <Stack.Screen
                     name="DetailSingleChatScreen"
                     component={DetailSingleChatScreen}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name="GroupChatScreen"
+                    component={GroupChatScreen}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name="DetailGroupChatScreen"
+                    component={DetailGroupChatScreen}
                     options={{ headerShown: false }}
                 />
             </Stack.Navigator>
