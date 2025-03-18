@@ -9,6 +9,7 @@ import ConversationScreen from "./src/pages/ConversationScreen";
 import TabBottom from "./src/navigation/TabBottom";
 import SingleChatScreen from "./src/pages/SingleChatScreen";
 import DetailSingleChatScreen from "./src/pages/DetailSingleChatScreen";
+import { BottomTabBar } from "@react-navigation/bottom-tabs";
 
 const Stack = createStackNavigator();
 export default function App() {
@@ -32,7 +33,7 @@ export default function App() {
                 />
                 <Stack.Screen
                     name="Main"
-                    component={SingleChatScreen}
+                    component={TabBottom}
                     options={{ headerShown: false }}
                 />
                 <Stack.Screen
