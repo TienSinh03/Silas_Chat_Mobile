@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, Image, StyleSheet, Dimensions } from "rea
 
 
 const { width, height } = Dimensions.get("window");
-const ZaloLoginScreen = () => {
+const ZaloLoginScreen = ({navigation}) => {
   return (
     <View style={styles.container}>
       {/* Logo Zalo */}
