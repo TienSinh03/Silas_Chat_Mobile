@@ -11,6 +11,7 @@ import {
 import { Ionicons, Feather } from "@expo/vector-icons";
 
 const DetailSingleChatScreen = () => {
+    const [isBestFriend, setIsBestFriend] = useState(false);
     const [isPinned, setIsPinned] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const [isCallAlert, setIsCallAlert] = useState(true);
@@ -25,8 +26,7 @@ const DetailSingleChatScreen = () => {
                     }}
                     style={styles.avatar}
                 />
-                <Text style={styles.name}>Tiến</Text>
-                <Text style={styles.status}>se</Text>
+                <Text style={styles.name}>Dương</Text>
             </View>
 
             {/* Các tùy chọn chính */}
@@ -40,8 +40,8 @@ const DetailSingleChatScreen = () => {
             {/* Đánh dấu bạn thân */}
             <SettingToggle
                 label="Đánh dấu bạn thân"
-                value={isPinned}
-                onChange={setIsPinned}
+                value={isBestFriend}
+                onChange={setIsBestFriend}
             />
 
             {/* Ảnh, file, link */}
@@ -61,12 +61,12 @@ const DetailSingleChatScreen = () => {
             {/* Tạo nhóm & Thêm vào nhóm */}
             <TouchableOpacity style={styles.optionRow}>
                 <Ionicons name="people-outline" size={20} color="white" />
-                <Text style={styles.optionText}>Tạo nhóm với Tiến</Text>
+                <Text style={styles.optionText}>Tạo nhóm với Dương</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.optionRow}>
                 <Ionicons name="person-add-outline" size={20} color="white" />
-                <Text style={styles.optionText}>Thêm Tiến vào nhóm</Text>
+                <Text style={styles.optionText}>Thêm Dương vào nhóm</Text>
             </TouchableOpacity>
 
             {/* Nhóm */}
