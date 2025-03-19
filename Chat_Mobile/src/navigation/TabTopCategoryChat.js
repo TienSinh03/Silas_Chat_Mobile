@@ -15,6 +15,7 @@ const TabTopCategoryChat = () => {
       <Tab.Navigator>
         <Tab.Screen name="Ưu tiên" component={PriorityMessages} />
         <Tab.Screen name="Khác" component={OtherMessages} />
+
       </Tab.Navigator>
     </View>
   );

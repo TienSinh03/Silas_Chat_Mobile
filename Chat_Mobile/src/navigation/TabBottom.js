@@ -17,7 +17,7 @@ import IconFo from "react-native-vector-icons/Fontisto";
 
 import ConversationScreen from "../pages/ConversationScreen";
 import Login from "../pages/Login";
-
+import Phonebook  from "../pages/Phonebook";
 const { width, height } = Dimensions.get("window");
 
 const Tab = createBottomTabNavigator();
@@ -65,7 +65,7 @@ const TabBottom = () => {
         />
         <Tab.Screen
           name="Danh bạ" // Đổi tên thành Dictionary (hoặc tên khác)
-          component={ConversationScreen} // Nhớ đổi tên lại
+          component={Phonebook} // Nhớ đổi tên lại
           options={{ headerShown: false }}
         />
         <Tab.Screen
