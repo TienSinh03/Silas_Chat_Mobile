@@ -3,6 +3,10 @@ import { StyleSheet, Text, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 
+import Login from './src/pages/Login';
+import HomeScreen from './src/pages/HomeScreen';
+import ConversationScreen from './src/pages/ConversationScreen';
+import TabBottom from './src/navigation/TabBottom';
 import Login from "./src/pages/Login";
 import HomeScreen from "./src/pages/HomeScreen";
 import ConversationScreen from "./src/pages/ConversationScreen";
@@ -12,6 +16,7 @@ import DetailSingleChatScreen from "./src/pages/DetailSingleChatScreen";
 import GroupChatScreen from "./src/pages/GroupChatScreen";
 import DetailGroupChatScreen from "./src/pages/DetailGroupChatScreen";
 import { BottomTabBar } from "@react-navigation/bottom-tabs";
+
 import ProfileScreen from "./src/pages/ProfileScreen";
 import EditStatusScreen from "./src/pages/EditStatusScreen"; // Import man hinh EditStatus
 
