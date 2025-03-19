@@ -12,6 +12,8 @@ import DetailSingleChatScreen from "./src/pages/DetailSingleChatScreen";
 import GroupChatScreen from "./src/pages/GroupChatScreen";
 import DetailGroupChatScreen from "./src/pages/DetailGroupChatScreen";
 import { BottomTabBar } from "@react-navigation/bottom-tabs";
+import ProfileScreen from "./src/pages/ProfileScreen";
+import EditStatusScreen from "./src/pages/EditStatusScreen"; // Import man hinh EditStatus
 
 const Stack = createStackNavigator();
 export default function App() {
@@ -58,6 +60,15 @@ export default function App() {
                     component={DetailGroupChatScreen}
                     options={{ headerShown: false }}
                 />
+                <Stack.Screen 
+                name="Profile" 
+                component={ProfileScreen}
+                options={{ headerShown: false }}
+                 />
+                 <Stack.Screen name="EditStatus" component={EditStatusScreen} 
+                    options={{ headerShown: false }}
+                 
+                 />
             </Stack.Navigator>
         </NavigationContainer>
     );
