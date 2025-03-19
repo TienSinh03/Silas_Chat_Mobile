@@ -6,7 +6,7 @@ import {createStackNavigator} from '@react-navigation/stack'
 import Login from './src/pages/Login';
 import HomeScreen from './src/pages/HomeScreen';
 import ConversationScreen from './src/pages/ConversationScreen';
-import TabBottom from './src/navigation/TabBottom'
+import TabBottom from './src/navigation/TabBottom';
 
 const Stack = createStackNavigator()
 export default function App() {
