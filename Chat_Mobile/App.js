@@ -7,10 +7,6 @@ import Login from './src/pages/Login';
 import HomeScreen from './src/pages/HomeScreen';
 import ConversationScreen from './src/pages/ConversationScreen';
 import TabBottom from './src/navigation/TabBottom';
-import Login from "./src/pages/Login";
-import HomeScreen from "./src/pages/HomeScreen";
-import ConversationScreen from "./src/pages/ConversationScreen";
-import TabBottom from "./src/navigation/TabBottom";
 import SingleChatScreen from "./src/pages/SingleChatScreen";
 import DetailSingleChatScreen from "./src/pages/DetailSingleChatScreen";
 import GroupChatScreen from "./src/pages/GroupChatScreen";
@@ -19,6 +15,7 @@ import { BottomTabBar } from "@react-navigation/bottom-tabs";
 
 import ProfileScreen from "./src/pages/ProfileScreen";
 import EditStatusScreen from "./src/pages/EditStatusScreen"; // Import man hinh EditStatus
+import FindInfo  from "./src/navigation/FindInfo";  
 
 const Stack = createStackNavigator();
 export default function App() {
@@ -74,6 +71,11 @@ export default function App() {
                     options={{ headerShown: false }}
                  
                  />
+
+                <Stack.Screen name="FindInfo" component={FindInfo} 
+                    options={{ headerShown: false }}
+                />
+
             </Stack.Navigator>
         </NavigationContainer>
     );
