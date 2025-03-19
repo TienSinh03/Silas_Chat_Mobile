@@ -22,15 +22,4 @@ const TabTopCategoryChat = () => {
   );
 }
 
-    return (
-        <View style={{ flex: 1 }}>
-            <Tab.Navigator>
-                <Tab.Screen name="Ưu tiên" component={PriorityMessages} />
-                <Tab.Screen name="Khác" component={OtherMessages} />
-            </Tab.Navigator>
-        </View>
-    );
-};
-
-
 export default TabTopCategoryChat;

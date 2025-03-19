@@ -3,12 +3,10 @@ import { StyleSheet, Text, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 
-<<<<<<< HEAD
 import Login from './src/pages/Login';
 import HomeScreen from './src/pages/HomeScreen';
 import ConversationScreen from './src/pages/ConversationScreen';
 import TabBottom from './src/navigation/TabBottom';
-=======
 import Login from "./src/pages/Login";
 import HomeScreen from "./src/pages/HomeScreen";
 import ConversationScreen from "./src/pages/ConversationScreen";
@@ -18,7 +16,9 @@ import DetailSingleChatScreen from "./src/pages/DetailSingleChatScreen";
 import GroupChatScreen from "./src/pages/GroupChatScreen";
 import DetailGroupChatScreen from "./src/pages/DetailGroupChatScreen";
 import { BottomTabBar } from "@react-navigation/bottom-tabs";
->>>>>>> e992a5e1fec3409b77169cd367c8190fe0dd0859
+
+import ProfileScreen from "./src/pages/ProfileScreen";
+import EditStatusScreen from "./src/pages/EditStatusScreen"; // Import man hinh EditStatus
 
 const Stack = createStackNavigator();
 export default function App() {
@@ -65,6 +65,15 @@ export default function App() {
                     component={DetailGroupChatScreen}
                     options={{ headerShown: false }}
                 />
+                <Stack.Screen 
+                name="Profile" 
+                component={ProfileScreen}
+                options={{ headerShown: false }}
+                 />
+                 <Stack.Screen name="EditStatus" component={EditStatusScreen} 
+                    options={{ headerShown: false }}
+                 
+                 />
             </Stack.Navigator>
         </NavigationContainer>
     );
