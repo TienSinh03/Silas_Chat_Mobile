@@ -1,22 +1,74 @@
-import React,{ useState } from "react";
-import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView,Modal } from "react-native";
+import React, { useState } from "react";
+import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, Modal } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 
 const ProfileScreen = ({ navigation }) => {
     // const navigation = useNavigation();
     const [modalVisible, setModalVisible] = useState(false);
+    const [historyModalVisible, setHistoryModalVisible] = useState(false);
+
 
     return (
         <ScrollView style={styles.container}>
 
-            {/* Nút 3 chấm */}
-            <TouchableOpacity
-                style={styles.menuButton}
-                onPress={() => setModalVisible(true)}
+            <View style={styles.iconContainer}>
+                {/* Nút time-outline */}
+                <TouchableOpacity
+                    style={styles.historyButton}
+                    onPress={() => setHistoryModalVisible(true)}
+                >
+                    <Ionicons name="time-outline" size={24} color="black" />
+                </TouchableOpacity>
+
+                {/* Nút 3 chấm */}
+                <TouchableOpacity
+                    style={styles.menuButton}
+                    onPress={() => setModalVisible(true)}
+                >
+                    <Ionicons name="ellipsis-horizontal-outline" size={24} color="black" />
+                </TouchableOpacity>
+            </View>
+            {/* Modal hiện lịch sử */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={historyModalVisible}
+                onRequestClose={() => setHistoryModalVisible(false)}
             >
-                <Ionicons name="ellipsis-horizontal-outline" size={24} color="black" />
-            </TouchableOpacity>
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Cho phép bạn bè xem nhật ký</Text>
+
+                        <TouchableOpacity style={styles.modalItem}>
+                            <Text>Toàn bộ bài đăng</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.modalItem}>
+                            <Text>Trong 7 ngày gần nhất</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.modalItem}>
+                            <Text>Trong 1 tháng gần nhất</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.modalItem}>
+                            <Text>Trong 6 tháng gần nhất</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.modalItem}>
+                            <Text>Tùy chỉnh</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.closeButton}
+                            onPress={() => setHistoryModalVisible(false)}
+                        >
+                            <Text>Đóng</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
 
             {/* Modal hiện menu */}
             <Modal
@@ -27,8 +79,8 @@ const ProfileScreen = ({ navigation }) => {
             >
                 <View style={styles.modalContainer}>
                     <View style={styles.modalContent}>
-                        <TouchableOpacity 
-                            style={styles.modalItem} 
+                        <TouchableOpacity
+                            style={styles.modalItem}
                             onPress={() => { setModalVisible(false); navigation.navigate("EditProfile"); }}
                         >
                             <Text>Thông tin</Text>
@@ -51,8 +103,8 @@ const ProfileScreen = ({ navigation }) => {
                         </TouchableOpacity>
 
                         {/* Đóng modal */}
-                        <TouchableOpacity 
-                            style={styles.closeButton} 
+                        <TouchableOpacity
+                            style={styles.closeButton}
                             onPress={() => setModalVisible(false)}
                         >
                             <Text>Đóng</Text>
@@ -60,6 +112,7 @@ const ProfileScreen = ({ navigation }) => {
                     </View>
                 </View>
             </Modal>
+
 
             {/* Ảnh bìa */}
             <View style={styles.coverPhotoContainer}>
@@ -131,12 +184,12 @@ const styles = StyleSheet.create({
     menuText: { fontSize: 18, marginLeft: 10 },
     menuButton: {
         position: "absolute",
-        top: 40,  // Giảm xuống để không bị che khuất
+        top: 45,  // Giảm xuống để không bị che khuất
         right: 10, // Đặt sát mép phải
         zIndex: 10, // Đảm bảo nằm trên cùng
         padding: 5,
         borderRadius: 20,
-    },    
+    },
     modalContainer: {
         flex: 1,
         justifyContent: "center",
@@ -158,6 +211,39 @@ const styles = StyleSheet.create({
         marginTop: 10,
         alignItems: "center",
     },
+    historyButton: {
+        position: "absolute",
+        top: 50,
+        right: 50,
+        zIndex: 10,
+    },
+    modalContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+    },
+    modalContent: {
+        width: 300,
+        backgroundColor: "white",
+        padding: 20,
+        borderRadius: 10,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: "bold",
+        marginBottom: 10,
+    },
+    modalItem: {
+        paddingVertical: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: "#ccc",
+    },
+    closeButton: {
+        marginTop: 10,
+        alignItems: "center",
+    },
+
 });
 
 export default ProfileScreen;
