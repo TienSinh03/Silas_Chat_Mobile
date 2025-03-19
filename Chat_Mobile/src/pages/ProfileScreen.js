@@ -1,13 +1,66 @@
-import React from "react";
-import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import React,{ useState } from "react";
+import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView,Modal } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 
 const ProfileScreen = ({ navigation }) => {
     // const navigation = useNavigation();
+    const [modalVisible, setModalVisible] = useState(false);
 
     return (
         <ScrollView style={styles.container}>
+
+            {/* Nút 3 chấm */}
+            <TouchableOpacity
+                style={styles.menuButton}
+                onPress={() => setModalVisible(true)}
+            >
+                <Ionicons name="ellipsis-horizontal-outline" size={24} color="black" />
+            </TouchableOpacity>
+
+            {/* Modal hiện menu */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <TouchableOpacity 
+                            style={styles.modalItem} 
+                            onPress={() => { setModalVisible(false); navigation.navigate("EditProfile"); }}
+                        >
+                            <Text>Thông tin</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.modalItem}>
+                            <Text>Đổi ảnh đại diện</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.modalItem}>
+                            <Text>Đổi ảnh bìa</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.modalItem}>
+                            <Text>Cập nhật giới thiệu bản thân</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.modalItem}>
+                            <Text>Ví của tôi</Text>
+                        </TouchableOpacity>
+
+                        {/* Đóng modal */}
+                        <TouchableOpacity 
+                            style={styles.closeButton} 
+                            onPress={() => setModalVisible(false)}
+                        >
+                            <Text>Đóng</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
             {/* Ảnh bìa */}
             <View style={styles.coverPhotoContainer}>
                 <Image
@@ -76,6 +129,35 @@ const styles = StyleSheet.create({
     menu: { marginTop: 20 },
     menuItem: { flexDirection: "row", alignItems: "center", padding: 15, borderBottomWidth: 1, borderBottomColor: "#ddd" },
     menuText: { fontSize: 18, marginLeft: 10 },
+    menuButton: {
+        position: "absolute",
+        top: 40,  // Giảm xuống để không bị che khuất
+        right: 10, // Đặt sát mép phải
+        zIndex: 10, // Đảm bảo nằm trên cùng
+        padding: 5,
+        borderRadius: 20,
+    },    
+    modalContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+    },
+    modalContent: {
+        width: 300,
+        backgroundColor: "white",
+        padding: 20,
+        borderRadius: 10,
+    },
+    modalItem: {
+        paddingVertical: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: "#ccc",
+    },
+    closeButton: {
+        marginTop: 10,
+        alignItems: "center",
+    },
 });
 
 export default ProfileScreen;
