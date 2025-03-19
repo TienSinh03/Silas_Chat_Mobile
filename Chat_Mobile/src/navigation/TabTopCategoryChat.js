@@ -10,6 +10,18 @@ const PriorityMessages = () => <ConservationList category="priority" />;
 const OtherMessages = () => <ConservationList category="other" />;
 
 const TabTopCategoryChat = () => {
+
+  return (
+    <View style={{ flex: 1 }}>
+      <Tab.Navigator>
+        <Tab.Screen name="Ưu tiên" component={PriorityMessages} />
+        <Tab.Screen name="Khác" component={OtherMessages} />
+
+      </Tab.Navigator>
+    </View>
+  );
+}
+
     return (
         <View style={{ flex: 1 }}>
             <Tab.Navigator>
@@ -19,5 +31,6 @@ const TabTopCategoryChat = () => {
         </View>
     );
 };
+
 
 export default TabTopCategoryChat;
