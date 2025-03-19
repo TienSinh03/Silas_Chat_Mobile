@@ -11,7 +11,7 @@ const ProfileScreen = ({ navigation }) => {
             {/* Ảnh bìa */}
             <View style={styles.coverPhotoContainer}>
                 <Image
-                    source={{ uri: "https://www.imagevenue.com/ME1ACS01" }}
+                    source={{ uri: "https://statictuoitre.mediacdn.vn/thumb_w/730/2017/1-1512755474911.jpg" }}
                     style={styles.coverPhoto}
                 />
             </View>
@@ -19,7 +19,7 @@ const ProfileScreen = ({ navigation }) => {
             {/* Ảnh đại diện và thông tin */}
             <View style={styles.profileInfo}>
                 <Image
-                    source={{ uri: "https://www.imagevenue.com/ME1ACS01" }}
+                    source={{ uri: "https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://gcs.tripi.vn/public-tripi/tripi-feed/img/482741PIj/anh-mo-ta.png" }}
                     style={styles.avatar}
                 />
                 <Text style={styles.userName}>Ngô Văn Toàn</Text>
