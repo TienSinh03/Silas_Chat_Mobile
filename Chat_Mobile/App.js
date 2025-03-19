@@ -73,6 +73,7 @@ import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import ProfileScreen from "./src/pages/ProfileScreen"; // Import màn hình Profile
+import EditStatusScreen from "./src/pages/EditStatusScreen"; // Import man hinh EditStatus
 
 const Stack = createStackNavigator();
 
@@ -85,6 +86,7 @@ export default function App() {
                     component={ProfileScreen} 
                     options={{ headerShown: false }} 
                 />
+                <Stack.Screen name="EditStatus" component={EditStatusScreen} />
             </Stack.Navigator>
         </NavigationContainer>
     );

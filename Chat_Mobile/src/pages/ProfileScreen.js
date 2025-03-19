@@ -3,8 +3,8 @@ import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView } from "rea
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 
-const ProfileScreen = () => {
-    const navigation = useNavigation();
+const ProfileScreen = ({ navigation }) => {
+    // const navigation = useNavigation();
 
     return (
         <ScrollView style={styles.container}>
@@ -23,7 +23,7 @@ const ProfileScreen = () => {
                     style={styles.avatar}
                 />
                 <Text style={styles.userName}>Ngô Văn Toàn</Text>
-                <TouchableOpacity>
+                <TouchableOpacity onPress={() => navigation.navigate("EditStatus")}>
                     <Text style={styles.status}>"Đường còn dài, tuổi còn trẻ"</Text>
                 </TouchableOpacity>
 
@@ -65,7 +65,11 @@ const styles = StyleSheet.create({
     profileInfo: { alignItems: "center", marginTop: -50 },
     avatar: { width: 100, height: 100, borderRadius: 50, borderWidth: 3, borderColor: "#fff" },
     userName: { fontSize: 22, fontWeight: "bold", marginTop: 10 },
-    status: { fontSize: 16, color: "#666" },
+    status: {
+        fontSize: 18,
+        color: "#000000",
+        // textDecorationLine: "underline",
+    },
     actions: { flexDirection: "row", justifyContent: "center", marginTop: 20 },
     button: { flexDirection: "row", alignItems: "center", backgroundColor: "#007AFF", padding: 10, borderRadius: 5, marginHorizontal: 5 },
     buttonText: { color: "white", marginLeft: 5 },
