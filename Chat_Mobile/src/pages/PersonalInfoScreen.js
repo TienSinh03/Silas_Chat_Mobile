@@ -6,11 +6,13 @@ import {
   StyleSheet,
   Modal,
   Dimensions,
+  TextInput,
 } from "react-native";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { Ionicons, AntDesign } from "@expo/vector-icons";
 
 const { width, height } = Dimensions.get("window");
+
 const PersonalInfoScreen = ({ navigation }) => {
   const [birthDate, setBirthDate] = useState(null);
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
@@ -18,11 +20,37 @@ const PersonalInfoScreen = ({ navigation }) => {
   const [gender, setGender] = useState(null);
   const [showGenderModal, setShowGenderModal] = useState(false);
 
-  const isValid = birthDate && gender;
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const isValid =
+    birthDate && gender && password.length >= 6 && password === confirmPassword;
 
   const handleConfirm = (date) => {
     setBirthDate(date.toLocaleDateString("vi-VN"));
     setDatePickerVisibility(false);
+  };
+
+  const handlePasswordChange = (text) => {
+    setPassword(text);
+    if (confirmPassword && text !== confirmPassword) {
+      setPasswordError("Mật khẩu không khớp");
+    } else {
+      setPasswordError("");
+    }
+  };
+
+  const handleConfirmPasswordChange = (text) => {
+    setConfirmPassword(text);
+    if (text !== password) {
+      setPasswordError("Mật khẩu không khớp");
+    } else {
+      setPasswordError("");
+    }
   };
 
   return (
@@ -34,7 +62,7 @@ const PersonalInfoScreen = ({ navigation }) => {
       >
         <AntDesign name="arrowleft" size={24} color="black" />
       </TouchableOpacity>
-      <Text style={styles.title}>Thêm thông tin cá nhân</Text>
+      <Text style={styles.title}>Thêm thông tin cá nhân và mật khẩu</Text>
 
       {/* Chọn ngày sinh */}
       <TouchableOpacity
@@ -47,7 +75,6 @@ const PersonalInfoScreen = ({ navigation }) => {
         <Ionicons name="calendar-outline" size={20} color="gray" />
       </TouchableOpacity>
 
-      {/* Date Picker */}
       <DateTimePickerModal
         isVisible={isDatePickerVisible}
         display="default"
@@ -67,6 +94,49 @@ const PersonalInfoScreen = ({ navigation }) => {
         </Text>
         <Ionicons name="chevron-down-outline" size={20} color="gray" />
       </TouchableOpacity>
+
+      {/* Nhập mật khẩu */}
+      <View style={styles.passwordContainer}>
+        <TextInput
+          style={styles.passwordInput}
+          placeholder="Mật khẩu"
+          placeholderTextColor="gray"
+          secureTextEntry={!showPassword}
+          value={password}
+          onChangeText={handlePasswordChange}
+        />
+        <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+          <Ionicons
+            name={showPassword ? "eye" : "eye-off"}
+            size={24}
+            color="gray"
+          />
+        </TouchableOpacity>
+      </View>
+
+      {/* Nhập lại mật khẩu */}
+      <View style={styles.passwordContainer}>
+        <TextInput
+          style={styles.passwordInput}
+          placeholder="Xác nhận mật khẩu"
+          placeholderTextColor="gray"
+          secureTextEntry={!showConfirmPassword}
+          value={confirmPassword}
+          onChangeText={handleConfirmPasswordChange}
+        />
+        <TouchableOpacity
+          onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+        >
+          <Ionicons
+            name={showConfirmPassword ? "eye" : "eye-off"}
+            size={24}
+            color="gray"
+          />
+        </TouchableOpacity>
+      </View>
+      {passwordError ? (
+        <Text style={styles.errorText}>{passwordError}</Text>
+      ) : null}
 
       {/* Nút tiếp tục */}
       <TouchableOpacity
@@ -152,8 +222,40 @@ const styles = StyleSheet.create({
     fontSize: height * 0.018,
     color: "black",
   },
+  passwordContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "white",
+    paddingVertical: height * 0.002,
+    paddingHorizontal: height * 0.01,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    marginBottom: height * 0.02,
+  },
+  passwordInput: {
+    flex: 1,
+    fontSize: height * 0.018,
+    color: "black",
+  },
   placeholder: {
     color: "gray",
+  },
+  inputPassword: {
+    backgroundColor: "white",
+    padding: height * 0.014,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    fontSize: height * 0.018,
+    marginBottom: height * 0.02,
+  },
+  errorText: {
+    fontWeight: "bold",
+    color: "red",
+    fontSize: height * 0.018,
+    marginBottom: height * 0.02,
+    textAlign: "center",
   },
   button: {
     backgroundColor: "#007AFF",

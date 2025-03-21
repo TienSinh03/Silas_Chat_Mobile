@@ -14,7 +14,7 @@ import Checkbox from "expo-checkbox";
 const { width, height } = Dimensions.get("window");
 
 const RegisterScreen = ({ navigation }) => {
-  const [phone, setPhone] = useState("0862058920");
+  const [phone, setPhone] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [agreePolicy, setAgreePolicy] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
