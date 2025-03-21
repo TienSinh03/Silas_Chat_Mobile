@@ -1,11 +1,11 @@
 import React from "react";
 import {
-    View,
-    Text,
-    TouchableOpacity,
-    Image,
-    StyleSheet,
-    Dimensions,
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  StyleSheet,
+  Dimensions,
 } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -19,7 +19,7 @@ import ConversationScreen from "../pages/ConversationScreen";
 import SingleChatScreen from "../pages/SingleChatScreen";
 import DetailSingleChatScreen from "../pages/DetailSingleChatScreen";
 import Login from "../pages/Login";
-import Phonebook  from "../pages/Phonebook";
+import Phonebook from "../pages/Phonebook";
 
 import ProfileMainScreen from "../pages/ProfileMainSrceen";
 // import CallScreen from "../pages/CallScreen";
@@ -27,12 +27,12 @@ const { width, height } = Dimensions.get("window");
 
 const Tab = createBottomTabNavigator();
 const TabBottom = () => {
-    return (
-        <>
-            <Tab.Navigator
-                screenOptions={({ route }) => ({
-                    tabBarIcon: ({ focused, color, size }) => {
-                        let iconName;
+  return (
+    <>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          tabBarIcon: ({ focused, color, size }) => {
+            let iconName;
             if (route.name === "Tin nhắn") {
               iconName = "wechat";
               return <IconAnt name={iconName} size={size} color={color} />;
@@ -85,7 +85,7 @@ const TabBottom = () => {
         />
       </Tab.Navigator>
     </>
-  )                    
+  );
 };
 
 export default TabBottom;
