@@ -20,6 +20,9 @@ import SingleChatScreen from "../pages/SingleChatScreen";
 import DetailSingleChatScreen from "../pages/DetailSingleChatScreen";
 import Login from "../pages/Login";
 import Phonebook  from "../pages/Phonebook";
+
+import ProfileMainScreen from "../pages/ProfileMainSrceen";
+// import CallScreen from "../pages/CallScreen";
 const { width, height } = Dimensions.get("window");
 
 const Tab = createBottomTabNavigator();
@@ -76,7 +79,8 @@ const TabBottom = () => {
         />
         <Tab.Screen
           name="Cá nhân" // Đổi tên thành Dictionary (hoặc tên khác)
-          component={ConversationScreen} // Nhớ đổi tên lại
+          component={ProfileMainScreen} // Nhớ đổi tên lại
+          // component={CallScreen}
           options={{ headerShown: false }}
         />
       </Tab.Navigator>

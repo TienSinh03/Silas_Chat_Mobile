@@ -17,6 +17,9 @@ import ProfileScreen from "./src/pages/ProfileScreen";
 import EditStatusScreen from "./src/pages/EditStatusScreen"; // Import man hinh EditStatus
 import FindInfo  from "./src/navigation/FindInfo";  
 
+import ProfileMainScreen from "./src/pages/ProfileMainSrceen";
+import CallScreen from "./src/pages/CallScreen";
+
 const Stack = createStackNavigator();
 export default function App() {
     return (
@@ -75,7 +78,12 @@ export default function App() {
                 <Stack.Screen name="FindInfo" component={FindInfo} 
                     options={{ headerShown: false }}
                 />
-
+                <Stack.Screen name="ProfileMain" component={ProfileMainScreen}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen name="CallScreen" component={CallScreen}
+                    options={{ headerShown: false }}
+                />
             </Stack.Navigator>
         </NavigationContainer>
     );
