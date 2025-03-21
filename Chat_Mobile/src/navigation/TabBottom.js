@@ -1,11 +1,11 @@
 import React from "react";
 import {
-    View,
-    Text,
-    TouchableOpacity,
-    Image,
-    StyleSheet,
-    Dimensions,
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  StyleSheet,
+  Dimensions,
 } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -18,19 +18,21 @@ import IconFo from "react-native-vector-icons/Fontisto";
 import ConversationScreen from "../pages/ConversationScreen";
 import SingleChatScreen from "../pages/SingleChatScreen";
 import DetailSingleChatScreen from "../pages/DetailSingleChatScreen";
-import Login from "../pages/Login";
-import Phonebook  from "../pages/Phonebook";
-import ProfileScreen from "../pages/ProfileScreen";
+
+import Phonebook from "../pages/Phonebook";
+
+import ProfileMainScreen from "../pages/ProfileMainSrceen";
+// import CallScreen from "../pages/CallScreen";
 const { width, height } = Dimensions.get("window");
 
 const Tab = createBottomTabNavigator();
 const TabBottom = () => {
-    return (
-        <>
-            <Tab.Navigator
-                screenOptions={({ route }) => ({
-                    tabBarIcon: ({ focused, color, size }) => {
-                        let iconName;
+  return (
+    <>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          tabBarIcon: ({ focused, color, size }) => {
+            let iconName;
             if (route.name === "Tin nhắn") {
               iconName = "wechat";
               return <IconAnt name={iconName} size={size} color={color} />;
@@ -76,13 +78,14 @@ const TabBottom = () => {
           options={{ headerShown: false }}
         />
         <Tab.Screen
-          name="Cá nhân" 
-          component={ProfileScreen} // Nhớ đổi tên lại
+          name="Cá nhân" // Đổi tên thành Dictionary (hoặc tên khác)
+          component={ProfileMainScreen} // Nhớ đổi tên lại
+          // component={CallScreen}
           options={{ headerShown: false }}
         />
       </Tab.Navigator>
     </>
-  )                    
+  );
 };
 
 export default TabBottom;

@@ -10,9 +10,12 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import IconA from "react-native-vector-icons/AntDesign";
+import { useNavigation } from "@react-navigation/native"; //  Đảm bảo đã import
 
-const { width, height } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");  
 const Header = ({ iconLeft, onIconLeftPress, iconRight, onIconRightPress }) => {
+  const navigation = useNavigation(); //  Di chuyển vào trong hàm Header
+
   return (
     <LinearGradient
       colors={["#006AF5", "#5FCBF2"]}
@@ -21,14 +24,21 @@ const Header = ({ iconLeft, onIconLeftPress, iconRight, onIconRightPress }) => {
       end={{ x: 1, y: 0 }}
       style={styles.container}
     >
-      <TouchableOpacity style={styles.left} onPress={() => {}}>
-        <IconA name="search1" size={24} color="#fff" />
-        <TextInput
-          placeholder="Tìm kiếm"
-          placeholderTextColor={"#B8D9FF"}
-          style={styles.search}
-        />
-      </TouchableOpacity>
+    <TouchableOpacity 
+      style={styles.left} 
+      onPress={() => {
+        console.log("Navigating to FindInfo...");
+        navigation.navigate("FindInfo");
+      }}
+    >
+      <IconA name="search1" size={24} color="#fff" />
+      <TextInput
+        placeholder="Tìm kiếm"
+        placeholderTextColor={"#B8D9FF"}
+        style={styles.search}
+      />
+    </TouchableOpacity>
+
 
       <View style={styles.right}>
         {/* Icon trai */}

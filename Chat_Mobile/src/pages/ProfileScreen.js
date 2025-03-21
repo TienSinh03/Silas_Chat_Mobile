@@ -13,6 +13,19 @@ const ProfileScreen = ({ navigation }) => {
         <ScrollView style={styles.container}>
 
             <View style={styles.iconContainer}>
+                {/* Nút mũi tên quay lại */}
+                <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={() => {
+                        if (navigation.canGoBack()) {
+                            navigation.goBack();
+                        } else {
+                            navigation.navigate("ProfileMain"); // Chuyển đến màn hình chính nếu không có màn hình trước đó
+                        }
+                    }}
+                >
+                    <Ionicons name="arrow-back-outline" size={24} color="black" />
+                </TouchableOpacity>
                 {/* Nút time-outline */}
                 <TouchableOpacity
                     style={styles.historyButton}
@@ -29,6 +42,7 @@ const ProfileScreen = ({ navigation }) => {
                     <Ionicons name="ellipsis-horizontal-outline" size={24} color="white" />
                 </TouchableOpacity>
             </View>
+
             {/* Modal hiện lịch sử */}
             <Modal
                 animationType="slide"
@@ -182,9 +196,30 @@ const styles = StyleSheet.create({
     menu: { marginTop: 20 },
     menuItem: { flexDirection: "row", alignItems: "center", padding: 15, borderBottomWidth: 1, borderBottomColor: "#ddd" },
     menuText: { fontSize: 18, marginLeft: 10 },
+    iconContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingHorizontal: 15, // Tăng padding ngang để có khoảng cách đều hơn
+        paddingVertical: 10, // Thêm padding dọc để căn giữa
+        top:40
+    },
+
+    backButton: {
+        position: "absolute",
+        left: 10,  // Căn lề trái
+        padding: 5, 
+        zIndex: 10, // Đảm bảo nút nằm trên cùng
+    },    
+    historyButton: {
+        position: "absolute",
+        // top: 50,
+        right: 50,
+        zIndex: 10,
+    },
     menuButton: {
         position: "absolute",
-        top: 45,  // Giảm xuống để không bị che khuất
+        // top: 45,  // Giảm xuống để không bị che khuất
         right: 10, // Đặt sát mép phải
         zIndex: 10, // Đảm bảo nằm trên cùng
         padding: 5,
@@ -210,12 +245,6 @@ const styles = StyleSheet.create({
     closeButton: {
         marginTop: 10,
         alignItems: "center",
-    },
-    historyButton: {
-        position: "absolute",
-        top: 50,
-        right: 50,
-        zIndex: 10,
     },
     modalContainer: {
         flex: 1,

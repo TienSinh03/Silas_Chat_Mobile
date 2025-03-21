@@ -1,9 +1,15 @@
 import React from "react";
-import { View, Text, TouchableOpacity, Image, StyleSheet, Dimensions } from "react-native";
-
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  StyleSheet,
+  Dimensions,
+} from "react-native";
 
 const { width, height } = Dimensions.get("window");
-const ZaloLoginScreen = ({navigation}) => {
+const ZaloLoginScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       {/* Logo Zalo */}
@@ -15,7 +21,7 @@ const ZaloLoginScreen = ({navigation}) => {
         style={styles.image}
       />
 
-      <View style={{ marginVertical: 20 }}> 
+      <View style={{ marginVertical: 20 }}>
         {/* Tiêu đề */}
         <Text style={styles.title}>Chat tiện ích</Text>
         <Text style={styles.subtitle}>
@@ -25,10 +31,16 @@ const ZaloLoginScreen = ({navigation}) => {
       </View>
 
       {/* Nút đăng nhập và tạo tài khoản */}
-      <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate("Login")}>
+      <TouchableOpacity
+        style={styles.loginButton}
+        onPress={() => navigation.navigate("LoginScreen")}
+      >
         <Text style={styles.loginText}>Đăng nhập</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.registerButton} onPress={() => navigation.navigate("Register")}>
+      <TouchableOpacity
+        style={styles.registerButton}
+        onPress={() => navigation.navigate("RegisterScreen")}
+      >
         <Text style={styles.registerText}>Tạo tài khoản mới</Text>
       </TouchableOpacity>
     </View>
@@ -67,7 +79,7 @@ const styles = StyleSheet.create({
   loginButton: {
     backgroundColor: "#007AFF",
     paddingVertical: 12,
-    paddingHorizontal: width*0.3,
+    paddingHorizontal: width * 0.3,
     borderRadius: 25,
     marginTop: 30,
   },
@@ -79,7 +91,7 @@ const styles = StyleSheet.create({
   registerButton: {
     backgroundColor: "#EAEAEA",
     paddingVertical: 12,
-    paddingHorizontal: width*0.25,
+    paddingHorizontal: width * 0.25,
     borderRadius: 25,
     marginTop: 25,
   },
