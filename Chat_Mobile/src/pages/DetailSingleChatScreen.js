@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Ionicons, Feather } from "@expo/vector-icons";
 
-const DetailSingleChatScreen = () => {
+const DetailSingleChatScreen = ({navigation, route}) => {
     const [isBestFriend, setIsBestFriend] = useState(false);
     const [isPinned, setIsPinned] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
@@ -32,7 +32,7 @@ const DetailSingleChatScreen = () => {
             {/* Các tùy chọn chính */}
             <View style={styles.optionsRow}>
                 <OptionButton icon="search" text="Tìm tin nhắn" />
-                <OptionButton icon="user" text="Trang cá nhân" />
+                <OptionButton icon="user" text="Trang cá nhân" navigation={() => navigation.navigate('Profile')}/>
                 <OptionButton icon="image" text="Đổi hình nền" />
                 <OptionButton icon="bell-off" text="Tắt thông báo" />
             </View>
@@ -108,8 +108,8 @@ const DetailSingleChatScreen = () => {
 };
 
 // Component hiển thị tùy chọn
-const OptionButton = ({ icon, text }) => (
-    <TouchableOpacity style={styles.optionButton}>
+const OptionButton = ({ icon, text, navigation }) => (
+    <TouchableOpacity style={styles.optionButton} onPress={navigation}>
         <Feather name={icon} size={22} color="white" />
         <Text style={styles.optionText}>{text}</Text>
     </TouchableOpacity>
