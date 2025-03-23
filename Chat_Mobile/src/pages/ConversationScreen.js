@@ -46,7 +46,7 @@ const ConversationScreen = ({navigation}) => {
               <Text style={{fontSize: 15}}>Thêm bạn bè</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.modalItem} onPress={() => {}}>
+            <TouchableOpacity style={styles.modalItem}onPress={() => {navigation.navigate("CreateGroupScreen")}}>
               <IconA name="addusergroup" size={24} color="#000" />
               <Text style={{fontSize: 15}}>Tạo nhóm</Text>
             </TouchableOpacity>
