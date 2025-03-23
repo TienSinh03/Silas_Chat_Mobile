@@ -25,11 +25,13 @@ import FindInfo from "./src/navigation/FindInfo";
 import ProfileMainScreen from "./src/pages/ProfileMainSrceen";
 import CallScreen from "./src/pages/CallScreen";
 
+import AddFriendScreen from "./src/pages/AddFriendScreen";
+
 const Stack = createStackNavigator();
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Main">
+      <Stack.Navigator initialRouteName="HomeScreen">
         <Stack.Screen
           name="HomeScreen"
           component={HomeScreen}
@@ -120,6 +122,11 @@ export default function App() {
           name="CallScreen"
           component={CallScreen}
           options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="AddFriendScreen"
+          component={AddFriendScreen}
+          options={{ headerTitle: "Thêm bạn bè" }}
         />
       </Stack.Navigator>
     </NavigationContainer>
