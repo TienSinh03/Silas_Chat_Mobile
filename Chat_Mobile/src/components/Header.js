@@ -43,22 +43,26 @@ const Header = ({ iconLeft, onIconLeftPress, iconRight, onIconRightPress }) => {
       <View style={styles.right}>
         {/* Icon trai */}
         {iconLeft ? (
+          <TouchableOpacity onPress={onIconLeftPress}>
+
             <IconA
                 name={iconLeft}
                 size={24}
                 color="#fff"
-                onPress={onIconLeftPress}
+                
             />
+          </TouchableOpacity>
         ) : <View style={styles.iconPlaceholder} />}
 
         {/* Icon phải */}
         {iconRight ? (
+          <TouchableOpacity onPress={onIconRightPress}>
             <IconA
                 name={iconRight}
                 size={24}
                 color="#fff"
-                onPress={onIconRightPress}
             />
+          </TouchableOpacity>
         ) : <View style={styles.iconPlaceholder} />}
 
       </View>
