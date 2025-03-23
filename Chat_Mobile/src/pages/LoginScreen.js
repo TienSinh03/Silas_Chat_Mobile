@@ -75,7 +75,7 @@ const LoginScreen = ({ navigation }) => {
 
       {/* Login Button */}
       <TouchableOpacity
-        onPress={() => navigation.navigate("Conversation")}
+        onPress={() => navigation.navigate("Main")}
         style={[
           styles.loginButton,
           { backgroundColor: isButtonEnabled ? "#007AFF" : "#B0C4DE" },

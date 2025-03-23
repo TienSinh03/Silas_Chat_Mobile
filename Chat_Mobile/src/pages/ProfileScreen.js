@@ -24,7 +24,7 @@ const ProfileScreen = ({ navigation }) => {
                         }
                     }}
                 >
-                    <Ionicons name="arrow-back-outline" size={24} color="black" />
+                    <Ionicons name="arrow-back-outline" size={24} color="white" />
                 </TouchableOpacity>
                 {/* Nút time-outline */}
                 <TouchableOpacity
