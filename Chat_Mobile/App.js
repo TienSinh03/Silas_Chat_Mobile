@@ -26,6 +26,7 @@ import ProfileMainScreen from "./src/pages/ProfileMainSrceen";
 import CallScreen from "./src/pages/CallScreen";
 
 import AddFriendScreen from "./src/pages/AddFriendScreen";
+import CreateGroupScreen from "./src/pages/CreateGroupScreen";
 
 const Stack = createStackNavigator();
 export default function App() {
@@ -127,6 +128,11 @@ export default function App() {
           name="AddFriendScreen"
           component={AddFriendScreen}
           options={{ headerTitle: "Thêm bạn bè" }}
+        />
+        <Stack.Screen
+          name="CreateGroupScreen"
+          component={CreateGroupScreen}
+          options={{ headerTitle: "Nhóm mới" }}
         />
       </Stack.Navigator>
     </NavigationContainer>
