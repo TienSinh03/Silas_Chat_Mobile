@@ -18,10 +18,14 @@ export const getRefreshToken = async () => {
 };
 
 export const removeToken = async () => {
-  console.log("removeToken")
-  console.log(await AsyncStorage.getItem('accessToken'))
+  console.log('removeToken', await getToken());
+  console.log('removeRefreshToken', await getRefreshToken());
+
   await AsyncStorage.removeItem('accessToken');
-  console.log(await AsyncStorage.getItem('accessToken'))
+  await AsyncStorage.removeItem('refreshToken');
+
+  console.log('removeToken after', await getToken());
+  console.log('removeRefreshToken after', await getRefreshToken());
 };
 
 
