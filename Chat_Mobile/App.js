@@ -1,3 +1,4 @@
+import React from "react";
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet, Text, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
@@ -28,112 +29,141 @@ import CallScreen from "./src/pages/CallScreen";
 import AddFriendScreen from "./src/pages/AddFriendScreen";
 import CreateGroupScreen from "./src/pages/CreateGroupScreen";
 
+import { getToken } from "./src/utils/authHelper";
+
 const Stack = createStackNavigator();
 export default function App() {
+  const [isLoggedIn, setIsLoggedIn] =  React.useState(false);
+  const [isLoading, setIsLoading] =  React.useState(true);
+
+  React.useEffect(() => {
+    const checkLoginStatus = async () => {
+      const token = await getToken();
+      if (token) {
+        setIsLoggedIn(true);
+      } else {
+        setIsLoggedIn(false);
+      }
+      setIsLoading(false);
+    };
+
+    checkLoginStatus();
+  }, []);
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="HomeScreen">
-        <Stack.Screen
-          name="HomeScreen"
-          component={HomeScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="LoginScreen"
-          component={LoginScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="RegisterScreen"
-          component={RegisterScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="VerifyScreen"
-          component={VerifyScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="NameRegisterScreen"
-          component={NameRegisterScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="PersonalInfoScreen"
-          component={PersonalInfoScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="AvatarScreen"
-          component={AvatarScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="Conversation"
-          component={ConversationScreen}
-          options={{ headerShown: false }}
-        />
+      <Stack.Navigator >
         <Stack.Screen
           name="Main"
           component={TabBottom}
           options={{ headerShown: false }}
         />
-        <Stack.Screen
-          name="SingleChatScreen"
-          component={SingleChatScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="DetailSingleChatScreen"
-          component={DetailSingleChatScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="GroupChatScreen"
-          component={GroupChatScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="DetailGroupChatScreen"
-          component={DetailGroupChatScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="Profile"
-          component={ProfileScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="EditStatus"
-          component={EditStatusScreen}
-          options={{ headerShown: false }}
-        />
+        {isLoggedIn ? (
+          <>
+            <Stack.Screen
+              name="Conversation"
+              component={ConversationScreen}
+              options={{ headerShown: false }}
+            />
 
-        <Stack.Screen
-          name="FindInfo"
-          component={FindInfo}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="ProfileMain"
-          component={ProfileMainScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="CallScreen"
-          component={CallScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="AddFriendScreen"
-          component={AddFriendScreen}
-          options={{ headerTitle: "Thêm bạn bè" }}
-        />
-        <Stack.Screen
-          name="CreateGroupScreen"
-          component={CreateGroupScreen}
-          options={{ headerTitle: "Nhóm mới" }}
-        />
+            <Stack.Screen
+              name="SingleChatScreen"
+              component={SingleChatScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="DetailSingleChatScreen"
+              component={DetailSingleChatScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="GroupChatScreen"
+              component={GroupChatScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="DetailGroupChatScreen"
+              component={DetailGroupChatScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="Profile"
+              component={ProfileScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="EditStatus"
+              component={EditStatusScreen}
+              options={{ headerShown: false }}
+            />
+
+            <Stack.Screen
+              name="FindInfo"
+              component={FindInfo}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="ProfileMain"
+              component={ProfileMainScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="CallScreen"
+              component={CallScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="AddFriendScreen"
+              component={AddFriendScreen}
+              options={{ headerTitle: "Thêm bạn bè" }}
+            />
+            <Stack.Screen
+              name="CreateGroupScreen"
+              component={CreateGroupScreen}
+              options={{ headerTitle: "Nhóm mới" }}
+            />
+          </>
+        ) : (
+          <>
+          
+            <Stack.Screen
+              name="HomeScreen"
+              component={HomeScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="LoginScreen"
+              component={LoginScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="RegisterScreen"
+              component={RegisterScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="VerifyScreen"
+              component={VerifyScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="NameRegisterScreen"
+              component={NameRegisterScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="PersonalInfoScreen"
+              component={PersonalInfoScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="AvatarScreen"
+              component={AvatarScreen}
+              options={{ headerShown: false }}
+            />
+          </>
+        )}
+
+        
       </Stack.Navigator>
     </NavigationContainer>
   );
