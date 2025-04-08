@@ -41,12 +41,12 @@ const ConversationScreen = ({navigation}) => {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
 
-            <TouchableOpacity style={styles.modalItem} onPress={() => {navigation.navigate("AddFriendScreen")}}>
+            <TouchableOpacity style={styles.modalItem} onPress={() => { setModalVisible(false); navigation.navigate("AddFriendScreen"); }}>
               <IconA name="adduser" size={24} color="#000" />
               <Text style={{fontSize: 15}}>Thêm bạn bè</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.modalItem}onPress={() => {navigation.navigate("CreateGroupScreen")}}>
+            <TouchableOpacity style={styles.modalItem} onPress={() => { setModalVisible(false); navigation.navigate("CreateGroupScreen"); }}>
               <IconA name="addusergroup" size={24} color="#000" />
               <Text style={{fontSize: 15}}>Tạo nhóm</Text>
             </TouchableOpacity>
