@@ -3,15 +3,27 @@ import { SafeAreaView, View, Text, Image, TouchableOpacity, ScrollView, StyleShe
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Header from '../components/Header';
 import FindInfo from '../navigation/FindInfo';
+import { removeToken } from '../utils/authHelper';
+import { useAuth } from '../contexts/AuthContext';
 
 const ProfileMainScreen = ({ navigation }) => {
     const [modalVisible, setModalVisible] = useState(false);
+    const { setIsLoggedIn } = useAuth(); // Get setIsLoggedIn from AuthContext
+    //logout
+    const handleLogout = () => {
+        // Implement logout functionality here
+        console.log('Logout pressed');
+        removeToken();
+
+        setIsLoggedIn(false);
+        navigation.replace("HomeScreen");
+    };
 
     return (
         <View style={styles.container}>
             {/* Header */}
             <SafeAreaView>
-                <Header iconLeft="setting" />
+                <Header iconRight="logout" onIconRightPress={handleLogout} />
                 {modalVisible && <FindInfo />}
             </SafeAreaView>
 
