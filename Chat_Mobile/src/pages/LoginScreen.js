@@ -27,8 +27,9 @@ const LoginScreen = ({ navigation }) => {
 
   const handelLogin = async () => {
     try {
+      console.log("Logging in with phone:", phone, "and password:", password);
       const response = await login(phone, password);
-      console.log("Login successful:", response.response);
+      console.log("Login successful:", response);
       await storeToken(response.response.token);
       await storeRefreshToken(response.response.refreshToken);
       setIsLoggedIn(true);
