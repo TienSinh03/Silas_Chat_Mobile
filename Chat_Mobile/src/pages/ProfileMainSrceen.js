@@ -16,7 +16,9 @@ const ProfileMainScreen = ({ navigation }) => {
         removeToken();
 
         setIsLoggedIn(false);
-        navigation.replace("HomeScreen");
+        setTimeout(() => {
+            navigation.replace("HomeScreen");
+        }, 100);
     };
 
     return (

@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
         // top: 45,  // Giảm xuống để không bị che khuất
         right: 10, // Đặt sát mép phải
         zIndex: 10, // Đảm bảo nằm trên cùng
-        padding: 5,
+        padding: 10,
         borderRadius: 20,
     },
     modalContainer: {
