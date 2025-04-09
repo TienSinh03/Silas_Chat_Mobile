@@ -3,7 +3,7 @@ import { View, Text, ImageBackground, TouchableOpacity, StyleSheet } from 'react
 import Icon from 'react-native-vector-icons/FontAwesome';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 
-const CallScreen = () => {
+const CallScreen = ({navigation}) => {
     const [isMuted, setIsMuted] = useState(false);
     const [isCameraOn, setIsCameraOn] = useState(true);
     const [isSpeakerOn, setIsSpeakerOn] = useState(false);
@@ -34,7 +34,7 @@ const CallScreen = () => {
                     <Icon name={isSpeakerOn ? "volume-up" : "volume-off"} size={24} color="#fff" />
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => console.log('Kết thúc cuộc gọi')} style={styles.endCallButton}>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.endCallButton}>
                     <Icon name="phone" size={24} color="#fff" />
                 </TouchableOpacity>
             </View>

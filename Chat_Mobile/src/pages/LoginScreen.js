@@ -8,6 +8,10 @@ import {
   Dimensions,
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
+import { login} from "../api/authApi";
+import { storeToken, storeRefreshToken } from "../utils/authHelper";
+import {useAuth} from "../contexts/AuthContext";
+import { CommonActions } from "@react-navigation/native";
 
 const { width, height } = Dimensions.get("window");
 
@@ -18,6 +22,35 @@ const LoginScreen = ({ navigation }) => {
   const [focusedInput, setFocusedInput] = useState(null);
 
   const isButtonEnabled = phone.trim() !== "" && password.trim() !== "";
+
+  const {setIsLoggedIn} = useAuth();
+
+  const handelLogin = async () => {
+    try {
+      console.log("Logging in with phone:", phone, "and password:", password);
+      const response = await login(phone, password);
+      console.log("Login successful:", response);
+      await storeToken(response.response.token);
+      await storeRefreshToken(response.response.refreshToken);
+      setIsLoggedIn(true);
+
+      setTimeout(() => {
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: "Main" }],
+          })
+        );
+      },100)
+
+    } catch (error) {
+      console.error("Login failed:", error);
+      alert("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập.");
+      setPhone("");
+      setPassword("");
+      setFocusedInput(null);
+    }
+  }
 
   return (
     <View style={styles.container}>
@@ -75,7 +108,7 @@ const LoginScreen = ({ navigation }) => {
 
       {/* Login Button */}
       <TouchableOpacity
-        onPress={() => navigation.navigate("Conversation")}
+        onPress={handelLogin }
         style={[
           styles.loginButton,
           { backgroundColor: isButtonEnabled ? "#007AFF" : "#B0C4DE" },

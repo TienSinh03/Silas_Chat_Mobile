@@ -1,13 +1,36 @@
 import React, { useState } from "react";
-import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, Modal } from "react-native";
+import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, Modal, StatusBar, TextInput } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { Platform } from 'react-native';
 
 const ProfileScreen = ({ navigation }) => {
     // const navigation = useNavigation();
     const [modalVisible, setModalVisible] = useState(false);
     const [historyModalVisible, setHistoryModalVisible] = useState(false);
+    // Thêm state mới ở phần đầu component
+    const [personalInfoModalVisible, setPersonalInfoModalVisible] = useState(false);
+    const [editInfoModalVisible, setEditInfoModalVisible] = useState(false);
 
+
+    const [fullName, setFullName] = useState("Ngô Văn Toàn");
+    const [gender, setGender] = useState("Nam");
+
+    const [dobDate, setDobDate] = useState(new Date("2003-04-02T00:00:00Z"));
+    const [showDatePicker, setShowDatePicker] = useState(false);
+
+    // Format lại ngày sinh:
+    const formatDate = (date) => {
+        return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+    };
+
+    const handleSave = () => {
+        const formattedDob = formatDate(dobDate);
+        // Gửi fullName, formattedDob, gender lên server hoặc Redux
+        console.log("Saving:", { fullName, formattedDob, gender });
+        setEditInfoModalVisible(false);
+    };
 
     return (
         <ScrollView style={styles.container}>
@@ -24,14 +47,14 @@ const ProfileScreen = ({ navigation }) => {
                         }
                     }}
                 >
-                    <Ionicons name="arrow-back-outline" size={24} color="black" />
+                    <Ionicons name="arrow-back-outline" size={24} color="white" />
                 </TouchableOpacity>
                 {/* Nút time-outline */}
                 <TouchableOpacity
                     style={styles.historyButton}
                     onPress={() => setHistoryModalVisible(true)}
                 >
-                    <Ionicons name="time-outline" size={24} color="black" />
+                    <Ionicons name="time-outline" size={24} color="white" />
                 </TouchableOpacity>
 
                 {/* Nút 3 chấm */}
@@ -39,7 +62,7 @@ const ProfileScreen = ({ navigation }) => {
                     style={styles.menuButton}
                     onPress={() => setModalVisible(true)}
                 >
-                    <Ionicons name="ellipsis-horizontal-outline" size={24} color="black" />
+                    <Ionicons name="ellipsis-horizontal-outline" size={24} color="white" />
                 </TouchableOpacity>
             </View>
 
@@ -95,10 +118,14 @@ const ProfileScreen = ({ navigation }) => {
                     <View style={styles.modalContent}>
                         <TouchableOpacity
                             style={styles.modalItem}
-                            onPress={() => { setModalVisible(false); navigation.navigate("EditProfile"); }}
+                            onPress={() => {
+                                setModalVisible(false);
+                                setPersonalInfoModalVisible(true); // mở modal thông tin cá nhân
+                            }}
                         >
-                            <Text>Thông tin</Text>
+                            <Text>Thông tin cá nhân</Text>
                         </TouchableOpacity>
+
 
                         <TouchableOpacity style={styles.modalItem}>
                             <Text>Đổi ảnh đại diện</Text>
@@ -127,6 +154,211 @@ const ProfileScreen = ({ navigation }) => {
                 </View>
             </Modal>
 
+            {/* Modal thông tin cá nhân */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={personalInfoModalVisible}
+                onRequestClose={() => setPersonalInfoModalVisible(false)}
+            >
+                <View style={styles.modalContainer}>
+                    <View style={[styles.modalContent, { width: '90%', paddingTop: 0 }]}>
+                        {/* Ảnh bìa và avatar */}
+                        <View style={{ position: 'relative', alignItems: 'center' }}>
+                            {/* Ảnh bìa */}
+                            <Image
+                                source={{ uri: 'https://statictuoitre.mediacdn.vn/thumb_w/730/2017/1-1512755474911.jpg' }}
+                                style={{ width: '100%', height: 120, borderTopLeftRadius: 10, borderTopRightRadius: 10 }}
+                                resizeMode="cover"
+                            />
+                            {/* Ảnh đại diện */}
+                            <Image
+                                source={{ uri: 'https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://gcs.tripi.vn/public-tripi/tripi-feed/img/482741PIj/anh-mo-ta.png' }}
+                                style={{
+                                    width: 100,
+                                    height: 100,
+                                    borderRadius: 50,
+                                    borderWidth: 3,
+                                    borderColor: 'white',
+                                    position: 'absolute',
+                                    bottom: -50
+                                }}
+                            />
+                        </View>
+
+                        {/* Thông tin bên dưới avatar */}
+                        <View style={{ alignItems: 'center', marginTop: 60 }}>
+                            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#000' }}>
+                                Ngô Văn Toàn
+                            </Text>
+                        </View>
+
+                        {/* Thông tin chi tiết */}
+                        <View style={{ paddingHorizontal: 16, paddingVertical: 20 }}>
+                            <Text style={styles.modalTitle}>Thông tin cá nhân</Text>
+
+                            <View style={styles.infoRow}>
+                                <Text style={styles.infoLabel}>Giới tính</Text>
+                                <Text style={styles.infoValue}>Nam</Text>
+                            </View>
+
+                            <View style={styles.infoRow}>
+                                <Text style={styles.infoLabel}>Ngày sinh</Text>
+                                <Text style={styles.infoValue}>02/04/2003</Text>
+                            </View>
+
+                            <View style={styles.infoRow}>
+                                <Text style={styles.infoLabel}>Điện thoại</Text>
+                                <Text style={styles.infoValue}>+84 986 045 261</Text>
+                            </View>
+
+                            <Text style={{ color: "#666", fontSize: 12, marginTop: 5 }}>
+                                Số điện thoại chỉ hiển thị với người có lưu số bạn trong danh bạ máy
+                            </Text>
+
+                            <TouchableOpacity
+                                style={[styles.button, { marginTop: 20, alignSelf: "center" }]}
+                                onPress={() => {
+                                    setPersonalInfoModalVisible(false);
+                                    setEditInfoModalVisible(true);
+                                }}
+                            >
+                                <Text style={styles.buttonText}>Chỉnh sửa</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+
+
+            {/* Modal chỉnh sửa thông tin cá nhân */}
+            <Modal
+                animationType="slide"
+                transparent={false}
+                visible={editInfoModalVisible}
+                onRequestClose={() => setEditInfoModalVisible(false)}
+            >
+                <View style={{ flex: 1, backgroundColor: "#fff" }}>
+                    {/* Header */}
+                    <View style={{ flexDirection: "row", alignItems: "center", padding: 16 }}>
+                        <TouchableOpacity onPress={() => setEditInfoModalVisible(false)}>
+                            <Ionicons name="arrow-back-outline" size={24} color="black" />
+                        </TouchableOpacity>
+                        <Text style={{ color: "black", fontSize: 20, marginLeft: 16 }}>Chỉnh sửa thông tin</Text>
+                    </View>
+
+                    {/* Avatar */}
+                    <View style={{ alignItems: "center", marginTop: 20 }}>
+                        <Image
+                            source={{
+                                uri: "https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://gcs.tripi.vn/public-tripi/tripi-feed/img/482741PIj/anh-mo-ta.png"
+                            }}
+                            style={{ width: 100, height: 100, borderRadius: 50 }}
+                        />
+                        <TouchableOpacity
+                            style={{
+                                backgroundColor: "#eee",
+                                borderRadius: 20,
+                                padding: 5,
+                                position: "absolute",
+                                top: 80,
+                                right: 120
+                            }}
+                            onPress={() => console.log("Đổi ảnh đại diện")}
+                        >
+                            <Ionicons name="camera-outline" size={18} color="black" />
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Form */}
+                    <View style={{ marginTop: 20, paddingHorizontal: 16 }}>
+                        {/* Họ tên */}
+                        <Text style={{ color: "black", marginBottom: 5 }}>Họ tên</Text>
+                        <TextInput
+                            style={{
+                                backgroundColor: "#f0f0f0",
+                                borderRadius: 5,
+                                padding: 10,
+                                marginBottom: 10,
+                                color: "black"
+                            }}
+                            value={fullName}
+                            onChangeText={setFullName}
+                        />
+
+                        {/* Ngày sinh */}
+                        {/* Ngày sinh */}
+                        <Text style={{ color: "black", marginBottom: 5 }}>Ngày sinh</Text>
+                        <TouchableOpacity
+                            style={{
+                                backgroundColor: "#f0f0f0",
+                                borderRadius: 5,
+                                padding: 10,
+                                marginBottom: 10
+                            }}
+                            onPress={() => setShowDatePicker(true)}
+                        >
+                            <Text style={{ color: "black" }}>{formatDate(dobDate)}</Text>
+                        </TouchableOpacity>
+
+                        {showDatePicker && (
+                            <DateTimePicker
+                                value={dobDate}
+                                mode="date"
+                                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                onChange={(event, selectedDate) => {
+                                    const currentDate = selectedDate || dobDate;
+                                    setShowDatePicker(Platform.OS === 'ios');
+                                    setDobDate(currentDate);
+                                }}
+                            />
+                        )}
+
+                        {/* Giới tính */}
+                        <Text style={{ color: "black", marginBottom: 5 }}>Giới tính</Text>
+                        <View style={{ flexDirection: "row", marginBottom: 20 }}>
+                            <TouchableOpacity
+                                style={{ flexDirection: "row", alignItems: "center", marginRight: 20 }}
+                                onPress={() => setGender("Nam")}
+                            >
+                                <Ionicons
+                                    name={gender === "Nam" ? "checkmark-circle" : "ellipse-outline"}
+                                    size={20}
+                                    color="#007AFF"
+                                />
+                                <Text style={{ color: "black", marginLeft: 5 }}>Nam</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={{ flexDirection: "row", alignItems: "center" }}
+                                onPress={() => setGender("Nữ")}
+                            >
+                                <Ionicons
+                                    name={gender === "Nữ" ? "checkmark-circle" : "ellipse-outline"}
+                                    size={20}
+                                    color="#007AFF"
+                                />
+                                <Text style={{ color: "black", marginLeft: 5 }}>Nữ</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Nút lưu */}
+                        <TouchableOpacity
+                            style={{
+                                backgroundColor: "#00A9FF",
+                                borderRadius: 30,
+                                padding: 15,
+                                alignItems: "center"
+                            }}
+                            onPress={handleSave}
+                        >
+                            <Text style={{ color: "white", fontWeight: "bold" }}>LƯU</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+
 
             {/* Ảnh bìa */}
             <View style={styles.coverPhotoContainer}>
@@ -147,19 +379,6 @@ const ProfileScreen = ({ navigation }) => {
                     <Text style={styles.status}>"Đường còn dài, tuổi còn trẻ"</Text>
                 </TouchableOpacity>
 
-            </View>
-
-            {/* Các nút chức năng */}
-            <View style={styles.actions}>
-                <TouchableOpacity style={styles.button}>
-                    <Ionicons name="create-outline" size={20} color="white" />
-                    <Text style={styles.buttonText}>Chỉnh sửa trang cá nhân</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.button}>
-                    <Ionicons name="settings-outline" size={20} color="white" />
-                    <Text style={styles.buttonText}>Cài đặt</Text>
-                </TouchableOpacity>
             </View>
 
             {/* Các mục khác */}
@@ -202,15 +421,15 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         paddingHorizontal: 15, // Tăng padding ngang để có khoảng cách đều hơn
         paddingVertical: 10, // Thêm padding dọc để căn giữa
-        top:40
+        top: 40
     },
 
     backButton: {
         position: "absolute",
         left: 10,  // Căn lề trái
-        padding: 5, 
+        padding: 5,
         zIndex: 10, // Đảm bảo nút nằm trên cùng
-    },    
+    },
     historyButton: {
         position: "absolute",
         // top: 50,
@@ -222,7 +441,7 @@ const styles = StyleSheet.create({
         // top: 45,  // Giảm xuống để không bị che khuất
         right: 10, // Đặt sát mép phải
         zIndex: 10, // Đảm bảo nằm trên cùng
-        padding: 5,
+        padding: 10,
         borderRadius: 20,
     },
     modalContainer: {
@@ -231,12 +450,13 @@ const styles = StyleSheet.create({
         alignItems: "center",
         backgroundColor: "rgba(0, 0, 0, 0.5)",
     },
-    modalContent: {
-        width: 300,
-        backgroundColor: "white",
-        padding: 20,
+    mmodalContent: {
+        backgroundColor: "#fff",
         borderRadius: 10,
-    },
+        paddingBottom: 20,
+        overflow: "hidden"
+    }
+    ,
     modalItem: {
         paddingVertical: 10,
         borderBottomWidth: 1,
@@ -272,6 +492,21 @@ const styles = StyleSheet.create({
         marginTop: 10,
         alignItems: "center",
     },
+    infoRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        paddingVertical: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: "#ccc",
+    },
+    infoLabel: {
+        fontWeight: "bold",
+        fontSize: 16,
+    },
+    infoValue: {
+        fontSize: 16,
+    },
+
 
 });
 

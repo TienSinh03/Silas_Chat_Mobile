@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Dimensions,
 } from "react-native";
+const {removeToken} = require("../utils/authHelper");
 
 const { width, height } = Dimensions.get("window");
 const ZaloLoginScreen = ({ navigation }) => {
@@ -33,7 +34,7 @@ const ZaloLoginScreen = ({ navigation }) => {
       {/* Nút đăng nhập và tạo tài khoản */}
       <TouchableOpacity
         style={styles.loginButton}
-        onPress={() => navigation.navigate("LoginScreen")}
+        onPress={() => {navigation.navigate("LoginScreen")}}
       >
         <Text style={styles.loginText}>Đăng nhập</Text>
       </TouchableOpacity>
