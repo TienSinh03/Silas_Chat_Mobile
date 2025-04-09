@@ -115,7 +115,9 @@ const SingleChatScreen = ({ navigation }) => {
                     Thái Dương
                 </Text>
                 <View style={{ flexDirection: "row", gap: width * 0.04 }}>
-                    <Icon name="call" size={width * 0.07} color="white" />
+                    <TouchableOpacity onPress={() => navigation.navigate("CallScreen")}>
+                        <Icon name="call" size={width * 0.07} color="white"/>
+                    </TouchableOpacity>
                     <Icon name="videocam" size={width * 0.07} color="white" />
                 </View>
                 <TouchableOpacity

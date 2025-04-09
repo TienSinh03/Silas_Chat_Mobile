@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, Modal } from "react-native";
+import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, Modal, StatusBar } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -24,14 +24,14 @@ const ProfileScreen = ({ navigation }) => {
                         }
                     }}
                 >
-                    <Ionicons name="arrow-back-outline" size={24} color="black" />
+                    <Ionicons name="arrow-back-outline" size={24} color="white" />
                 </TouchableOpacity>
                 {/* Nút time-outline */}
                 <TouchableOpacity
                     style={styles.historyButton}
                     onPress={() => setHistoryModalVisible(true)}
                 >
-                    <Ionicons name="time-outline" size={24} color="black" />
+                    <Ionicons name="time-outline" size={24} color="white" />
                 </TouchableOpacity>
 
                 {/* Nút 3 chấm */}
@@ -39,7 +39,7 @@ const ProfileScreen = ({ navigation }) => {
                     style={styles.menuButton}
                     onPress={() => setModalVisible(true)}
                 >
-                    <Ionicons name="ellipsis-horizontal-outline" size={24} color="black" />
+                    <Ionicons name="ellipsis-horizontal-outline" size={24} color="white" />
                 </TouchableOpacity>
             </View>
 
@@ -179,7 +179,7 @@ const ProfileScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "#fff" },
+    container: { flex: 1, backgroundColor: "#fff"},
     coverPhotoContainer: { height: 200, backgroundColor: "#ccc" },
     coverPhoto: { width: "100%", height: "100%" },
     profileInfo: { alignItems: "center", marginTop: -50 },

@@ -8,6 +8,9 @@ import {
     StyleSheet,
 } from "react-native";
 
+import { useNavigation } from "@react-navigation/native";
+
+
 const messagesData = [
     {
         id: "1",
@@ -76,36 +79,51 @@ const messagesData = [
     },
 ];
 
-const ConservationItem = ({ item }) => (
-    <TouchableOpacity style={styles.conservationItem}>
-        {/* Avata group và cá nhân */}
-        {item.isGroup ? (
-            <View style={styles.groupAvatars}>
-                {item.members.slice(0, 4).map((member, index) => (
-                    <Image
-                        key={index}
-                        source={{ uri: member.avatar }}
-                        style={styles.groupAvatar}
-                    />
-                ))}
+const ConservationItem = ({ item}) => {
+    const navigation = useNavigation();
+
+    const handleChooseChat = (item) => {
+        if (item.isGroup) {
+            navigation.navigate("GroupChatScreen", { item });
+        } else {
+            navigation.navigate("SingleChatScreen", { item });
+        }
+    };
+    return (
+
+        <TouchableOpacity key={item.id} style={styles.conservationItem} onPress={() => handleChooseChat(item)}>
+            {/* Avata group và cá nhân */}
+            {item.isGroup ? (
+                <View style={styles.groupAvatars}>
+                    {item.members.slice(0, 4).map((member, index) => (
+                        <Image
+                            key={index}
+                            source={{ uri: member.avatar }}
+                            style={styles.groupAvatar}
+                        />
+                    ))}
+                </View>
+            ) : (
+                <Image source={{ uri: item.avatar }} style={styles.avatar} />
+            )}
+    
+            {/* Nội dung */}
+            <View style={styles.conservationContent}>
+                <Text style={styles.name}>{item.name}</Text>
+                <Text style={styles.message}>{item.message}</Text>
             </View>
-        ) : (
-            <Image source={{ uri: item.avatar }} style={styles.avatar} />
-        )}
+            <Text style={styles.time}>{item.time}</Text>
+        </TouchableOpacity>
+    )
+};
+    
+    
 
-        {/* Nội dung */}
-        <View style={styles.conservationContent}>
-            <Text style={styles.name}>{item.name}</Text>
-            <Text style={styles.message}>{item.message}</Text>
-        </View>
-        <Text style={styles.time}>{item.time}</Text>
-    </TouchableOpacity>
-);
-
-const ConservationList = ({ category }) => {
+const ConservationList = ({ category}) => {
     const filteredMessages = messagesData.filter(
         (item) => item.category === category
     );
+    
     return (
         <View style={{ flex: 1 }}>
             <FlatList

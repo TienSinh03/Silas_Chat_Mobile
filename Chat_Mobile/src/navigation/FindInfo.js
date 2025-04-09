@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { 
   View, Text, TextInput, FlatList, Image, TouchableOpacity, 
-  StyleSheet, Dimensions 
+  StyleSheet, Dimensions, StatusBar
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import IconA from "react-native-vector-icons/AntDesign";
@@ -117,6 +117,7 @@ const styles = StyleSheet.create({
     flex: 1, 
     backgroundColor: "#fff",
     paddingBottom: 20, // Chừa khoảng trống phía dưới
+    paddingTop: StatusBar.currentHeight || 0,
   },
 
   // Header Gradient
