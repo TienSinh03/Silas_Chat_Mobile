@@ -10,6 +10,7 @@ import {
 import { AntDesign } from "@expo/vector-icons";
 import { login} from "../api/authApi";
 import { storeToken, storeRefreshToken } from "../utils/authHelper";
+import {useAuth} from "../contexts/AuthContext";
 import { CommonActions } from "@react-navigation/native";
 
 const { width, height } = Dimensions.get("window");
@@ -22,18 +23,24 @@ const LoginScreen = ({ navigation }) => {
 
   const isButtonEnabled = phone.trim() !== "" && password.trim() !== "";
 
+  const {setIsLoggedIn} = useAuth();
+
   const handelLogin = async () => {
     try {
       const response = await login(phone, password);
       console.log("Login successful:", response.response);
       await storeToken(response.response.token);
       await storeRefreshToken(response.response.refreshToken);
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: "Main" }],
-        })
-      );
+      setIsLoggedIn(true);
+
+      setTimeout(() => {
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: "Main" }],
+          })
+        );
+      },100)
 
     } catch (error) {
       console.error("Login failed:", error);

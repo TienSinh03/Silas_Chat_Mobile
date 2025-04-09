@@ -42,13 +42,13 @@ const AppNavigation = () => {
   return (
     <NavigationContainer>
         <Stack.Navigator >
-          <Stack.Screen
-            name="Main"
-            component={TabBottom}
-            options={{ headerShown: false }}
-          />
           {isLoggedIn ? (
             <>
+              <Stack.Screen
+                name="Main"
+                component={TabBottom}
+                options={{ headerShown: false }}
+              />
               <Stack.Screen
                 name="Conversation"
                 component={ConversationScreen}
