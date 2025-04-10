@@ -13,12 +13,24 @@ export async function login(phone, password) {
     }
 }
 
-export async function signUp(params) {
+export async function signUp(formData) {
+    console.log("formData");
+    console.log(formData._parts);
     try {
-        const response = await instance.post(chatApi.signUp(), params);
+        const response = await instance.post(chatApi.signUp(), formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
         return response.data;
     } catch (error) {
-        console.log("Error in signUp API:", error);
+        if (error.response) {
+            console.log("Status:", error.response.status);
+            console.log("Data:", error.response.data); // << cái này sẽ cho biết lý do 400
+          } else {
+            console.log("Other error:", error.message);
+          }
+          throw error;
     }
 }
 
@@ -29,7 +41,7 @@ export async function signUp(params) {
 
 export async function sendOtp(phone) {
     try {
-        const response = await instance.post('/api/v1/auth/send-otp', { phoneNumber: phone });
+        const response = await instance.post(chatApi.sendOtp(), { phoneNumber: phone });
         return response.data
     } catch (error) {
         console.log("Error in sendOtp API:", error);
@@ -37,6 +49,6 @@ export async function sendOtp(phone) {
 }
 
 export const verifyOtp= async (phoneNumber, otp) => {
-    const response = await instance.post("/api/v1/auth/verify-otp-sns", { phoneNumber, otp });
+    const response = await instance.post(chatApi.verifyOtp(), { phoneNumber, otp });
     return response.data;
 };

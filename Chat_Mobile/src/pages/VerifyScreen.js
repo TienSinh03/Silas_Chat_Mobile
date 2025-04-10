@@ -56,13 +56,14 @@ const VerifyScreen = ({ navigation, route }) => {
       try {
         
 
+        console.log("Xác thực OTP với số điện thoại:", phone, "và mã OTP:", enteredOtp);
         const response = await verify(phone, enteredOtp);
 
         Alert.alert("Xác thực thành công", response.message, [{ text: "OK" }]);
         navigation.navigate("NameRegisterScreen", { phone: phone });
         
       } catch (error) {
-        Alert.alert("Lỗi", error.message, [{ text: "OK" }]);
+        Alert.alert("Lỗi",  error?.response?.data?.message || error?.message, [{ text: "OK" }]);
       }
     } else {
       alert("Vui lòng nhập đủ 6 số OTP!");
