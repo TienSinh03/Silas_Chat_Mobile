@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { getToken, removeToken } from '../utils/authHelper';
 import { useNavigation } from '@react-navigation/native';
+import { sendOtp, verifyOtp } from '../api/authApi';
 
 const AuthContext = createContext();
 
@@ -8,6 +9,31 @@ export const AuthProvider = ({ children }) => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [user, setUser] = useState(null);
+    
+    const sendOTP = async (phone) => {
+        try {
+           const response = await sendOtp(phone);
+            if (response.status === "ERROR") {
+                throw new Error(response.message);
+            }
+            return response;
+
+        } catch (error) {
+            console.log("Error sending OTP:", error);
+        }
+    };
+
+    const verify = async (phone, otp) => {
+        try {
+            const response = await verifyOtp(phone, otp);
+            if (response.status === "ERROR") {
+                throw new Error(response.message);
+            }
+            return response;
+        } catch (error) {
+            console.log("Error verifying OTP:", error);
+        }
+    };
 
     useEffect(() => {
         const checkLoginStatus = async () => {
@@ -25,7 +51,7 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ isLoggedIn, setIsLoggedIn, user, setUser, isLoading }}>
+        <AuthContext.Provider value={{ isLoggedIn, setIsLoggedIn, user, setUser, isLoading, sendOTP, verify }}>
             {children}
         </AuthContext.Provider>
     );
