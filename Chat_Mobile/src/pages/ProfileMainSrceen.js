@@ -5,10 +5,21 @@ import Header from '../components/Header';
 import FindInfo from '../navigation/FindInfo';
 import { removeToken } from '../utils/authHelper';
 import { useAuth } from '../contexts/AuthContext';
+import { getProfile } from '../store/slice/userSlice';
+import { useDispatch, useSelector } from 'react-redux';
 
 const ProfileMainScreen = ({ navigation }) => {
     const [modalVisible, setModalVisible] = useState(false);
     const { setIsLoggedIn } = useAuth(); // Get setIsLoggedIn from AuthContext
+    const dispatch = useDispatch();
+    const userProfile = useSelector(state => state.user.user);
+    console.log(userProfile);
+
+    React.useEffect(() => {
+        dispatch(getProfile());
+    },[])
+
+
     //logout
     const handleLogout = () => {
         // Implement logout functionality here
@@ -32,21 +43,21 @@ const ProfileMainScreen = ({ navigation }) => {
             {/* Profile */}
             <View style={styles.profileContainer}>
                 <Image
-                    source={{ uri: 'https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://gcs.tripi.vn/public-tripi/tripi-feed/img/482741PIj/anh-mo-ta.png' }}
+                    source={{ uri: userProfile?.avatar || 'https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://gcs.tripi.vn/public-tripi/tripi-feed/img/482741PIj/anh-mo-ta.png' }}
                     style={styles.avatar}
                 />
                 <TouchableOpacity onPress={() => { setModalVisible(false); navigation.navigate("Profile"); }}>
-                    <Text style={styles.name}>Ngô Văn Toàn</Text>
+                    <Text style={styles.name}>{userProfile?.display_name}</Text>
                     <Text style={styles.viewProfile}>Xem trang cá nhân</Text>
                 </TouchableOpacity>
             </View>
 
             {/* Menu Items */}
             <ScrollView>
-                <MenuItem icon="cloud" title="zCloud" subtitle="Không gian lưu trữ dữ liệu trên đám mây" />
-                <MenuItem icon="paint-brush" title="zStyle - Nổi bật trên Zalo" subtitle="Hình nền và nhạc cho cuộc gọi Zalo" />
+                <MenuItem icon="cloud" title="Cloud" subtitle="Không gian lưu trữ dữ liệu trên đám mây" />
+                <MenuItem icon="paint-brush" title="Style - Nổi bật trên Chat" subtitle="Hình nền và nhạc cho cuộc gọi Chat" />
                 <MenuItem icon="cloud-upload" title="Cloud của tôi" subtitle="Lưu trữ các tin nhắn quan trọng" />
-                <MenuItem icon="folder" title="Dữ liệu trên máy" subtitle="Quản lý dữ liệu Zalo của bạn" />
+                <MenuItem icon="folder" title="Dữ liệu trên máy" subtitle="Quản lý dữ liệu Chat của bạn" />
                 <MenuItem icon="qrcode" title="Ví QR" subtitle="Lưu trữ và xuất trình các mã QR quan trọng" />
                 <MenuItem icon="shield" title="Tài khoản và bảo mật" />
                 <MenuItem icon="lock" title="Quyền riêng tư" />

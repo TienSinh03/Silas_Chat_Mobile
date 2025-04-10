@@ -2,6 +2,8 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import { getToken, removeToken } from '../utils/authHelper';
 import { useNavigation } from '@react-navigation/native';
 import { sendOtp, verifyOtp } from '../api/authApi';
+import { getCurrentUser } from '../api/userApi';
+import { Alert } from 'react-native';
 
 const AuthContext = createContext();
 
@@ -34,6 +36,7 @@ export const AuthProvider = ({ children }) => {
             console.log("Error verifying OTP:", error);
         }
     };
+
 
     useEffect(() => {
         const checkLoginStatus = async () => {

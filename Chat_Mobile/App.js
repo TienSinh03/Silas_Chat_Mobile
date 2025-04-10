@@ -32,7 +32,8 @@ import CreateGroupScreen from "./src/pages/CreateGroupScreen";
 import { getToken } from "./src/utils/authHelper";
 import { AuthProvider } from "./src/contexts/AuthContext";
 import { useAuth } from "./src/contexts/AuthContext";
-
+import { Provider } from "react-redux";
+import store from "./src/store/store";
 const Stack = createStackNavigator();
 
 const AppNavigation = () => {
@@ -162,9 +163,12 @@ export default function App() {
  
 
   return (
-    <AuthProvider>
-      <StatusBar style="auto" />
-      <AppNavigation />
-    </AuthProvider>
+    <Provider store={store}>
+      <AuthProvider>
+        <StatusBar style="auto" />
+        <AppNavigation />
+      </AuthProvider>
+    </Provider>
+
   );
 }
