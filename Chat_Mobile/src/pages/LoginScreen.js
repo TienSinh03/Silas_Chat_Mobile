@@ -15,9 +15,12 @@ import { CommonActions } from "@react-navigation/native";
 
 const { width, height } = Dimensions.get("window");
 
-const LoginScreen = ({ navigation }) => {
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
+const LoginScreen = ({ navigation, route }) => {
+
+  const { phoneLogin, passwordLogin } = route.params || { phoneLogin: "", passwordLogin: "" };
+  
+  const [phone, setPhone] = useState(phoneLogin);
+  const [password, setPassword] = useState(passwordLogin);
   const [showPassword, setShowPassword] = useState(false);
   const [focusedInput, setFocusedInput] = useState(null);
 
@@ -29,8 +32,11 @@ const LoginScreen = ({ navigation }) => {
     try {
       console.log("Logging in with phone:", phone, "and password:", password);
       const response = await login(phone, password);
+      
       console.log("Login successful:", response);
+
       await storeToken(response.response.token);
+
       await storeRefreshToken(response.response.refreshToken);
       setIsLoggedIn(true);
 

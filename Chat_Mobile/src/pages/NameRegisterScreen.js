@@ -10,7 +10,8 @@ import {
 
 const { width, height } = Dimensions.get("window");
 
-const NameRegisterScreen = ({ navigation }) => {
+const NameRegisterScreen = ({ navigation, route }) => {
+  const { phone } = route.params || { phone: "" };
   const [name, setName] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const isValid = name.length >= 2 && name.length <= 40 && !/[0-9]/.test(name);
@@ -26,7 +27,7 @@ const NameRegisterScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Nhập tên Zalo</Text>
+      <Text style={styles.title}>Nhập tên người dùng</Text>
       <Text style={styles.subtitle}>
         Hãy dùng tên thật để mọi người dễ nhận ra bạn
       </Text>
@@ -47,15 +48,12 @@ const NameRegisterScreen = ({ navigation }) => {
       <View style={styles.rulesContainer}>
         <Text style={styles.rule}>● Dài từ 2 đến 40 ký tự</Text>
         <Text style={styles.rule}>● Không chứa số</Text>
-        <Text style={styles.rule}>
-          ● Cần tuân thủ <Text style={styles.link}>quy định đặt tên Zalo</Text>
-        </Text>
       </View>
 
       <TouchableOpacity
         style={[styles.button, !isValid && styles.buttonDisabled]}
         disabled={!isValid}
-        onPress={() => navigation.navigate("PersonalInfoScreen")}
+        onPress={() => navigation.navigate("PersonalInfoScreen", { phone, name })}
       >
         <Text style={styles.buttonText}>Tiếp tục</Text>
       </TouchableOpacity>

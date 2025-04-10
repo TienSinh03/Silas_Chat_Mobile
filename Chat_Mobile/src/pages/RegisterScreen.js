@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,23 +10,57 @@ import {
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import Checkbox from "expo-checkbox";
+import { useAuth } from "../contexts/AuthContext";
 
 const { width, height } = Dimensions.get("window");
 
 const RegisterScreen = ({ navigation }) => {
+
+  const { sendOTP } = useAuth();
+
   const [phone, setPhone] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [agreePolicy, setAgreePolicy] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [verificationId, setVerificationId] = useState(null);
 
   const isButtonEnabled = phone.trim() !== "" && agreeTerms && agreePolicy;
 
+  //regex phone
+  const phoneRegex = /^0?[35789]\d{8}$/;
+
+  const formatPhoneNumber = (phone) => {
+
+    if (phone.startsWith("0")) {
+      return "+84" + phone.slice(1);
+    }
+    return "+84" + phone;
+  }
+
   const handleContinue = () => {
+    if(!phoneRegex.test(phone)) {
+      alert("Số điện thoại không hợp lệ. Vui lòng nhập lại.");
+      return;
+    }
     setModalVisible(true);
   };
 
+  const handleSendOtp = async () => {
+    try {
+
+      const formattedPhone = formatPhoneNumber(phone);
+      await sendOTP(formattedPhone);
+      navigation.navigate("VerifyScreen", { phone: formattedPhone });
+    
+    } catch (error) {
+      console.error("Error sending OTP:", error);
+    }
+  }
+
+  
   return (
     <View style={styles.container}>
+
       {/* Header */}
       <TouchableOpacity
         style={styles.backButton}
@@ -63,7 +97,7 @@ const RegisterScreen = ({ navigation }) => {
         />
         <Text style={styles.checkboxText}>
           Tôi đồng ý với các{" "}
-          <Text style={styles.link}>điều khoản sử dụng Zalo</Text>
+          <Text style={styles.link}>điều khoản sử dụng Chat</Text>
         </Text>
       </View>
       <View style={styles.checkboxContainer}>
@@ -74,7 +108,7 @@ const RegisterScreen = ({ navigation }) => {
         />
         <Text style={styles.checkboxText}>
           Tôi đồng ý với{" "}
-          <Text style={styles.link}>điều khoản Mạng xã hội của Zalo</Text>
+          <Text style={styles.link}>điều khoản Mạng xã hội của Chat</Text>
         </Text>
       </View>
 
@@ -102,7 +136,7 @@ const RegisterScreen = ({ navigation }) => {
             <Text style={styles.modalTitle}>Nhận mã xác thực qua số</Text>
             <Text style={styles.modalPhone}>{phone}?</Text>
             <Text style={styles.modalDescription}>
-              Zalo sẽ gửi mã xác thực cho bạn qua số điện thoại này
+              Chat sẽ gửi mã xác thực cho bạn qua số điện thoại này
             </Text>
 
             {/* Buttons */}
@@ -110,7 +144,7 @@ const RegisterScreen = ({ navigation }) => {
               style={styles.modalButton}
               onPress={() => {
                 setModalVisible(false);
-                navigation.navigate("VerifyScreen", { phone });
+                handleSendOtp();
               }}
             >
               <Text style={styles.modalButtonText}>Tiếp tục</Text>
@@ -136,6 +170,7 @@ const RegisterScreen = ({ navigation }) => {
           Đăng nhập ngay
         </Text>
       </Text>
+      
     </View>
   );
 };

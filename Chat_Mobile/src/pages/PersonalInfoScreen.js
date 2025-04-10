@@ -13,7 +13,8 @@ import { Ionicons, AntDesign } from "@expo/vector-icons";
 
 const { width, height } = Dimensions.get("window");
 
-const PersonalInfoScreen = ({ navigation }) => {
+const PersonalInfoScreen = ({ navigation, route }) => {
+  const { phone, name } = route.params;
   const [birthDate, setBirthDate] = useState(null);
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
 
@@ -31,7 +32,7 @@ const PersonalInfoScreen = ({ navigation }) => {
     birthDate && gender && password.length >= 6 && password === confirmPassword;
 
   const handleConfirm = (date) => {
-    setBirthDate(date.toLocaleDateString("vi-VN"));
+    setBirthDate(date.toISOString().split("T")[0]);
     setDatePickerVisibility(false);
   };
 
@@ -140,7 +141,7 @@ const PersonalInfoScreen = ({ navigation }) => {
 
       {/* Nút tiếp tục */}
       <TouchableOpacity
-        onPress={() => navigation.navigate("AvatarScreen")}
+        onPress={() => navigation.navigate("AvatarScreen", { phone, name, gender, birthDate, password })}
         style={[styles.button, !isValid && styles.buttonDisabled]}
         disabled={!isValid}
       >

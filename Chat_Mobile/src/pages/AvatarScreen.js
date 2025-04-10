@@ -6,13 +6,18 @@ import {
   StyleSheet,
   Image,
   Dimensions,
+  Alert,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import { signUp } from "../api/authApi";
+import { storeToken, storeRefreshToken } from "../utils/authHelper";
 
 const { width, height } = Dimensions.get("window");
 
-const AvatarScreen = ({ navigation }) => {
-  const [avatar, setAvatar] = useState(null);
+const AvatarScreen = ({ navigation, route }) => {
+  const { phone, name, gender, birthDate, password  } = route.params;
+
+  const [avatar, setAvatar] = useState(null); // Avatar mặc định là null
   const initials = "LT"; // Chữ viết tắt
 
   // Hàm chọn ảnh từ thư viện
@@ -26,6 +31,46 @@ const AvatarScreen = ({ navigation }) => {
 
     if (!result.canceled) {
       setAvatar(result.assets[0].uri);
+    }
+  };
+
+  // Hàm đăng ký tài khoản
+  const handleSignUp = async () => {
+    console.log("Đang đăng ký với số điện thoại:");
+    console.log(phone);
+    console.log("Đang đăng ký với tên:");
+    console.log(name);
+    console.log("Đang đăng ký với ngày sinh:");
+    console.log(birthDate);
+    console.log("Đang đăng ký với giới tính:");
+    
+    console.log(gender);
+
+    console.log("Đang đăng ký với mật khẩu:");
+    console.log(password);
+
+
+    const params = { 
+        phone, 
+        display_name: name, 
+        gender, 
+        dob: birthDate, 
+        password,
+        ...(avatar ? { avatar } : {}), // Chỉ thêm avatar nếu có
+
+    };
+    console.log("Đang đăng ký với thông tin:", params);
+    try {
+      const response = await signUp(params);
+
+      if (response) {
+
+        navigation.navigate("LoginScreen", { phoneLogin: phone, passwordLogin: password });
+        Alert.alert("Đăng ký thành công", "Vui lòng đăng nhập để tiếp tục.");
+      }
+    } catch (error) {
+      console.log("Sign up error:", error);
+      Alert.alert("Đăng ký thất bại", "Vui lòng thử lại sau.");
     }
   };
 
@@ -50,13 +95,13 @@ const AvatarScreen = ({ navigation }) => {
       {/* Nút cập nhật */}
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate("Conversation")}
+        onPress={() => {}}
       >
         <Text style={styles.buttonText}>Cập nhật</Text>
       </TouchableOpacity>
 
       {/* Nút bỏ qua */}
-      <TouchableOpacity onPress={() => navigation.navigate("Conversation")}>
+      <TouchableOpacity onPress={() => { console.log("Đang cập nhật"); handleSignUp()}}>
         <Text style={styles.skipText}>Bỏ qua</Text>
       </TouchableOpacity>
     </View>
