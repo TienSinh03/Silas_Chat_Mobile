@@ -15,3 +15,27 @@ export async function getCurrentUser() {
           throw error;
     }
 }
+
+export async function updateProfile(formData) {
+    
+    console.log("formData");
+    console.log(formData._parts);
+    try {
+        const response = await instance.put('/api/v1/user/me/update', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        console.log("response");
+        console.log(response.data);
+        return response.data;
+    } catch (error) {
+        if (error.response) {
+            console.log("Status:", error.response.status);
+            console.log("Data:", error.response.data); // << cái này sẽ cho biết lý do 400
+          } else {
+            console.log("Other error:", error.message);
+          }
+          throw error;
+    }
+}

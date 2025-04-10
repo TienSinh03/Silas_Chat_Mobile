@@ -12,7 +12,7 @@ const ProfileMainScreen = ({ navigation }) => {
     const [modalVisible, setModalVisible] = useState(false);
     const { setIsLoggedIn } = useAuth(); // Get setIsLoggedIn from AuthContext
     const dispatch = useDispatch();
-    const userProfile = useSelector(state => state.user.user.response);
+    const userProfile = useSelector(state => state.user.user);
     console.log(userProfile);
 
     React.useEffect(() => {

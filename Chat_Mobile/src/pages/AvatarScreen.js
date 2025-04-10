@@ -67,7 +67,7 @@ const AvatarScreen = ({ navigation, route }) => {
     try {
       const response = await signUp(formData);
 
-      if (response) {
+      if (response.status === "SUCCESS") {
         navigation.navigate("LoginScreen", { phoneLogin: phone, passwordLogin: password });
         Alert.alert("Đăng ký thành công", "Vui lòng đăng nhập để tiếp tục.");
       }

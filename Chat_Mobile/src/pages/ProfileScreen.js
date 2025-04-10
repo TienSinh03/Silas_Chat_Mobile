@@ -1,10 +1,12 @@
-import React, { useState } from "react";
-import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, Modal, StatusBar, TextInput } from "react-native";
+import React, { useState, useMemo } from "react";
+import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, Modal, StatusBar, TextInput, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Platform } from 'react-native';
 import { useDispatch, useSelector } from "react-redux";
+import {updateUserProfile } from "../store/slice/userSlice";
+import * as ImagePicker from "expo-image-picker";
 
 const ProfileScreen = ({ navigation }) => {
     // const navigation = useNavigation();
@@ -14,25 +16,72 @@ const ProfileScreen = ({ navigation }) => {
     const [personalInfoModalVisible, setPersonalInfoModalVisible] = useState(false);
     const [editInfoModalVisible, setEditInfoModalVisible] = useState(false);
 
-    const userProfile = useSelector(state => state.user.user.response);
-    console.log(userProfile);
+    const dispatch = useDispatch();
+    const userProfile = useSelector(state => state.user.user);
+    const user = useMemo(() => {
+        return userProfile || null;
+    }, [userProfile]);
 
-    const [fullName, setFullName] = useState(userProfile?.display_name);
-    const [gender, setGender] = useState(userProfile?.gender);
+    const [fullName, setFullName] = useState(user?.display_name || "");
+    const [gender, setGender] = useState(user?.gender || "");
 
-    const [dobDate, setDobDate] = useState(userProfile?.dob ? new Date(userProfile.dob) : new Date()); // Ngày sinh mặc định là ngày hiện tại
+    const [dobDate, setDobDate] = useState(user?.dob ? new Date(user.dob) : new Date()); // Ngày sinh mặc định là ngày hiện tại
     const [showDatePicker, setShowDatePicker] = useState(false);
+
+    const [avatarUpdate, setAvatarUpdate] = useState(null); // Avatar mặc định là null
 
     // Format lại ngày sinh:
     const formatDate = (date) => {
         return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
     };
 
-    const handleSave = () => {
-        const formattedDob = formatDate(dobDate);
+    const pickImage = async () => {
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images, // Chọn ảnh từ thư viện
+            allowsEditing: true, // Cho phép chỉnh sửa ảnh
+            aspect: [1, 1], // Tỉ lệ ảnh
+            quality: 1, 
+        })
+
+        if(!result.canceled) {
+            const image = result.assets[0];
+            setAvatarUpdate({
+                uri: image.uri,
+                name: image.fileName || "avatar.jpg",
+                type: "image/jpeg",
+            });
+        }
+    }
+
+    const handleSave = async () => {
+        const formattedDob = dobDate.toISOString().split("T")[0]; // Chuyển đổi ngày sinh thành định dạng YYYY-MM-DD
+        console.log("Formatted Date:", formattedDob);
         // Gửi fullName, formattedDob, gender lên server hoặc Redux
-        console.log("Saving:", { fullName, formattedDob, gender });
-        setEditInfoModalVisible(false);
+        const request = {
+            display_name: fullName,
+            gender: gender,
+            dob: formattedDob,
+        }
+        console.log("Request:", request);
+
+        const formData = new FormData();
+        formData.append("request", JSON.stringify(request), "application/json");
+
+        //image
+        if(avatarUpdate) { 
+            formData.append("avatar", avatarUpdate);
+        }
+        try {
+
+            await dispatch(updateUserProfile(formData)).unwrap(); // unwrap để lấy giá trị trả về từ thunk fulfilled khi thành công hoặc thất bại
+           
+                setEditInfoModalVisible(false);
+                Alert.alert("Cập nhật thành công", "Thông tin cá nhân đã được cập nhật.");
+            
+        } catch (error) {
+            console.log("Update error:", error);
+            Alert.alert("Cập nhật thất bại", "Vui lòng thử lại sau.");
+        }
     };
 
     return (
@@ -176,7 +225,7 @@ const ProfileScreen = ({ navigation }) => {
                             />
                             {/* Ảnh đại diện */}
                             <Image
-                                source={{ uri: userProfile?.avatar ||'https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://gcs.tripi.vn/public-tripi/tripi-feed/img/482741PIj/anh-mo-ta.png' }}
+                                source={{ uri: user?.avatar ||'https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://gcs.tripi.vn/public-tripi/tripi-feed/img/482741PIj/anh-mo-ta.png' }}
                                 style={{
                                     width: 100,
                                     height: 100,
@@ -192,7 +241,7 @@ const ProfileScreen = ({ navigation }) => {
                         {/* Thông tin bên dưới avatar */}
                         <View style={{ alignItems: 'center', marginTop: 60 }}>
                             <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#000' }}>
-                                {userProfile?.display_name}
+                                {user?.display_name}
                             </Text>
                         </View>
 
@@ -200,17 +249,17 @@ const ProfileScreen = ({ navigation }) => {
                         <View style={{ paddingHorizontal: 16, paddingVertical: 20 }}>
                             <View style={styles.infoRow}>
                                 <Text style={styles.infoLabel}>Giới tính</Text>
-                                <Text style={styles.infoValue}>{userProfile?.gender}</Text>
+                                <Text style={styles.infoValue}>{user?.gender}</Text>
                             </View>
 
                             <View style={styles.infoRow}>
                                 <Text style={styles.infoLabel}>Ngày sinh</Text>
-                                <Text style={styles.infoValue}>{userProfile?.dob}</Text>
+                                <Text style={styles.infoValue}>{user?.dob}</Text>
                             </View>
 
                             <View style={styles.infoRow}>
                                 <Text style={styles.infoLabel}>Điện thoại</Text>
-                                <Text style={styles.infoValue}>{userProfile?.phone}</Text>
+                                <Text style={styles.infoValue}>{user?.phone}</Text>
                             </View>
 
                             <Text style={{ color: "#666", fontSize: 12, marginTop: 5 }}>
@@ -251,12 +300,19 @@ const ProfileScreen = ({ navigation }) => {
 
                     {/* Avatar */}
                     <View style={{ alignItems: "center", marginTop: 20 }}>
-                        <Image
-                            source={{
-                                uri: userProfile?.avatar || "https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://gcs.tripi.vn/public-tripi/tripi-feed/img/482741PIj/anh-mo-ta.png"
-                            }}
-                            style={{ width: 100, height: 100, borderRadius: 50 }}
-                        />
+                        {avatarUpdate ? (
+                            <Image source={{uri: avatarUpdate.uri}}
+                                style={{ width: 100, height: 100, borderRadius: 50 }}
+                            />
+                        ) : (
+
+                            <Image
+                                source={{
+                                    uri: user?.avatar || "https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://gcs.tripi.vn/public-tripi/tripi-feed/img/482741PIj/anh-mo-ta.png"
+                                }}
+                                style={{ width: 100, height: 100, borderRadius: 50 }}
+                            />
+                        )}
                         <TouchableOpacity
                             style={{
                                 backgroundColor: "#eee",
@@ -266,7 +322,7 @@ const ProfileScreen = ({ navigation }) => {
                                 top: 80,
                                 right: 120
                             }}
-                            onPress={() => console.log("Đổi ảnh đại diện")}
+                            onPress={pickImage}
                         >
                             <Ionicons name="camera-outline" size={18} color="black" />
                         </TouchableOpacity>
@@ -372,10 +428,10 @@ const ProfileScreen = ({ navigation }) => {
             {/* Ảnh đại diện và thông tin */}
             <View style={styles.profileInfo}>
                 <Image
-                    source={{ uri: userProfile?.avatar || "https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://gcs.tripi.vn/public-tripi/tripi-feed/img/482741PIj/anh-mo-ta.png" }}
+                    source={{ uri: user?.avatar || "https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://gcs.tripi.vn/public-tripi/tripi-feed/img/482741PIj/anh-mo-ta.png" }}
                     style={styles.avatar}
                 />
-                <Text style={styles.userName}>{fullName}</Text>
+                <Text style={styles.userName}>{user?.display_name}</Text>
                 <TouchableOpacity onPress={() => navigation.navigate("EditStatus")}>
                     <Text style={styles.status}>"Đường còn dài, tuổi còn trẻ"</Text>
                 </TouchableOpacity>
