@@ -19,6 +19,7 @@
     "@react-navigation/native": "^7.0.15",
     "@react-navigation/native-stack": "^7.2.1",
     "@react-navigation/stack": "^7.1.2",
+    "@reduxjs/toolkit": "^2.6.1",
     "axios": "^1.8.3",
     "chat_mobile": "file:",
     "expo": "~52.0.38",
@@ -40,6 +41,7 @@
     "react-native-screens": "~4.4.0",
     "react-native-vector-icons": "^10.2.0",
     "react-native-web": "~0.19.13",
+    "react-redux": "^9.2.0",
     "yet": "^0.1.0"
   },
   "devDependencies": {

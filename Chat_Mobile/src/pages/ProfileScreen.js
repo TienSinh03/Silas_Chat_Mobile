@@ -4,6 +4,7 @@ import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Platform } from 'react-native';
+import { useDispatch, useSelector } from "react-redux";
 
 const ProfileScreen = ({ navigation }) => {
     // const navigation = useNavigation();
@@ -13,11 +14,13 @@ const ProfileScreen = ({ navigation }) => {
     const [personalInfoModalVisible, setPersonalInfoModalVisible] = useState(false);
     const [editInfoModalVisible, setEditInfoModalVisible] = useState(false);
 
+    const userProfile = useSelector(state => state.user.user.response);
+    console.log(userProfile);
 
-    const [fullName, setFullName] = useState("Ngô Văn Toàn");
-    const [gender, setGender] = useState("Nam");
+    const [fullName, setFullName] = useState(userProfile?.display_name);
+    const [gender, setGender] = useState(userProfile?.gender);
 
-    const [dobDate, setDobDate] = useState(new Date("2003-04-02T00:00:00Z"));
+    const [dobDate, setDobDate] = useState(userProfile?.dob ? new Date(userProfile.dob) : new Date()); // Ngày sinh mặc định là ngày hiện tại
     const [showDatePicker, setShowDatePicker] = useState(false);
 
     // Format lại ngày sinh:
@@ -131,17 +134,17 @@ const ProfileScreen = ({ navigation }) => {
                             <Text>Đổi ảnh đại diện</Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={styles.modalItem}>
+                        {/* <TouchableOpacity style={styles.modalItem}>
                             <Text>Đổi ảnh bìa</Text>
-                        </TouchableOpacity>
+                        </TouchableOpacity> */}
 
                         <TouchableOpacity style={styles.modalItem}>
                             <Text>Cập nhật giới thiệu bản thân</Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={styles.modalItem}>
+                        {/* <TouchableOpacity style={styles.modalItem}>
                             <Text>Ví của tôi</Text>
-                        </TouchableOpacity>
+                        </TouchableOpacity> */}
 
                         {/* Đóng modal */}
                         <TouchableOpacity
@@ -162,7 +165,7 @@ const ProfileScreen = ({ navigation }) => {
                 onRequestClose={() => setPersonalInfoModalVisible(false)}
             >
                 <View style={styles.modalContainer}>
-                    <View style={[styles.modalContent, { width: '90%', paddingTop: 0 }]}>
+                    <View style={[styles.modalContent, { width: '90%', padding: 0, }]}>
                         {/* Ảnh bìa và avatar */}
                         <View style={{ position: 'relative', alignItems: 'center' }}>
                             {/* Ảnh bìa */}
@@ -173,7 +176,7 @@ const ProfileScreen = ({ navigation }) => {
                             />
                             {/* Ảnh đại diện */}
                             <Image
-                                source={{ uri: 'https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://gcs.tripi.vn/public-tripi/tripi-feed/img/482741PIj/anh-mo-ta.png' }}
+                                source={{ uri: userProfile?.avatar ||'https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://gcs.tripi.vn/public-tripi/tripi-feed/img/482741PIj/anh-mo-ta.png' }}
                                 style={{
                                     width: 100,
                                     height: 100,
@@ -189,27 +192,25 @@ const ProfileScreen = ({ navigation }) => {
                         {/* Thông tin bên dưới avatar */}
                         <View style={{ alignItems: 'center', marginTop: 60 }}>
                             <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#000' }}>
-                                Ngô Văn Toàn
+                                {userProfile?.display_name}
                             </Text>
                         </View>
 
                         {/* Thông tin chi tiết */}
                         <View style={{ paddingHorizontal: 16, paddingVertical: 20 }}>
-                            <Text style={styles.modalTitle}>Thông tin cá nhân</Text>
-
                             <View style={styles.infoRow}>
                                 <Text style={styles.infoLabel}>Giới tính</Text>
-                                <Text style={styles.infoValue}>Nam</Text>
+                                <Text style={styles.infoValue}>{userProfile?.gender}</Text>
                             </View>
 
                             <View style={styles.infoRow}>
                                 <Text style={styles.infoLabel}>Ngày sinh</Text>
-                                <Text style={styles.infoValue}>02/04/2003</Text>
+                                <Text style={styles.infoValue}>{userProfile?.dob}</Text>
                             </View>
 
                             <View style={styles.infoRow}>
                                 <Text style={styles.infoLabel}>Điện thoại</Text>
-                                <Text style={styles.infoValue}>+84 986 045 261</Text>
+                                <Text style={styles.infoValue}>{userProfile?.phone}</Text>
                             </View>
 
                             <Text style={{ color: "#666", fontSize: 12, marginTop: 5 }}>
@@ -252,7 +253,7 @@ const ProfileScreen = ({ navigation }) => {
                     <View style={{ alignItems: "center", marginTop: 20 }}>
                         <Image
                             source={{
-                                uri: "https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://gcs.tripi.vn/public-tripi/tripi-feed/img/482741PIj/anh-mo-ta.png"
+                                uri: userProfile?.avatar || "https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://gcs.tripi.vn/public-tripi/tripi-feed/img/482741PIj/anh-mo-ta.png"
                             }}
                             style={{ width: 100, height: 100, borderRadius: 50 }}
                         />
@@ -371,10 +372,10 @@ const ProfileScreen = ({ navigation }) => {
             {/* Ảnh đại diện và thông tin */}
             <View style={styles.profileInfo}>
                 <Image
-                    source={{ uri: "https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://gcs.tripi.vn/public-tripi/tripi-feed/img/482741PIj/anh-mo-ta.png" }}
+                    source={{ uri: userProfile?.avatar || "https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://gcs.tripi.vn/public-tripi/tripi-feed/img/482741PIj/anh-mo-ta.png" }}
                     style={styles.avatar}
                 />
-                <Text style={styles.userName}>Ngô Văn Toàn</Text>
+                <Text style={styles.userName}>{fullName}</Text>
                 <TouchableOpacity onPress={() => navigation.navigate("EditStatus")}>
                     <Text style={styles.status}>"Đường còn dài, tuổi còn trẻ"</Text>
                 </TouchableOpacity>
