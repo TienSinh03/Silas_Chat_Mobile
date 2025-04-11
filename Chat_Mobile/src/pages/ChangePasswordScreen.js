@@ -1,28 +1,49 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import Header from '../components/Header';
+import { changePassword } from '../api/userApi';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../contexts/AuthContext'; // đúng đường dẫn context của bạn
+
 
 const ChangePasswordScreen = ({ navigation }) => {
     const [oldPassword, setOldPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const { setIsLoggedIn } = useAuth();
 
-    const handleChangePassword = () => {
-        if (!oldPassword || !newPassword || !confirmPassword) {
-            Alert.alert("Lỗi", "Vui lòng nhập đầy đủ thông tin");
-            return;
-        }
 
+    const handleChangePassword = async () => {
         if (newPassword !== confirmPassword) {
-            Alert.alert("Lỗi", "Mật khẩu mới và xác nhận không khớp");
+            Alert.alert("Lỗi", "Mật khẩu xác nhận không khớp");
             return;
         }
 
-        // TODO: Gọi API đổi mật khẩu ở đây
-        Alert.alert("Thành công", "Mật khẩu đã được thay đổi");
-        navigation.goBack();
-    };
+        try {
+            const data = {
+                oldPassword,
+                newPassword
+            };
+            await changePassword(data);
 
+            Alert.alert("Thành công", "Mật khẩu đã được thay đổi. Vui lòng đăng nhập lại.", [
+                {
+                    text: "OK",
+                    onPress: async () => {
+                        // Xóa token và cập nhật trạng thái đăng nhập
+                        await AsyncStorage.removeItem('accessToken');
+                        await AsyncStorage.removeItem('refreshToken');
+
+                        // Chuyển về Login bằng cách set trạng thái đăng nhập thành false
+                        setIsLoggedIn(false);
+                    }
+                }
+            ]);
+        } catch (error) {
+            Alert.alert("Lỗi", "Không thể đổi mật khẩu");
+            console.error(error);
+        }
+    };
     return (
         <View style={styles.container}>
             <View style={styles.content}>
