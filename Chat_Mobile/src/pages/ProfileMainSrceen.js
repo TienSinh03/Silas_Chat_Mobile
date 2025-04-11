@@ -59,15 +59,16 @@ const ProfileMainScreen = ({ navigation }) => {
                 <MenuItem icon="cloud-upload" title="Cloud của tôi" subtitle="Lưu trữ các tin nhắn quan trọng" />
                 <MenuItem icon="folder" title="Dữ liệu trên máy" subtitle="Quản lý dữ liệu Chat của bạn" />
                 <MenuItem icon="qrcode" title="Ví QR" subtitle="Lưu trữ và xuất trình các mã QR quan trọng" />
-                <MenuItem icon="shield" title="Tài khoản và bảo mật" />
+                <MenuItem icon="shield" title="Tài khoản và bảo mật" onPress={() => navigation.navigate("AccountSecurity")} />
+
                 <MenuItem icon="lock" title="Quyền riêng tư" />
             </ScrollView>
         </View>
     );
 };
 
-const MenuItem = ({ icon, title, subtitle }) => (
-    <TouchableOpacity style={styles.menuItem}>
+const MenuItem = ({ icon, title, subtitle, onPress }) => (
+    <TouchableOpacity style={styles.menuItem} onPress={onPress}>
         <Icon name={icon} size={22} color="#007AFF" style={styles.icon} />
         <View style={styles.menuTextContainer}>
             <Text style={styles.menuTitle}>{title}</Text>
