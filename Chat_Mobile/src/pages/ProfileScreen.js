@@ -53,6 +53,54 @@ const ProfileScreen = ({ navigation }) => {
         }
     }
 
+    const pickImageOk = async () => {
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 1,
+        });
+    
+        if (!result.canceled) {
+            const image = result.assets[0];
+            const imageData = {
+                uri: image.uri,
+                name: image.fileName || "avatar.jpg",
+                type: "image/jpeg",
+            };
+    
+            setAvatarUpdate(imageData); // lưu avatar
+            handleSaveOk(); // gọi lưu
+        }
+    };
+    
+
+    const handleSaveOk = async () => {
+        const formattedDob = dobDate.toISOString().split("T")[0];
+        const request = {
+            display_name: fullName,
+            gender: gender,
+            dob: formattedDob,
+        };
+    
+        const formData = new FormData();
+        formData.append("request", JSON.stringify(request), "application/json");
+    
+        if (avatarUpdate) {
+            formData.append("avatar", avatarUpdate);
+        }
+    
+        try {
+            await dispatch(updateUserProfile(formData)).unwrap();
+            setEditInfoModalVisible(false);
+            Alert.alert("Cập nhật thành công", "Thông tin cá nhân đã được cập nhật.");
+        } catch (error) {
+            console.log("Update error:", error);
+            Alert.alert("Cập nhật thất bại", "Vui lòng thử lại sau.");
+        }
+    };
+    
+
     const handleSave = async () => {
         const formattedDob = dobDate.toISOString().split("T")[0]; // Chuyển đổi ngày sinh thành định dạng YYYY-MM-DD
         console.log("Formatted Date:", formattedDob);
@@ -431,6 +479,19 @@ const ProfileScreen = ({ navigation }) => {
                     source={{ uri: user?.avatar || "https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://gcs.tripi.vn/public-tripi/tripi-feed/img/482741PIj/anh-mo-ta.png" }}
                     style={styles.avatar}
                 />
+                    <TouchableOpacity
+                        style={{
+                            backgroundColor: "#eee",
+                            borderRadius: 20,
+                            padding: 5,
+                            position: "absolute",
+                            top: 80,
+                            right: 140
+                        }}
+                        onPress={pickImageOk}
+                    >
+                <Ionicons name="camera-outline" size={18} color="black"/>
+                </TouchableOpacity>
                 <Text style={styles.userName}>{user?.display_name}</Text>
                 <TouchableOpacity onPress={() => navigation.navigate("EditStatus")}>
                     <Text style={styles.status}>"Đường còn dài, tuổi còn trẻ"</Text>
@@ -440,10 +501,12 @@ const ProfileScreen = ({ navigation }) => {
 
             {/* Các mục khác */}
             <View style={styles.menu}>
-                <TouchableOpacity style={styles.menuItem}>
+                {/* <TouchableOpacity style={styles.menuItem}>
                     <Ionicons name="images-outline" size={24} color="black" />
                     <Text style={styles.menuText}>Ảnh của tôi</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
+
+
 
                 <TouchableOpacity style={styles.menuItem}>
                     <Ionicons name="bookmark-outline" size={24} color="black" />
