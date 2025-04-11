@@ -29,7 +29,7 @@ const PersonalInfoScreen = ({ navigation, route }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const isValid =
-    birthDate && gender && password.length >= 6 && password === confirmPassword;
+    birthDate && gender && password.length >= 8 && password === confirmPassword;
 
   const handleConfirm = (date) => {
     setBirthDate(date.toISOString().split("T")[0]);

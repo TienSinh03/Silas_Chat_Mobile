@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SafeAreaView, View, Text, Image, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView, View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, StatusBar } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Header from '../components/Header';
 import FindInfo from '../navigation/FindInfo';
@@ -7,6 +7,8 @@ import { removeToken } from '../utils/authHelper';
 import { useAuth } from '../contexts/AuthContext';
 import { getProfile } from '../store/slice/userSlice';
 import { useDispatch, useSelector } from 'react-redux';
+import { logout } from '../api/authApi';
+import { Alert } from 'react-native';
 
 const ProfileMainScreen = ({ navigation }) => {
     const [modalVisible, setModalVisible] = useState(false);
@@ -21,15 +23,38 @@ const ProfileMainScreen = ({ navigation }) => {
 
 
     //logout
-    const handleLogout = () => {
-        // Implement logout functionality here
+    const handleLogout = async () => {
         console.log('Logout pressed');
-        removeToken();
+        Alert.alert(
+            "Đăng xuất",
+            "Bạn có chắc chắn muốn đăng xuất không?",
+            [
+                {
+                    text: "Hủy",
+                    onPress: () => console.log("Cancel Pressed"),
+                    style: "cancel",
+                },
+                {
+                    text: "Đăng xuất",
+                    onPress: async () => {
+                        console.log("Logout confirmed");
+                        try {
+                            await logout();
+                            removeToken();
 
-        setIsLoggedIn(false);
-        setTimeout(() => {
-            navigation.replace("HomeScreen");
-        }, 100);
+                            setIsLoggedIn(false);
+                            setTimeout(() => {
+                                navigation.replace("HomeScreen");
+                            }, 1);
+                        } catch (error) {
+                            console.error('Error during logout:', error);
+                        }
+                    },
+                    style: "default",
+                }
+            ]
+        )
+
     };
 
     return (
@@ -81,7 +106,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#F5F5F5',
-        marginTop: 40,
+        marginTop: StatusBar.currentHeight || 0,
     },
 
     profileContainer: {

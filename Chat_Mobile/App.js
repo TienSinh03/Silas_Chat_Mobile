@@ -30,6 +30,7 @@ import AddFriendScreen from "./src/pages/AddFriendScreen";
 import CreateGroupScreen from "./src/pages/CreateGroupScreen";
 import AccountSecurityScreen from "./src/pages/AccountSecurityScreen";
 import ChangePasswordScreen from "./src/pages/ChangePasswordScreen";
+import ResetPasswordScreen from "./src/pages/ResetPasswordScreen";
 
 import { getToken } from "./src/utils/authHelper";
 import { AuthProvider } from "./src/contexts/AuthContext";
@@ -161,6 +162,11 @@ const AppNavigation = () => {
                 name="AvatarScreen"
                 component={AvatarScreen}
                 options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="ResetPasswordScreen"
+                component={ResetPasswordScreen}
+                options={{ headerTitle: "Tạo mật khẩu mới" }}
               />
             </>
           )}
