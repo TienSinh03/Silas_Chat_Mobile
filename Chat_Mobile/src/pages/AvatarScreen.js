@@ -6,13 +6,18 @@ import {
   StyleSheet,
   Image,
   Dimensions,
+  Alert,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import { signUp } from "../api/authApi";
+import { storeToken, storeRefreshToken } from "../utils/authHelper";
 
 const { width, height } = Dimensions.get("window");
 
-const AvatarScreen = ({ navigation }) => {
-  const [avatar, setAvatar] = useState(null);
+const AvatarScreen = ({ navigation, route }) => {
+  const { phone, name, gender, birthDate, password  } = route.params;
+
+  const [avatar, setAvatar] = useState(null); // Avatar mặc định là null
   const initials = "LT"; // Chữ viết tắt
 
   // Hàm chọn ảnh từ thư viện
@@ -25,7 +30,50 @@ const AvatarScreen = ({ navigation }) => {
     });
 
     if (!result.canceled) {
-      setAvatar(result.assets[0].uri);
+      const img = result.assets[0];
+
+      setAvatar({
+        uri: img.uri,
+        name: img.fileName || "avatar.jpg",
+        type: "image/jpeg",
+      });
+    }
+  };
+
+  // Hàm đăng ký tài khoản
+  const handleSignUp = async () => {
+    
+    const params = { 
+        phone, 
+        display_name: name, 
+        gender, 
+        dob: birthDate, 
+        password,
+    };
+    console.log("Đang đăng ký với thông tin:", params);
+
+    const formData = new FormData();
+
+    // Thêm thông tin vào formData
+    formData.append(
+      "signUpRequest",
+      JSON.stringify(params), "application/json" 
+    );
+
+    // Nếu có avatar thì thêm vào formData
+    if (avatar) {
+      formData.append("avatar", avatar);
+    }
+    try {
+      const response = await signUp(formData);
+
+      if (response.status === "SUCCESS") {
+        navigation.navigate("LoginScreen", { phoneLogin: phone, passwordLogin: password });
+        Alert.alert("Đăng ký thành công", "Vui lòng đăng nhập để tiếp tục.");
+      }
+    } catch (error) {
+      console.log("Sign up error:", error);
+      Alert.alert("Đăng ký thất bại", error?.response?.data?.message || error?.message, [{ text: "OK" }]);
     }
   };
 
@@ -39,7 +87,7 @@ const AvatarScreen = ({ navigation }) => {
       {/* Avatar */}
       <TouchableOpacity onPress={pickImage} style={styles.avatarContainer}>
         {avatar ? (
-          <Image source={{ uri: avatar }} style={styles.avatar} />
+          <Image source={{ uri: avatar.uri }} style={styles.avatar} />
         ) : (
           <View style={styles.avatarPlaceholder}>
             <Text style={styles.avatarText}>{initials}</Text>
@@ -50,13 +98,13 @@ const AvatarScreen = ({ navigation }) => {
       {/* Nút cập nhật */}
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate("Conversation")}
+        onPress={() => {handleSignUp()}}
       >
         <Text style={styles.buttonText}>Cập nhật</Text>
       </TouchableOpacity>
 
       {/* Nút bỏ qua */}
-      <TouchableOpacity onPress={() => navigation.navigate("Conversation")}>
+      <TouchableOpacity disabled={!!avatar} onPress={() => { console.log("Đang cập nhật"); handleSignUp()}}>
         <Text style={styles.skipText}>Bỏ qua</Text>
       </TouchableOpacity>
     </View>

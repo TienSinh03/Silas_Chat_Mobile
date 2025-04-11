@@ -6,8 +6,11 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
+  Alert,
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
+
+import { useAuth } from "../contexts/AuthContext";
 
 const { width, height } = Dimensions.get("window");
 
@@ -16,6 +19,8 @@ const VerifyScreen = ({ navigation, route }) => {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [focusedIndex, setFocusedIndex] = useState(null);
   const inputs = useRef([]);
+
+  const { verify} = useAuth();
 
   useEffect(() => {
     if (inputs.current[0]) {
@@ -42,13 +47,24 @@ const VerifyScreen = ({ navigation, route }) => {
 
   const getOtpValue = () => otp.join("");
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     const enteredOtp = getOtpValue();
-    console.log("🔹 Mã OTP đã nhập:", enteredOtp);
+    console.log(" Mã OTP đã nhập:", enteredOtp);
 
     if (enteredOtp.length === 6) {
       // alert(`Xác thực OTP thành công: ${enteredOtp}`);
-      navigation.navigate("NameRegisterScreen");
+      try {
+        
+
+        console.log("Xác thực OTP với số điện thoại:", phone, "và mã OTP:", enteredOtp);
+        const response = await verify(phone, enteredOtp);
+
+        Alert.alert("Xác thực thành công", response.message, [{ text: "OK" }]);
+        navigation.navigate("NameRegisterScreen", { phone: phone });
+        
+      } catch (error) {
+        Alert.alert("Lỗi",  error?.response?.data?.message || error?.message, [{ text: "OK" }]);
+      }
     } else {
       alert("Vui lòng nhập đủ 6 số OTP!");
     }
