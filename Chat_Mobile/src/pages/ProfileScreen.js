@@ -7,6 +7,7 @@ import { Platform } from 'react-native';
 import { useDispatch, useSelector } from "react-redux";
 import {updateUserProfile } from "../store/slice/userSlice";
 import * as ImagePicker from "expo-image-picker";
+import Loading from "../components/Loading";
 
 const ProfileScreen = ({ navigation }) => {
     // const navigation = useNavigation();
@@ -72,12 +73,13 @@ const ProfileScreen = ({ navigation }) => {
             };
     
             setAvatarUpdate(imageData); // lưu avatar
-            handleSaveOk(); // gọi lưu
+            console.log("Avatar update:", imageData);
+            handleSaveOk(imageData); // gọi lưu
         }
     };
     
 
-    const handleSaveOk = async () => {
+    const handleSaveOk = async (imageData) => {
         const formattedDob = dobDate.toISOString().split("T")[0];
         const request = {
             display_name: fullName,
@@ -88,13 +90,15 @@ const ProfileScreen = ({ navigation }) => {
         const formData = new FormData();
         formData.append("request", JSON.stringify(request), "application/json");
     
-        if (avatarUpdate) {
-            formData.append("avatar", avatarUpdate);
+        if (imageData) {
+            formData.append("avatar", imageData);
+            console.log("Avatar update:", imageData);
         }
-    
+
         try {
             await dispatch(updateUserProfile(formData)).unwrap();
             setEditInfoModalVisible(false);
+            console.log("Cập nhật thành công:", user.avatar);
             Alert.alert("Cập nhật thành công", "Thông tin cá nhân đã được cập nhật.");
         } catch (error) {
             console.log("Update error:", error);
@@ -463,15 +467,7 @@ const ProfileScreen = ({ navigation }) => {
                         </TouchableOpacity>
                     </View>
                 </View>
-                {
-                isLoading && (
-                    <View style={{position:'absolute',width:'100%', height:'100%',justifyContent:"center", alignItems:"center", backgroundColor: 'rgba(248, 247, 247, 0.75)'}}>
-                        <ActivityIndicator size="large" color="#007AFF" />
-                        <Text style={{ marginTop: 10, color: '#007AFF' }}>Đang cập nhật...</Text>
-                    </View>
-                    
-                )
-            }
+                <Loading isLoading={isLoading} /> 
             </Modal>
 
 
@@ -507,7 +503,6 @@ const ProfileScreen = ({ navigation }) => {
                 <TouchableOpacity onPress={() => navigation.navigate("EditStatus")}>
                     <Text style={styles.status}>"Đường còn dài, tuổi còn trẻ"</Text>
                 </TouchableOpacity>
-
             </View>
 
             {/* Các mục khác */}
@@ -524,14 +519,15 @@ const ProfileScreen = ({ navigation }) => {
                     <Text style={styles.menuText}>Kho khoảnh khắc</Text>
                 </TouchableOpacity>
             </View>
+            <Loading isLoading={isLoading} />        
 
         </ScrollView>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "#fff" },
-    coverPhotoContainer: { height: 200, backgroundColor: "#ccc" },
+    container: { flex: 1, backgroundColor: "#fff", marginTop: StatusBar.currentHeight || 0 },
+    coverPhotoContainer: { height: 300, backgroundColor: "#ccc" },
     coverPhoto: { width: "100%", height: "100%" },
     profileInfo: { alignItems: "center", marginTop: -50 },
     avatar: { width: 100, height: 100, borderRadius: 50, borderWidth: 3, borderColor: "#fff" },
