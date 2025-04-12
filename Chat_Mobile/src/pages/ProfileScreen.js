@@ -5,9 +5,11 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Platform } from 'react-native';
 import { useDispatch, useSelector } from "react-redux";
-import {updateUserProfile } from "../store/slice/userSlice";
+import {updateUserProfile, updateUserProfileSuccess } from "../store/slice/userSlice";
 import * as ImagePicker from "expo-image-picker";
 import Loading from "../components/Loading";
+
+import { connectWebSocket, disconnectWebSocket } from "../config/socket";
 
 const ProfileScreen = ({ navigation }) => {
     // const navigation = useNavigation();
@@ -32,6 +34,27 @@ const ProfileScreen = ({ navigation }) => {
     const [showDatePicker, setShowDatePicker] = useState(false);
 
     const [avatarUpdate, setAvatarUpdate] = useState(null); // Avatar mặc định là null
+
+    const [avatarUrl, setAvatarUrl] = useState( user?.avatar ||'');
+
+    React.useEffect(() => {
+        if(!user?.id) return;
+        
+        // function để xử lý khi nhận được tin nhắn từ WebSocket
+        const handleMessageReceived = (updatedProfile) => {
+            console.log("Message received:", updatedProfile);
+            
+            // Xử lý thông điệp nhận được từ WebSocket
+            dispatch(updateUserProfileSuccess(updatedProfile));
+        };
+
+        const client = connectWebSocket(user?.id, handleMessageReceived);
+
+            
+        return () => {
+            disconnectWebSocket(client); // Ngắt kết nối khi component unmount
+        }
+    },[user?.id, dispatch]);
 
     // Format lại ngày sinh:
     const formatDate = (date) => {
@@ -74,7 +97,7 @@ const ProfileScreen = ({ navigation }) => {
     
             setAvatarUpdate(imageData); // lưu avatar
             console.log("Avatar update:", imageData);
-            handleSaveOk(imageData); // gọi lưu
+            handleSaveImageSingle(imageData); // gọi lưu
         }
     };
     
@@ -137,6 +160,9 @@ const ProfileScreen = ({ navigation }) => {
             Alert.alert("Cập nhật thất bại", "Vui lòng thử lại sau.");
         }
     };
+
+
+    
 
     return (
         <ScrollView style={styles.container}>

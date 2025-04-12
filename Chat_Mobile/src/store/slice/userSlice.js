@@ -15,7 +15,11 @@ const initialState = {
 const userSlice = createSlice({
     name: 'user',
     initialState,
-    reducers: {},
+    reducers: {
+        updateUserProfileSuccess(state, action) {
+            state.user = action.payload;
+        }
+    },
     extraReducers: (builder) => {
         //getProfile
         builder.addCase(getProfile.pending, (state) => {
@@ -46,5 +50,6 @@ const userSlice = createSlice({
 })
 
 export { getProfile, updateUserProfile };
+export const { updateUserProfileSuccess } = userSlice.actions;
 export default userSlice.reducer;
 
