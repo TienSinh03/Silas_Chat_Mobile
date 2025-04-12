@@ -52,6 +52,7 @@ const RegisterScreen = ({ navigation, route }) => {
 
       const formattedPhone = formatPhoneNumber(phone);
       await sendOTP(formattedPhone);
+      console.log("Mã OTP đã được gửi đến số điện thoại:", formattedPhone);
       navigation.navigate("VerifyScreen", { phone: formattedPhone, nextScreen });
     
     } catch (error) {

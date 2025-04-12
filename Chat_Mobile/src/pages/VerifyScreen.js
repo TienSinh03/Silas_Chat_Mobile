@@ -11,6 +11,7 @@ import {
 import { AntDesign } from "@expo/vector-icons";
 
 import { useAuth } from "../contexts/AuthContext";
+import Loading from "../components/Loading";
 
 const { width, height } = Dimensions.get("window");
 
@@ -22,7 +23,7 @@ const VerifyScreen = ({ navigation, route }) => {
   const [focusedIndex, setFocusedIndex] = useState(null);
   const inputs = useRef([]);
 
-  const { verify} = useAuth();
+  const { verify, isLoading } = useAuth();
 
   useEffect(() => {
     if (inputs.current[0]) {
@@ -129,6 +130,7 @@ const VerifyScreen = ({ navigation, route }) => {
       >
         <Text style={styles.continueText}>Tiếp tục</Text>
       </TouchableOpacity>
+      <Loading isLoading={isLoading} />
     </View>
   );
 };

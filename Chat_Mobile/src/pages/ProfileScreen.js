@@ -1,12 +1,15 @@
 import React, { useState, useMemo } from "react";
-import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, Modal, StatusBar, TextInput, Alert } from "react-native";
+import { View, Text, Image, ActivityIndicator,TouchableOpacity, StyleSheet, ScrollView, Modal, StatusBar, TextInput, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Platform } from 'react-native';
 import { useDispatch, useSelector } from "react-redux";
-import {updateUserProfile } from "../store/slice/userSlice";
+import {updateUserProfile, updateUserProfileSuccess } from "../store/slice/userSlice";
 import * as ImagePicker from "expo-image-picker";
+import Loading from "../components/Loading";
+
+import { connectWebSocket, disconnectWebSocket } from "../config/socket";
 
 const ProfileScreen = ({ navigation }) => {
     // const navigation = useNavigation();
@@ -18,6 +21,8 @@ const ProfileScreen = ({ navigation }) => {
 
     const dispatch = useDispatch();
     const userProfile = useSelector(state => state.user.user);
+    const isLoading = useSelector(state => state.user.isLoading);
+
     const user = useMemo(() => {
         return userProfile || null;
     }, [userProfile]);
@@ -29,6 +34,27 @@ const ProfileScreen = ({ navigation }) => {
     const [showDatePicker, setShowDatePicker] = useState(false);
 
     const [avatarUpdate, setAvatarUpdate] = useState(null); // Avatar mặc định là null
+
+    const [avatarUrl, setAvatarUrl] = useState( user?.avatar ||'');
+
+    React.useEffect(() => {
+        if(!user?.id) return;
+        
+        // function để xử lý khi nhận được tin nhắn từ WebSocket
+        const handleMessageReceived = (updatedProfile) => {
+            console.log("Message received:", updatedProfile);
+            
+            // Xử lý thông điệp nhận được từ WebSocket
+            dispatch(updateUserProfileSuccess(updatedProfile));
+        };
+
+        const client = connectWebSocket(user?.id, handleMessageReceived);
+
+            
+        return () => {
+            disconnectWebSocket(client); // Ngắt kết nối khi component unmount
+        }
+    },[user?.id, dispatch]);
 
     // Format lại ngày sinh:
     const formatDate = (date) => {
@@ -53,7 +79,7 @@ const ProfileScreen = ({ navigation }) => {
         }
     }
 
-    const pickImageOk = async () => {
+    const pickImageImageSingle= async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
@@ -70,12 +96,13 @@ const ProfileScreen = ({ navigation }) => {
             };
     
             setAvatarUpdate(imageData); // lưu avatar
-            handleSaveOk(); // gọi lưu
+            console.log("Avatar update:", imageData);
+            handleSaveImageSingle(imageData); // gọi lưu
         }
     };
     
 
-    const handleSaveOk = async () => {
+    const handleSaveImageSingle = async (imageData) => {
         const formattedDob = dobDate.toISOString().split("T")[0];
         const request = {
             display_name: fullName,
@@ -86,13 +113,15 @@ const ProfileScreen = ({ navigation }) => {
         const formData = new FormData();
         formData.append("request", JSON.stringify(request), "application/json");
     
-        if (avatarUpdate) {
-            formData.append("avatar", avatarUpdate);
+        if (imageData) {
+            formData.append("avatar", imageData);
+            console.log("Avatar update:", imageData);
         }
-    
+
         try {
             await dispatch(updateUserProfile(formData)).unwrap();
             setEditInfoModalVisible(false);
+            console.log("Cập nhật thành công:", user.avatar);
             Alert.alert("Cập nhật thành công", "Thông tin cá nhân đã được cập nhật.");
         } catch (error) {
             console.log("Update error:", error);
@@ -131,6 +160,9 @@ const ProfileScreen = ({ navigation }) => {
             Alert.alert("Cập nhật thất bại", "Vui lòng thử lại sau.");
         }
     };
+
+
+    
 
     return (
         <ScrollView style={styles.container}>
@@ -227,7 +259,7 @@ const ProfileScreen = ({ navigation }) => {
                         </TouchableOpacity>
 
 
-                        <TouchableOpacity style={styles.modalItem}>
+                        <TouchableOpacity style={styles.modalItem} onPress={pickImageImageSingle}>
                             <Text>Đổi ảnh đại diện</Text>
                         </TouchableOpacity>
 
@@ -297,7 +329,7 @@ const ProfileScreen = ({ navigation }) => {
                         <View style={{ paddingHorizontal: 16, paddingVertical: 20 }}>
                             <View style={styles.infoRow}>
                                 <Text style={styles.infoLabel}>Giới tính</Text>
-                                <Text style={styles.infoValue}>{user?.gender}</Text>
+                                <Text style={styles.infoValue}>{user?.gender === "MALE" ? "Nam" : "Nữ"}</Text>
                             </View>
 
                             <View style={styles.infoRow}>
@@ -425,10 +457,10 @@ const ProfileScreen = ({ navigation }) => {
                         <View style={{ flexDirection: "row", marginBottom: 20 }}>
                             <TouchableOpacity
                                 style={{ flexDirection: "row", alignItems: "center", marginRight: 20 }}
-                                onPress={() => setGender("Nam")}
+                                onPress={() => setGender("MALE")}
                             >
                                 <Ionicons
-                                    name={gender === "Nam" ? "checkmark-circle" : "ellipse-outline"}
+                                    name={gender === "MALE" ? "checkmark-circle" : "ellipse-outline"}
                                     size={20}
                                     color="#007AFF"
                                 />
@@ -436,10 +468,10 @@ const ProfileScreen = ({ navigation }) => {
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={{ flexDirection: "row", alignItems: "center" }}
-                                onPress={() => setGender("Nữ")}
+                                onPress={() => setGender("FEMALE")}
                             >
                                 <Ionicons
-                                    name={gender === "Nữ" ? "checkmark-circle" : "ellipse-outline"}
+                                    name={gender === "FEMALE" ? "checkmark-circle" : "ellipse-outline"}
                                     size={20}
                                     color="#007AFF"
                                 />
@@ -461,6 +493,7 @@ const ProfileScreen = ({ navigation }) => {
                         </TouchableOpacity>
                     </View>
                 </View>
+                <Loading isLoading={isLoading} /> 
             </Modal>
 
 
@@ -488,7 +521,7 @@ const ProfileScreen = ({ navigation }) => {
                             top: 80,
                             right: 140
                         }}
-                        onPress={pickImageOk}
+                        onPress={pickImageImageSingle}
                     >
                 <Ionicons name="camera-outline" size={18} color="black"/>
                 </TouchableOpacity>
@@ -496,7 +529,6 @@ const ProfileScreen = ({ navigation }) => {
                 <TouchableOpacity onPress={() => navigation.navigate("EditStatus")}>
                     <Text style={styles.status}>"Đường còn dài, tuổi còn trẻ"</Text>
                 </TouchableOpacity>
-
             </View>
 
             {/* Các mục khác */}
@@ -513,13 +545,15 @@ const ProfileScreen = ({ navigation }) => {
                     <Text style={styles.menuText}>Kho khoảnh khắc</Text>
                 </TouchableOpacity>
             </View>
+            <Loading isLoading={isLoading} />        
+
         </ScrollView>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "#fff" },
-    coverPhotoContainer: { height: 200, backgroundColor: "#ccc" },
+    container: { flex: 1, backgroundColor: "#fff", marginTop: StatusBar.currentHeight || 0 },
+    coverPhotoContainer: { height: 300, backgroundColor: "#ccc" },
     coverPhoto: { width: "100%", height: "100%" },
     profileInfo: { alignItems: "center", marginTop: -50 },
     avatar: { width: 100, height: 100, borderRadius: 50, borderWidth: 3, borderColor: "#fff" },

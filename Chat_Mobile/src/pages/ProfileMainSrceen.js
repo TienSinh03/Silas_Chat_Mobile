@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { SafeAreaView, View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, StatusBar } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Header from '../components/Header';
@@ -9,19 +9,47 @@ import { getProfile } from '../store/slice/userSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../api/authApi';
 import { Alert } from 'react-native';
+import { updateUserProfileSuccess } from '../store/slice/userSlice';
+
+import { connectWebSocket, disconnectWebSocket } from "../config/socket";
+
 
 const ProfileMainScreen = ({ navigation }) => {
     const [modalVisible, setModalVisible] = useState(false);
     const { setIsLoggedIn } = useAuth(); // Get setIsLoggedIn from AuthContext
     const dispatch = useDispatch();
     const userProfile = useSelector(state => state.user.user);
+
+    const user = useMemo(() => {
+            return userProfile || null;
+    }, [userProfile]);
+
     console.log(userProfile);
+
+    // xu ly khi nhan duoc tin nhan tu websocket tu dong cap nhat lai trang thai
+    React.useEffect(() => {
+            console.log("user", user.id);
+            if(!user?.id) return;
+            
+            // function để xử lý khi nhận được tin nhắn từ WebSocket
+            const handleMessageReceived = (updatedProfile) => {
+                console.log("Message received:", updatedProfile);
+                
+                // Xử lý thông điệp nhận được từ WebSocket
+                dispatch(updateUserProfileSuccess(updatedProfile));
+            };
+    
+            const client = connectWebSocket(user?.id, handleMessageReceived);
+    
+                
+            return () => {
+                disconnectWebSocket(client); // Ngắt kết nối khi component unmount
+            }
+    },[user?.id, dispatch]);
 
     React.useEffect(() => {
         dispatch(getProfile());
     },[])
-
-
     //logout
     const handleLogout = async () => {
         console.log('Logout pressed');
@@ -68,11 +96,11 @@ const ProfileMainScreen = ({ navigation }) => {
             {/* Profile */}
             <View style={styles.profileContainer}>
                 <Image
-                    source={{ uri: userProfile?.avatar || 'https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://gcs.tripi.vn/public-tripi/tripi-feed/img/482741PIj/anh-mo-ta.png' }}
+                    source={{ uri: user?.avatar || 'https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://gcs.tripi.vn/public-tripi/tripi-feed/img/482741PIj/anh-mo-ta.png' }}
                     style={styles.avatar}
                 />
                 <TouchableOpacity onPress={() => { setModalVisible(false); navigation.navigate("Profile"); }}>
-                    <Text style={styles.name}>{userProfile?.display_name}</Text>
+                    <Text style={styles.name}>{user?.display_name}</Text>
                     <Text style={styles.viewProfile}>Xem trang cá nhân</Text>
                 </TouchableOpacity>
             </View>

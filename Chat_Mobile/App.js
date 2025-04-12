@@ -39,7 +39,7 @@ import { Provider } from "react-redux";
 import store from "./src/store/store";
 const Stack = createStackNavigator();
 
-const AppNavigation = () => {
+const AppNavigation =  () => {
   const { isLoggedIn, isLoading } = useAuth();
 
   if (isLoading) return null;
