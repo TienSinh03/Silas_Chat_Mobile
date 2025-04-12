@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, Modal, StatusBar, TextInput, Alert } from "react-native";
+import { View, Text, Image, ActivityIndicator,TouchableOpacity, StyleSheet, ScrollView, Modal, StatusBar, TextInput, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -18,6 +18,8 @@ const ProfileScreen = ({ navigation }) => {
 
     const dispatch = useDispatch();
     const userProfile = useSelector(state => state.user.user);
+    const isLoading = useSelector(state => state.user.isLoading);
+    console.log("Loading:", isLoading);
     const user = useMemo(() => {
         return userProfile || null;
     }, [userProfile]);
@@ -297,7 +299,7 @@ const ProfileScreen = ({ navigation }) => {
                         <View style={{ paddingHorizontal: 16, paddingVertical: 20 }}>
                             <View style={styles.infoRow}>
                                 <Text style={styles.infoLabel}>Giới tính</Text>
-                                <Text style={styles.infoValue}>{user?.gender}</Text>
+                                <Text style={styles.infoValue}>{user?.gender === "MALE" ? "Nam" : "Nữ"}</Text>
                             </View>
 
                             <View style={styles.infoRow}>
@@ -425,10 +427,10 @@ const ProfileScreen = ({ navigation }) => {
                         <View style={{ flexDirection: "row", marginBottom: 20 }}>
                             <TouchableOpacity
                                 style={{ flexDirection: "row", alignItems: "center", marginRight: 20 }}
-                                onPress={() => setGender("Nam")}
+                                onPress={() => setGender("MALE")}
                             >
                                 <Ionicons
-                                    name={gender === "Nam" ? "checkmark-circle" : "ellipse-outline"}
+                                    name={gender === "MALE" ? "checkmark-circle" : "ellipse-outline"}
                                     size={20}
                                     color="#007AFF"
                                 />
@@ -436,10 +438,10 @@ const ProfileScreen = ({ navigation }) => {
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={{ flexDirection: "row", alignItems: "center" }}
-                                onPress={() => setGender("Nữ")}
+                                onPress={() => setGender("FEMALE")}
                             >
                                 <Ionicons
-                                    name={gender === "Nữ" ? "checkmark-circle" : "ellipse-outline"}
+                                    name={gender === "FEMALE" ? "checkmark-circle" : "ellipse-outline"}
                                     size={20}
                                     color="#007AFF"
                                 />
@@ -461,6 +463,15 @@ const ProfileScreen = ({ navigation }) => {
                         </TouchableOpacity>
                     </View>
                 </View>
+                {
+                isLoading && (
+                    <View style={{position:'absolute',width:'100%', height:'100%',justifyContent:"center", alignItems:"center", backgroundColor: 'rgba(248, 247, 247, 0.75)'}}>
+                        <ActivityIndicator size="large" color="#007AFF" />
+                        <Text style={{ marginTop: 10, color: '#007AFF' }}>Đang cập nhật...</Text>
+                    </View>
+                    
+                )
+            }
             </Modal>
 
 
@@ -513,6 +524,7 @@ const ProfileScreen = ({ navigation }) => {
                     <Text style={styles.menuText}>Kho khoảnh khắc</Text>
                 </TouchableOpacity>
             </View>
+
         </ScrollView>
     );
 };
