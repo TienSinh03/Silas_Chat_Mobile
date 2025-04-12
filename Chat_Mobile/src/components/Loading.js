@@ -16,7 +16,7 @@ const Loading = ({ isLoading }) => {
       >
         <ActivityIndicator size="large" color="#007AFF" />
         <Text style={{ marginTop: 10, color: "#007AFF" }}>
-          Đang cập nhật...
+          Loading...
         </Text>
       </View>
     )

@@ -20,7 +20,7 @@ const ProfileScreen = ({ navigation }) => {
     const dispatch = useDispatch();
     const userProfile = useSelector(state => state.user.user);
     const isLoading = useSelector(state => state.user.isLoading);
-    console.log("Loading:", isLoading);
+
     const user = useMemo(() => {
         return userProfile || null;
     }, [userProfile]);
@@ -56,7 +56,7 @@ const ProfileScreen = ({ navigation }) => {
         }
     }
 
-    const pickImageOk = async () => {
+    const pickImageImageSingle= async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
@@ -79,7 +79,7 @@ const ProfileScreen = ({ navigation }) => {
     };
     
 
-    const handleSaveOk = async (imageData) => {
+    const handleSaveImageSingle = async (imageData) => {
         const formattedDob = dobDate.toISOString().split("T")[0];
         const request = {
             display_name: fullName,
@@ -233,7 +233,7 @@ const ProfileScreen = ({ navigation }) => {
                         </TouchableOpacity>
 
 
-                        <TouchableOpacity style={styles.modalItem}>
+                        <TouchableOpacity style={styles.modalItem} onPress={pickImageImageSingle}>
                             <Text>Đổi ảnh đại diện</Text>
                         </TouchableOpacity>
 
@@ -495,7 +495,7 @@ const ProfileScreen = ({ navigation }) => {
                             top: 80,
                             right: 140
                         }}
-                        onPress={pickImageOk}
+                        onPress={pickImageImageSingle}
                     >
                 <Ionicons name="camera-outline" size={18} color="black"/>
                 </TouchableOpacity>
