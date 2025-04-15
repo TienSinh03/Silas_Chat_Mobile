@@ -10,6 +10,9 @@ import {
   TouchableOpacity,
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
+import { useDispatch, useSelector } from "react-redux";
+import { getMyFriends } from "../store/slice/friendSlice";
+import Loading from "./Loading";
 
 const dummyContacts = [
   {
@@ -68,12 +71,23 @@ const dummyContacts = [
   },
 ];
 
-const PhoneBookFriend = () => {
+const PhoneBookFriend = ({navigation}) => {
+  const dispatch = useDispatch();
+  const  { friends, isLoading }  = useSelector((state) => state.friend);
+
+  console.log("friends", friends);
+  console.log("isLoading", isLoading);
+
   const [searchText, setSearchText] = useState("");
 
-  const filteredContacts = dummyContacts.filter((contact) =>
-    contact.name.toLowerCase().includes(searchText.toLowerCase())
-  );
+  // const filteredContacts = friends.filter((contact) =>
+  //   contact.displayName.toLowerCase().includes(searchText.toLowerCase())
+  // );
+
+  React.useEffect(() => {
+    dispatch(getMyFriends());
+  }
+  , [dispatch]);
 
   return (
     <View style={styles.container}>
@@ -81,7 +95,7 @@ const PhoneBookFriend = () => {
 
       {/* Danh mục */}
       <View style={styles.menuContainer}>
-      <TouchableOpacity style={styles.menuItem}>
+      <TouchableOpacity style={styles.menuItem} onPress={() => {navigation.navigate("TabTopFriendRequest")}}>
         <View style={styles.iconContainer}>
           <Icon name="user-plus" size={20} color="#007AFF" style={styles.icons}/>
         </View>
@@ -110,12 +124,12 @@ const PhoneBookFriend = () => {
 
       {/* Danh sách bạn bè */}
       <FlatList
-        data={filteredContacts}
-        keyExtractor={(item) => item.id}
+        data={friends}
+        keyExtractor={(item) => item.userId}
         renderItem={({ item }) => (
           <View style={styles.contactItem}>
-            <Image source={{uri:item.avatar}} style={styles.avatar} />
-            <Text style={styles.contactName}>{item.name}</Text>
+            <Image source={{uri:item?.avatar}} style={styles.avatar} />
+            <Text style={styles.contactName}>{item?.displayName}</Text>
             <View style={styles.iconContainer}>
               <TouchableOpacity>
                 <Icon name="phone" size={20} color="#34C759" />
@@ -127,6 +141,7 @@ const PhoneBookFriend = () => {
           </View>
         )}
       />
+      <Loading isLoading={isLoading} />
     </View>
   );
 };
@@ -183,7 +198,7 @@ const styles = StyleSheet.create({
     size: 20,
 },
 separator: {
-  height: 3,
+  height: 1,
   backgroundColor: "#ddd",
   marginVertical: 10,
 },
@@ -191,6 +206,7 @@ separator: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 12,
+    paddingHorizontal: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
   },

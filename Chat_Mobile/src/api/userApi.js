@@ -54,3 +54,33 @@ export async function changePassword(data) {
         throw error;
     }
 }
+
+export const getFriendList = async () => {
+  try {
+    const response = await instance.get("/api/v1/user/my-friends");
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error fetching friend list:",
+      error.response?.data || error.message
+    );
+    throw new Error(
+      error.response?.data?.message || "Failed to fetch friend list"
+    );
+  }
+};
+
+export const searchUser = async (keyword) => {
+    try {
+      const response = await instance.get(`/api/v1/user/search?keyword=${keyword}`);
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Error searching user:",
+        error.response?.data || error.message
+      );
+      throw new Error(
+        error.response?.data?.message || "Failed to search user"
+      );
+    }
+  };

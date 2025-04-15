@@ -17,7 +17,7 @@ const { width, height } = Dimensions.get("window");
 
 const VerifyScreen = ({ navigation, route }) => {
   const { phone, nextScreen } = route.params || { phone: "0862 058 920" };
-  console.log("Screen từ VerifyScreen:", nextScreen);
+  // console.log("Screen từ VerifyScreen:", nextScreen);
 
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [focusedIndex, setFocusedIndex] = useState(null);
