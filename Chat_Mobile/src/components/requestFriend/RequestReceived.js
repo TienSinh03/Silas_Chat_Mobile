@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useCallback } from "react";
 import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet, Dimensions } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
 import { getReqsReceived, acceptReq, rejectReq } from "../../store/slice/friendSlice";
@@ -47,6 +47,28 @@ const RequestReceived = ({ navigation }) => {
     
     console.log("requests", requests);
 
+    const handleAcceptReq = useCallback(async (requestId) => {
+        try {
+
+           const response = await dispatch(acceptReq(requestId));
+
+           await dispatch(getReqsReceived());
+        } catch (error) {
+            console.error("Error accepting request:", error);
+        }
+    }, [dispatch])
+
+    const handleRejecttReq = useCallback(async (requestId) => {
+        try {
+
+           const response = await dispatch(rejectReq(requestId));
+
+           await dispatch(getReqsReceived());
+        } catch (error) {
+            console.error("Error rejecting request:", error);
+        }
+    }, [dispatch])
+
     React.useEffect(() => {
         dispatch(getReqsReceived());
     }, [dispatch]);
@@ -58,8 +80,8 @@ const RequestReceived = ({ navigation }) => {
                 data={requests}
                 renderItem={({ item }) => 
                     renderItem({ item, 
-                        accept: async (requestId) => await dispatch(acceptReq(requestId)), 
-                        reject: async (requestId) => await dispatch(rejectReq(requestId)) })}
+                        accept:  (requestId) => handleAcceptReq(requestId), 
+                        reject:  (requestId) => handleRejecttReq(requestId) })}
                 keyExtractor={item => item.requestId}
             />
             <Loading loading={isLoading} />

@@ -33,6 +33,15 @@ const RequestSent = ({ navigation }) => {
     
     console.log("requests", requests);
 
+    const handleRecallRes = React.useCallback(async (requestId) => {
+        try {
+            await dispatch(recallReq(requestId));
+            await dispatch(getReqsSent());
+        } catch (error) {
+            console.error("Error recalling request:", error); 
+        }
+    }, [dispatch])
+
     React.useEffect(() => {
         dispatch(getReqsSent());
     }, [dispatch]);
@@ -43,7 +52,7 @@ const RequestSent = ({ navigation }) => {
                 data={requests}
                 renderItem={({item}) => 
                     renderItem({ item, recall: (requestId) => {
-                        dispatch(recallReq(requestId));
+                        handleRecallRes(requestId);
                     }})}
                 
                 keyExtractor={item => item.requestId}
