@@ -16,8 +16,9 @@ import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useDispatch, useSelector } from "react-redux";
 import { search } from "../store/slice/userSlice";
-import { sendFriendReq } from "../api/friendApi";
+import { sendReq } from "../store/slice/friendSlice";
 import { checkFriend } from "../api/friendApi";
+import { Alert } from "react-native";
 
 const { width } = Dimensions.get("window"); // Lấy kích thước màn hình
 
@@ -81,6 +82,7 @@ const FindInfo = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const { searchResults } = useSelector((state) => state.user);
+  
 
 
   const [searchText, setSearchText] = useState("");
@@ -114,6 +116,26 @@ const FindInfo = () => {
     }
   }, [searchText]);
 
+  // handle gửi lời mời kết bạn
+  const handleSendRequest = async (friendId) => {
+
+    try {
+      const response = await dispatch(sendReq(friendId)).unwrap();
+      if (response.status === "SUCCESS") {
+        console.log("Lời mời kết bạn đã được gửi thành công.");
+        Alert.alert(
+          "Thông báo",
+          "Lời mời kết bạn đã được gửi thành công.",
+          [{ text: "OK" }],
+          { cancelable: false }
+        );
+      } else {
+        console.log("Không thể gửi lời mời kết bạn.");
+      }
+    } catch (error) {
+      console.error("Lỗi khi gửi lời mời kết bạn:", error);
+    }
+  }
 
 
   // Render Item cho danh sách liên hệ
@@ -205,7 +227,7 @@ const FindInfo = () => {
           <FlatList
             data={result}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => ItemSerch({item})}
+            renderItem={({ item }) => ItemSerch({item, sendRequest: (id) => handleSendRequest(id)})}
           />
         </View>
       )}
