@@ -69,3 +69,18 @@ export const getFriendList = async () => {
     );
   }
 };
+
+export const searchUser = async (keyword) => {
+    try {
+      const response = await instance.get(`/api/v1/user/search?keyword=${keyword}`);
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Error searching user:",
+        error.response?.data || error.message
+      );
+      throw new Error(
+        error.response?.data?.message || "Failed to search user"
+      );
+    }
+  };
