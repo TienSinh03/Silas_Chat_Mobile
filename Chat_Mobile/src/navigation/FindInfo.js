@@ -62,16 +62,10 @@ const ItemSerch = ({item, isFriend, isSuccessSent, sendRequest}) => {
           {/* Kiem tra xem co phai ban khong */}
           {!isFriend ? (
 
-              //  Nếu chưa là bạn bè thì hiển thị nút gửi lời mời kết bạn
-              !isSuccessSent ? (
                   <TouchableOpacity  style={{fontSize: '12px', padding: '4px 8px', backgroundColor: '#D6E9FF', paddingHorizontal: 15, paddingVertical: 5, borderRadius: 10}} onPress={() => {sendRequest(item.id)}}>
                       <Text style={{color: "#006AF5"}}>Kết bạn</Text>
                   </TouchableOpacity>
-              ) : (
-                  <TouchableOpacity  style={{fontSize: '12px', padding: '4px 8px'}} disabled>
-                      <Text style={{color: "#006AF5"}}>Đã gửi lời mời</Text>
-                  </TouchableOpacity>
-              )
+              
           ): (<View></View>)}
           
       </View>
@@ -82,10 +76,14 @@ const FindInfo = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const { searchResults } = useSelector((state) => state.user);
-  
+  const { isSuccess, error } = useSelector((state) => state.friend);
+  console.log("isSuccess", isSuccess);
+  console.log("error", error);
 
 
   const [searchText, setSearchText] = useState("");
+  const [isFriend, setIsFriend] = useState(false);
+  const [isSuccessSent, setIsSuccessSent] = useState(false);
   console.log("searchText", searchText);
 
   const result = useMemo(() => {
@@ -121,6 +119,7 @@ const FindInfo = () => {
 
     try {
       const response = await dispatch(sendReq(friendId)).unwrap();
+      console.log("response", response);
       if (response.status === "SUCCESS") {
         console.log("Lời mời kết bạn đã được gửi thành công.");
         Alert.alert(
@@ -134,6 +133,12 @@ const FindInfo = () => {
       }
     } catch (error) {
       console.error("Lỗi khi gửi lời mời kết bạn:", error);
+      Alert.alert(
+        "Thông báo",
+        error || "Không thể gửi lời mời kết bạn.",
+        [{ text: "OK" }],
+        { cancelable: false }
+      );
     }
   }
 
@@ -227,7 +232,7 @@ const FindInfo = () => {
           <FlatList
             data={result}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => ItemSerch({item, sendRequest: (id) => handleSendRequest(id)})}
+            renderItem={({ item }) => ItemSerch({item, sendRequest: (id) => handleSendRequest(id), isSuccessSent: isSuccess})}
           />
         </View>
       )}

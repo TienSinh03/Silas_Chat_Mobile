@@ -7,6 +7,7 @@ const initialState = {
     sentRequests: [],
     receivedFriendRequests: [],
     isLoading: true,
+    isSuccess: false,
     error: null,
 }; 
 
@@ -16,7 +17,16 @@ const getReqsSent = createAsyncThunk('friend/getReqsSent', getFriendReqSent);
 const recallReq = createAsyncThunk('friend/recallReq', recallFriendReq);
 const acceptReq = createAsyncThunk('friend/acceptReq', acceptFriendReq);
 const rejectReq = createAsyncThunk('friend/rejectReq', rejectFriendReq);
-const sendReq = createAsyncThunk('friend/sendReq', sendFriendReq);
+
+const sendReq = createAsyncThunk('friend/sendReq', async (friendId, thunkAPI) => {
+    try {
+        const response = await sendFriendReq(friendId);
+        return response;
+    } catch (error) {
+        console.error("Error sending friend request:", error);
+        return thunkAPI.rejectWithValue(error.response.data?.message || error.message);
+    }
+});
 
 
 const friendSlice = createSlice({
@@ -79,9 +89,11 @@ const friendSlice = createSlice({
         builder.addCase(sendReq.fulfilled, (state, action) => {
             state.isLoading = false;
             state.sentRequests = [...state.sentRequests, action.payload.response];
+            state.isSuccess = true;
         });
         builder.addCase(sendReq.rejected, (state, action) => {
             state.isLoading = false;
+            state.isSuccess = false;
             state.error = action.error.message;
         });
 
