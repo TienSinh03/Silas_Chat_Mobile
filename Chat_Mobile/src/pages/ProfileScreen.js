@@ -76,6 +76,8 @@ const ProfileScreen = ({ navigation }) => {
                 name: image.fileName || "avatar.jpg",
                 type: "image/jpeg",
             });
+            setModalVisible(false);
+
         }
     }
 
@@ -120,7 +122,6 @@ const ProfileScreen = ({ navigation }) => {
 
         try {
             await dispatch(updateUserProfile(formData)).unwrap();
-            setEditInfoModalVisible(false);
             console.log("Cập nhật thành công:", user.avatar);
             Alert.alert("Cập nhật thành công", "Thông tin cá nhân đã được cập nhật.");
         } catch (error) {
@@ -552,7 +553,7 @@ const ProfileScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "#fff", marginTop: StatusBar.currentHeight || 0 },
+    container: { flex: 1, backgroundColor: "#fff" },
     coverPhotoContainer: { height: 300, backgroundColor: "#ccc" },
     coverPhoto: { width: "100%", height: "100%" },
     profileInfo: { alignItems: "center", marginTop: -50 },
@@ -574,8 +575,8 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "space-between",
         paddingHorizontal: 15, // Tăng padding ngang để có khoảng cách đều hơn
-        paddingVertical: 10, // Thêm padding dọc để căn giữa
-        top: 40
+        // paddingVertical: 10, // Thêm padding dọc để căn giữa
+        top: 60
     },
 
     backButton: {

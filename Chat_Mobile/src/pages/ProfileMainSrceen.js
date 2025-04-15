@@ -28,8 +28,8 @@ const ProfileMainScreen = ({ navigation }) => {
 
     // xu ly khi nhan duoc tin nhan tu websocket tu dong cap nhat lai trang thai
     React.useEffect(() => {
-            console.log("user", user.id);
             if(!user?.id) return;
+            console.log("user", user.id);
             
             // function để xử lý khi nhận được tin nhắn từ WebSocket
             const handleMessageReceived = (updatedProfile) => {
@@ -107,11 +107,11 @@ const ProfileMainScreen = ({ navigation }) => {
 
             {/* Menu Items */}
             <ScrollView>
-                <MenuItem icon="cloud" title="Cloud" subtitle="Không gian lưu trữ dữ liệu trên đám mây" />
-                <MenuItem icon="paint-brush" title="Style - Nổi bật trên Chat" subtitle="Hình nền và nhạc cho cuộc gọi Chat" />
-                <MenuItem icon="cloud-upload" title="Cloud của tôi" subtitle="Lưu trữ các tin nhắn quan trọng" />
-                <MenuItem icon="folder" title="Dữ liệu trên máy" subtitle="Quản lý dữ liệu Chat của bạn" />
-                <MenuItem icon="qrcode" title="Ví QR" subtitle="Lưu trữ và xuất trình các mã QR quan trọng" />
+                {/* <MenuItem icon="cloud" title="Cloud" subtitle="Không gian lưu trữ dữ liệu trên đám mây" /> */}
+                {/* <MenuItem icon="paint-brush" title="Style - Nổi bật trên Chat" subtitle="Hình nền và nhạc cho cuộc gọi Chat" /> */}
+                {/* <MenuItem icon="cloud-upload" title="Cloud của tôi" subtitle="Lưu trữ các tin nhắn quan trọng" /> */}
+                {/* <MenuItem icon="folder" title="Dữ liệu trên máy" subtitle="Quản lý dữ liệu Chat của bạn" /> */}
+                {/* <MenuItem icon="qrcode" title="Ví QR" subtitle="Lưu trữ và xuất trình các mã QR quan trọng" /> */}
                 <MenuItem icon="shield" title="Tài khoản và bảo mật" onPress={() => navigation.navigate("AccountSecurity")} />
 
                 <MenuItem icon="lock" title="Quyền riêng tư" />

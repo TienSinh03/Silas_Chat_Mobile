@@ -31,6 +31,7 @@ import CreateGroupScreen from "./src/pages/CreateGroupScreen";
 import AccountSecurityScreen from "./src/pages/AccountSecurityScreen";
 import ChangePasswordScreen from "./src/pages/ChangePasswordScreen";
 import ResetPasswordScreen from "./src/pages/ResetPasswordScreen";
+import TabTopFriendRequest from "./src/navigation/TabTopFriendRequest";
 
 import { getToken } from "./src/utils/authHelper";
 import { AuthProvider } from "./src/contexts/AuthContext";
@@ -123,6 +124,11 @@ const AppNavigation =  () => {
                 name="ChangePasswordScreen"
                 component={ChangePasswordScreen}
                 options={{ headerTitle: "Thay đổi mật khẩu" }}
+              />
+              <Stack.Screen
+                name="TabTopFriendRequest"
+                component={TabTopFriendRequest}
+                options={{ headerTitle: "Lời mời kết bạn" }}
               />
             </>
           ) : (
