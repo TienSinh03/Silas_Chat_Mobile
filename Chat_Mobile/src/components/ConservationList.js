@@ -92,9 +92,10 @@ const ConservationItem = ({ item , user}) => {
     const handleChooseChat = (item) => {
         if (item.is_group) {
         
-            navigation.navigate("GroupChatScreen", { conversationId: item.id });
+            navigation.navigate("GroupChatScreen", { conversationId: item?.id });
         } else {
-            navigation.navigate("SingleChatScreen", { conversationId: item.id });
+            const userReceived = item.members.find((member) => member.id !== user?.id);
+            navigation.navigate("SingleChatScreen", { conversationId: item.id, userReceived: userReceived });
         }
     };
     return (
@@ -112,7 +113,7 @@ const ConservationItem = ({ item , user}) => {
                     ))}
                 </View>
             ) : (
-                <Image source={{ uri: item.members.find((member) => member.id !== user.id)?.avatar || "https://i.pravatar.cc/300?img=4"}} style={styles.avatar} />
+                <Image source={{ uri: item.members.find((member) => member.id !== user?.id)?.avatar || "https://i.pravatar.cc/300?img=4"}} style={styles.avatar} />
             )}
     
             {/* Nội dung */}
@@ -135,16 +136,17 @@ const ConservationList = ({ category}) => {
 
     React.useEffect(() => {
         dispatch(getProfile());
-    },[]);
+    },[dispatch]);
 
     const userProfile = useSelector(state => state.user.user);
     
         const user = useMemo(() => {
+            if(userProfile === null) return null;
                 return userProfile || null;
         }, [userProfile]);
 
-    console.log("User Profile: ", userProfile);
-    console.log("User: ", user);
+    // console.log("User Profile: ", userProfile);
+    // console.log("User: ", user);
 
 
     const conversationsMemo = useMemo(() => {
@@ -152,7 +154,7 @@ const ConservationList = ({ category}) => {
         return conversations;
     }, [conversations]);
 
-    console.log("Conversations Memo: ", conversationsMemo);
+    // console.log("Conversations Memo: ", conversationsMemo);
 
     React.useEffect(() => {
         const fetchConversations = async () => {

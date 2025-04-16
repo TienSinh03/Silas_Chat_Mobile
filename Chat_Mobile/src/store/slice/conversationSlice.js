@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import {getAllConversationsByUserIdService, getMessagesByConversationIdService, sendMessageService} from '../../api/chatApi' 
+import {getAllConversationsByUserIdService } from '../../api/chatApi' 
 
 const initialState = {
     conversations: [],

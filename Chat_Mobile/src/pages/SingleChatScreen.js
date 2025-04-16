@@ -15,20 +15,19 @@ import Icon from "react-native-vector-icons/Ionicons";
 import * as ImagePicker from "react-native-image-picker";
 import AudioRecorderPlayer from "react-native-audio-recorder-player";
 import { useSelector, useDispatch } from "react-redux";
-import { getAllMessagesByConversationId } from "../store/slice/messageSlice";
+import { getAllMessagesByConversationId, sendMessageToUser } from "../store/slice/messageSlice";
 import { convertHours } from "../utils/convertHours";
 
 const { width, height } = Dimensions.get("window");
 const audioRecorderPlayer = new AudioRecorderPlayer();
 
 const SingleChatScreen = ({ navigation, route }) => {
-    const { conversationId } = route.params; // Nhận userId từ params
+    const { conversationId, userReceived } = route.params; // Nhận userId từ params
     console.log("conversationId", conversationId);
 
     const dispatch = useDispatch();
     const { messages } = useSelector((state) => state.message);
     const { user } = useSelector((state) => state.user);
-    console.log("user message ", user);
     
     const messageMemo = useMemo(() => {
         if(!messages) return [];
@@ -45,26 +44,38 @@ const SingleChatScreen = ({ navigation, route }) => {
     const audioPath = useRef(null);
     
 
+    // Gọi hàm lấy tin nhắn từ slice khi component được mount
+    useEffect(() => {
+        setMessages(messageMemo); // Cập nhật lại messagesLocal khi messages thay đổi
+    }, [messageMemo]);
+
+
     useEffect(() => {
         dispatch(getAllMessagesByConversationId(conversationId)); // Gọi hàm lấy tin nhắn từ slice
-    }, [conversationId]);
+    }, [conversationId, dispatch]);
 
     const sendMessage = () => {
         if (inputText.trim() || imageUri) {
             const messageData = {
-                id: Date.now().toString(),
-                text: inputText,
-                image: imageUri,
-                audio: null,
+                senderId: user?.id,
+                conversationId: conversationId,
+                messageType: imageUri ? "FILE" : "TEXT",
+                content: inputText,
+                fileUrl: null,
+                replyToMessageId: null,
             };
-            dispatch(sendMessageService(messageData)); // Gọi hàm gửi tin nhắn từ slice
+            dispatch(sendMessageToUser(messageData)); // Gọi hàm gửi tin nhắn từ slice
             setMessages([
                 ...messages,
                 {
                     id: Date.now().toString(),
-                    text: inputText,
-                    image: imageUri,
-                    audio: null,
+                    senderId: user?.id,
+                    conversationId: conversationId,
+                    content: inputText,
+                    messageType: imageUri ? "FILE" : "TEXT",
+                    fileUrl: null,
+                    replyToMessageId: null,
+                    // audio: null,
                 },
             ]);
             setInputText("");
@@ -143,7 +154,7 @@ const SingleChatScreen = ({ navigation, route }) => {
                         fontWeight: "bold",
                     }}
                 >
-                    Thái Dương
+                   {userReceived?.display_name}
                 </Text>
                 <View style={{ flexDirection: "row", gap: width * 0.04 }}>
                     <TouchableOpacity onPress={() => navigation.navigate("CallScreen")}>

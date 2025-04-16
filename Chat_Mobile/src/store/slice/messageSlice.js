@@ -9,6 +9,7 @@ const initialState = {
 }; 
 
 const getAllMessagesByConversationId = createAsyncThunk('conversation/getAllMessagesByConversationId', getMessagesByConversationIdService);
+const sendMessageToUser = createAsyncThunk('conversation/sendMessage', sendMessageService);
 
 const messageSlice = createSlice({
     name: "message",
@@ -36,20 +37,20 @@ const messageSlice = createSlice({
         })
 
         //sendMessage
-        // builder.addCase(sendMessageService.pending, (state) => {
-        //     state.isLoading = true;
-        // })
-        // builder.addCase(sendMessageService.fulfilled, (state, action) => {
-        //     state.messages.push(action.payload.response);
-        //     state.isLoading = false;
-        // })
-        // builder.addCase(sendMessageService.rejected, (state, action) => {
-        //     state.isLoading = false;
-        //     state.error = action.error.message;
-        // })
+        builder.addCase(sendMessageToUser.pending, (state) => {
+            state.isLoading = true;
+        })
+        builder.addCase(sendMessageToUser.fulfilled, (state, action) => {
+            state.messages.push(action.payload.response);
+            state.isLoading = false;
+        })
+        builder.addCase(sendMessageToUser.rejected, (state, action) => {
+            state.isLoading = false;
+            state.error = action.error.message;
+        })
     }
 })
 
 export const { setMessages, clearMessages } = messageSlice.actions;
-export { getAllMessagesByConversationId };
+export { getAllMessagesByConversationId, sendMessageToUser };
 export default messageSlice.reducer;

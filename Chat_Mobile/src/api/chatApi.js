@@ -37,6 +37,7 @@ export const getAllConversationsByUserIdService = async () => {
   };
   
   export const sendMessageService = async (messageData) => {
+    console.log("messageData api: ", messageData);
     try {
       const response = await instance.post("/api/v1/messages", messageData);
       console.log("Response data:");
