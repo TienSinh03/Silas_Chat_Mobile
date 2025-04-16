@@ -132,7 +132,7 @@ const FindInfo = () => {
         console.log("Không thể gửi lời mời kết bạn.");
       }
     } catch (error) {
-      console.error("Lỗi khi gửi lời mời kết bạn:", error);
+      console.log("Lỗi khi gửi lời mời kết bạn:", error);
       Alert.alert(
         "Thông báo",
         error || "Không thể gửi lời mời kết bạn.",

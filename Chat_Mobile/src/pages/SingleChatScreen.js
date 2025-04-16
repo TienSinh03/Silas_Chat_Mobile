@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo, useEffect } from "react";
 import {
     View,
     Text,
@@ -9,24 +9,55 @@ import {
     Dimensions,
     KeyboardAvoidingView,
     Platform,
+    StatusBar
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import * as ImagePicker from "react-native-image-picker";
 import AudioRecorderPlayer from "react-native-audio-recorder-player";
+import { useSelector, useDispatch } from "react-redux";
+import { getAllMessagesByConversationId } from "../store/slice/messageSlice";
+import { convertHours } from "../utils/convertHours";
 
 const { width, height } = Dimensions.get("window");
 const audioRecorderPlayer = new AudioRecorderPlayer();
 
-const SingleChatScreen = ({ navigation }) => {
+const SingleChatScreen = ({ navigation, route }) => {
+    const { conversationId } = route.params; // Nhận userId từ params
+    console.log("conversationId", conversationId);
+
+    const dispatch = useDispatch();
+    const { messages } = useSelector((state) => state.message);
+    const { user } = useSelector((state) => state.user);
+    console.log("user message ", user);
+    
+    const messageMemo = useMemo(() => {
+        if(!messages) return [];
+        return messages;
+    }, [messages]);
+    console.log("messages", messageMemo);
+
     // Nhận navigation từ props
-    const [messages, setMessages] = useState([]);
+    const [messagesLocal, setMessages] = useState(messageMemo);
+    console.log("messagesLocal", messagesLocal);
     const [inputText, setInputText] = useState("");
     const [imageUri, setImageUri] = useState(null);
     const [recording, setRecording] = useState(false);
     const audioPath = useRef(null);
+    
+
+    useEffect(() => {
+        dispatch(getAllMessagesByConversationId(conversationId)); // Gọi hàm lấy tin nhắn từ slice
+    }, [conversationId]);
 
     const sendMessage = () => {
         if (inputText.trim() || imageUri) {
+            const messageData = {
+                id: Date.now().toString(),
+                text: inputText,
+                image: imageUri,
+                audio: null,
+            };
+            dispatch(sendMessageService(messageData)); // Gọi hàm gửi tin nhắn từ slice
             setMessages([
                 ...messages,
                 {
@@ -89,7 +120,7 @@ const SingleChatScreen = ({ navigation }) => {
     };
 
     return (
-        <View style={{ flex: 1, backgroundColor: "#D3CFCF" }}>
+        <View style={{ flex: 1, backgroundColor: "#D3CFCF", marginTop: StatusBar.currentHeight }}>
             {/* Header */}
             <View
                 style={{
@@ -131,29 +162,35 @@ const SingleChatScreen = ({ navigation }) => {
 
             {/* Hiển thị tin nhắn */}
             <FlatList
-                data={messages}
-                keyExtractor={(item) => item.id}
+                data={messagesLocal}
                 renderItem={({ item }) => (
                     <View
                         style={{
                             padding: 10,
-                            alignSelf: "flex-end",
+                            alignSelf: item.senderId === user.id ? "flex-end" : "flex-start",
                             backgroundColor: "#4CAF50",
                             borderRadius: 10,
                             margin: 5,
                         }}
                     >
-                        {item.text ? (
-                            <Text
-                                style={{
-                                    color: "white",
-                                    fontSize: width * 0.04,
-                                }}
-                            >
-                                {item.text}
-                            </Text>
+                        
+                        {item.messageType === "TEXT" ? (
+                            <View>
+
+                                <Text
+                                    style={{
+                                        color: "white",
+                                        fontSize: width * 0.04,
+                                    }}
+                                >
+                                    {item.content}
+                                    {/* thoi gian */}
+                                    
+                                </Text>
+                            
+                            </View>
                         ) : null}
-                        {item.image ? (
+                        {item.messageType === "FILE" ? (
                             <Image
                                 source={{ uri: item.image }}
                                 style={{
@@ -164,7 +201,7 @@ const SingleChatScreen = ({ navigation }) => {
                                 }}
                             />
                         ) : null}
-                        {item.audio ? (
+                        {item.messageType === "AUDIO" ? (
                             <TouchableOpacity
                                 onPress={() => playAudio(item.audio)}
                             >
@@ -175,8 +212,12 @@ const SingleChatScreen = ({ navigation }) => {
                                 />
                             </TouchableOpacity>
                         ) : null}
+                        <Text style={{ fontSize: width * 0.03, color: "gray" }}>
+                            {convertHours(item.timestamp)}    
+                        </Text>
                     </View>
                 )}
+                keyExtractor={(item) => item.id}
                 contentContainerStyle={{ padding: 10 }}
             />
 

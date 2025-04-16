@@ -45,6 +45,7 @@ const RequestSent = ({ navigation }) => {
     React.useEffect(() => {
         dispatch(getReqsSent());
     }, [dispatch]);
+    
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Lời mời đã gửi ( {requests.length} )</Text>
