@@ -16,7 +16,7 @@ import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useDispatch, useSelector } from "react-redux";
 import { search } from "../store/slice/userSlice";
-import { sendReq } from "../store/slice/friendSlice";
+import { sendReq, checkFriendStatus } from "../store/slice/friendSlice";
 import { checkFriend } from "../api/friendApi";
 import { Alert } from "react-native";
 
@@ -50,9 +50,9 @@ const { width } = Dimensions.get("window"); // Lấy kích thước màn hình
 
 const ItemSerch = ({item, isFriend, isSuccessSent, sendRequest}) => {
 
+  console.log("isFriend", isFriend);
   return (
       <View key={item.id} 
-          onClick={() => {dispatch(setShowConversation(true))}}
           style={{cursor: 'pointer', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, paddingVertical: 8, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: '#E0E0E0'}}
       >
           <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -82,8 +82,8 @@ const FindInfo = () => {
 
 
   const [searchText, setSearchText] = useState("");
-  const [isFriend, setIsFriend] = useState(false);
-  const [isSuccessSent, setIsSuccessSent] = useState(false);
+  const [friendStatus, setFriendStatus] = useState({}); 
+
   console.log("searchText", searchText);
 
   const result = useMemo(() => {
@@ -92,6 +92,28 @@ const FindInfo = () => {
   }, [searchResults]);
 
   console.log("result", result);
+
+  // Kiểm tra trạng thái bạn bè
+  useEffect(() => {
+    const checkIsFriend = async () => {
+      if (!result || result.length === 0) return;
+
+      const statusUpdates = {};
+      for (const item of result) {
+        try {
+          const response = await dispatch(checkFriendStatus(item.id)).unwrap();
+          statusUpdates[item.id] = response; 
+        } catch (error) {
+          console.log(`Lỗi khi kiểm tra trạng thái bạn bè cho ${item.id}:`, error);
+          statusUpdates[item.id] = false; 
+        }
+      }
+      setFriendStatus((prev) => ({ ...prev, ...statusUpdates }));
+    };
+
+    checkIsFriend();
+  }, [result, dispatch]);
+
 
   // Xu lý tìm kiếm
   const handleSearch = async (keyword) => {
@@ -232,7 +254,7 @@ const FindInfo = () => {
           <FlatList
             data={result}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => ItemSerch({item, sendRequest: (id) => handleSendRequest(id), isSuccessSent: isSuccess})}
+            renderItem={({ item }) => ItemSerch({item, sendRequest: (id) => handleSendRequest(id), isSuccessSent: isSuccess, isFriend: friendStatus[item.id]})}
           />
         </View>
       )}

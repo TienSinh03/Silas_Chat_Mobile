@@ -6,6 +6,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { Platform } from 'react-native';
 import { useDispatch, useSelector } from "react-redux";
 import {updateUserProfile, updateUserProfileSuccess } from "../store/slice/userSlice";
+import { checkFriendStatus } from "../store/slice/friendSlice";
 import * as ImagePicker from "expo-image-picker";
 import Loading from "../components/Loading";
 
@@ -25,6 +26,9 @@ const ProfileScreen = ({ navigation, route }) => {
     const userProfile = useSelector(state => state.user.user);
     const isLoading = useSelector(state => state.user.isLoading);
 
+    const { friendStatus } = useSelector(state => state.friend); // Lấy trạng thái bạn bè từ Redux
+    console.log("Friend status:", friendStatus); // Kiểm tra trạng thái bạn bè
+
     const user = useMemo(() => userReceived || userProfile, [userReceived, userProfile]); // Lấy thông tin người dùng từ props hoặc Redux
 
     const [fullName, setFullName] = useState(user?.display_name || "");
@@ -36,6 +40,14 @@ const ProfileScreen = ({ navigation, route }) => {
     const [avatarUpdate, setAvatarUpdate] = useState(null); // Avatar mặc định là null
 
     const [avatarUrl, setAvatarUrl] = useState( user?.avatar ||'');
+
+    
+    React.useEffect(() => {
+        if(!user?.id) return;
+
+        dispatch(checkFriendStatus(user?.id));
+    }, [user?.id, dispatch]);
+
 
     React.useEffect(() => {
         if(!user?.id) return;
@@ -151,6 +163,7 @@ const ProfileScreen = ({ navigation, route }) => {
         if(avatarUpdate) { 
             formData.append("avatar", avatarUpdate);
         }
+
         try {
 
             await dispatch(updateUserProfile(formData)).unwrap(); // unwrap để lấy giá trị trả về từ thunk fulfilled khi thành công hoặc thất bại
@@ -535,6 +548,33 @@ const ProfileScreen = ({ navigation, route }) => {
                     <Text style={styles.status}>"Đường còn dài, tuổi còn trẻ"</Text>
                 </TouchableOpacity>
             </View>
+
+            {/* Kết bạn và nhắn tin */}
+            {user?.id !== userProfile?.id && (
+                <View style={styles.actions}>
+                
+                    <TouchableOpacity
+                        style={[styles.button, { marginTop: 20, alignSelf: "center"}]}
+                            onPress={() => {
+                                
+                            }}
+                    >
+                        <Text style={styles.buttonText}>Nhắn tin</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.button, { marginTop: 20, alignSelf: "center", display: !friendStatus ? "flex" : "none", }]}
+                            onPress={() => {
+                                
+                            }}
+                        disabled={user?.id !== userProfile?.id} // Disable button if not the same user
+                        aria-hidden={user?.id !== userProfile?.id}
+                    >
+                        <Text style={styles.buttonText}>Kết bạn</Text>
+                    </TouchableOpacity>
+
+                </View>
+            )}
 
             {/* Các mục khác */}
             <View style={styles.menu}>
