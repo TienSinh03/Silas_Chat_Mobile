@@ -15,13 +15,23 @@ import Icon from "react-native-vector-icons/Ionicons";
 import * as ImagePicker from "react-native-image-picker";
 import AudioRecorderPlayer from "react-native-audio-recorder-player";
 import { useSelector, useDispatch } from "react-redux";
-import { getAllMessagesByConversationId, sendMessageToUser } from "../store/slice/messageSlice";
+import { getAllMessagesByConversationId, sendMessageToUser, setMessagesUpdate, addMessage } from "../store/slice/messageSlice";
 import { convertHours } from "../utils/convertHours";
+
+import SockJS from 'sockjs-client';
+import { Client } from '@stomp/stompjs';
+
+import { connectWebSocket, disconnectWebSocket, subscribeToChat, sendMessageToWebSocket } from "../config/socket";
+
 
 const { width, height } = Dimensions.get("window");
 const audioRecorderPlayer = new AudioRecorderPlayer();
 
 const SingleChatScreen = ({ navigation, route }) => {
+
+    // tự động cuộn xuống cuối danh sách khi có tin nhắn mới
+    const bottomRef = useRef(null);
+
     const { conversationId, userReceived } = route.params; // Nhận userId từ params
     console.log("conversationId", conversationId);
 
@@ -33,11 +43,11 @@ const SingleChatScreen = ({ navigation, route }) => {
         if(!messages) return [];
         return messages;
     }, [messages]);
-    console.log("messages", messageMemo);
+    console.log("messages", messageMemo.length);
 
     // Nhận navigation từ props
-    const [messagesLocal, setMessages] = useState(messageMemo);
-    console.log("messagesLocal", messagesLocal);
+    const [messagesLocal, setMessages] = useState([]);
+    // console.log("messagesLocal", messagesLocal);
     const [inputText, setInputText] = useState("");
     const [imageUri, setImageUri] = useState(null);
     const [recording, setRecording] = useState(false);
@@ -54,6 +64,30 @@ const SingleChatScreen = ({ navigation, route }) => {
         dispatch(getAllMessagesByConversationId(conversationId)); // Gọi hàm lấy tin nhắn từ slice
     }, [conversationId, dispatch]);
 
+    useEffect(() => {
+        if (bottomRef.current) {
+            bottomRef.current.scrollToEnd({ animated: true });
+        }
+    }, [messagesLocal]);
+
+    const client = useRef(null);
+
+    // Kết nối WebSocket
+    useEffect(() => {
+        
+        connectWebSocket(() => {
+            subscribeToChat(conversationId, (newMessage) => {
+                console.log("Received message:", newMessage);
+                dispatch(addMessage(newMessage))
+            })
+        })
+
+        return () => {
+           disconnectWebSocket(); // Ngắt kết nối khi component unmount
+        };
+    }, [conversationId]);
+
+
     const sendMessage = () => {
         if (inputText.trim() || imageUri) {
             const messageData = {
@@ -64,19 +98,14 @@ const SingleChatScreen = ({ navigation, route }) => {
                 fileUrl: null,
                 replyToMessageId: null,
             };
-            dispatch(sendMessageToUser(messageData)); // Gọi hàm gửi tin nhắn từ slice
+
+            sendMessageToWebSocket(messageData);
+
+
+            // dispatch(sendMessageToUser(messageData)); // Gọi hàm gửi tin nhắn từ slice
             setMessages([
                 ...messages,
-                {
-                    id: Date.now().toString(),
-                    senderId: user?.id,
-                    conversationId: conversationId,
-                    content: inputText,
-                    messageType: imageUri ? "FILE" : "TEXT",
-                    fileUrl: null,
-                    replyToMessageId: null,
-                    // audio: null,
-                },
+                messageData,
             ]);
             setInputText("");
             setImageUri(null);
@@ -136,7 +165,7 @@ const SingleChatScreen = ({ navigation, route }) => {
             <View
                 style={{
                     width: width,
-                    height: height * 0.08,
+                    height: height * 0.07,
                     backgroundColor: "#2196F3",
                     flexDirection: "row",
                     alignItems: "center",
@@ -164,7 +193,7 @@ const SingleChatScreen = ({ navigation, route }) => {
                 </View>
                 <TouchableOpacity
                     onPress={() =>
-                        navigation.navigate("DetailSingleChatScreen")
+                        navigation.navigate("DetailSingleChatScreen", {userReceived})
                     }
                 >
                     <Icon name="menu" size={width * 0.07} color="white" />
@@ -173,63 +202,76 @@ const SingleChatScreen = ({ navigation, route }) => {
 
             {/* Hiển thị tin nhắn */}
             <FlatList
+                ref={bottomRef} 
                 data={messagesLocal}
                 renderItem={({ item }) => (
-                    <View
-                        style={{
-                            padding: 10,
-                            alignSelf: item.senderId === user.id ? "flex-end" : "flex-start",
-                            backgroundColor: "#4CAF50",
-                            borderRadius: 10,
-                            margin: 5,
-                        }}
-                    >
-                        
-                        {item.messageType === "TEXT" ? (
-                            <View>
+                    <View>
+                        {item?.senderId !== user?.id ? (
+                            <Image source={{uri: userReceived?.avatar}} style={{width:30, height:30, borderRadius: 15, marginTop: 5}}/>
+                        ): null}
 
-                                <Text
-                                    style={{
-                                        color: "white",
-                                        fontSize: width * 0.04,
-                                    }}
-                                >
-                                    {item.content}
-                                    {/* thoi gian */}
-                                    
-                                </Text>
+                        <View
+                            style={{
+                                padding: 10,
+                                alignSelf: item?.senderId === user?.id ? "flex-end" : "flex-start",
+                                backgroundColor: item?.senderId === user?.id ? "#8FC1FF" : "white",
+                                borderRadius: 10,
+                                margin: 5,
+                                borderWidth: 1,
+                                borderColor: "#52A0FF",
+                                marginLeft: item?.senderId !== user?.id ? 25 : 0,
+                            }}
+                        >
                             
-                            </View>
-                        ) : null}
-                        {item.messageType === "FILE" ? (
-                            <Image
-                                source={{ uri: item.image }}
-                                style={{
-                                    width: 150,
-                                    height: 150,
-                                    borderRadius: 10,
-                                    marginTop: 5,
-                                }}
-                            />
-                        ) : null}
-                        {item.messageType === "AUDIO" ? (
-                            <TouchableOpacity
-                                onPress={() => playAudio(item.audio)}
-                            >
-                                <Icon
-                                    name="play-circle"
-                                    size={40}
-                                    color="white"
+                            {item?.messageType === "TEXT" ? (
+                                <View>
+
+                                    <Text
+                                        style={{
+                                            color: "black",
+                                            fontSize: width * 0.04,
+                                        }}
+                                    >
+                                        {item?.content}
+                                        {/* thoi gian */}
+                                        
+                                    </Text>
+                                
+                                </View>
+                            ) : null}
+                            {item?.messageType === "FILE" ? (
+                                <Image
+                                    source={{ uri: item.image }}
+                                    style={{
+                                        width: 150,
+                                        height: 150,
+                                        borderRadius: 10,
+                                        marginTop: 5,
+                                    }}
                                 />
-                            </TouchableOpacity>
-                        ) : null}
-                        <Text style={{ fontSize: width * 0.03, color: "gray" }}>
-                            {convertHours(item.timestamp)}    
-                        </Text>
+                            ) : null}
+                            {item?.messageType === "AUDIO" ? (
+                                <TouchableOpacity
+                                    onPress={() => playAudio(item.audio)}
+                                >
+                                    <Icon
+                                        name="play-circle"
+                                        size={40}
+                                        color="white"
+                                    />
+                                </TouchableOpacity>
+                            ) : null}
+                            <Text style={{ fontSize: width * 0.03, color: "gray" }}>
+                                {convertHours(item?.timestamp)}    
+                            </Text>
+                        </View>
                     </View>
                 )}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={{ padding: 10 }}
+                keyExtractor={(item) => item?.id}
+                initialNumToRender={20} // Số lượng tin nhắn ban đầu được render
+                maxToRenderPerBatch={10} // Số lượng tin nhắn được render mỗi lần
+                contentContainerStyle={{ padding: 10, backgroundColor: "#EBF4FF" }}
+                onContentSizeChange={() => bottomRef.current?.scrollToEnd({ animated: true })}
             />
 
             {/* Nhập tin nhắn */}

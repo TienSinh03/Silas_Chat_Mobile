@@ -6,8 +6,7 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 export const convertHours = (utcTime ) => {
-    const vnTime = dayjs().utc(utcTime).tz("Asia/Ho_Chi_Minh").format("HH:mm");
-    console.log("vnTime", vnTime);
+    const vnTime = dayjs(utcTime).add(7, 'hour').tz("Asia/Ho_Chi_Minh").format("HH:mm");
     return vnTime;
 }
 

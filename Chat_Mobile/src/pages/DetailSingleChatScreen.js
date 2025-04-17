@@ -7,10 +7,16 @@ import {
     Switch,
     TouchableOpacity,
     StyleSheet,
+    StatusBar,
+    Dimensions
 } from "react-native";
 import { Ionicons, Feather } from "@expo/vector-icons";
 
+
+const { width, height } = Dimensions.get("window");
 const DetailSingleChatScreen = ({navigation, route}) => {
+    const {userReceived} = route.params;
+    console.log("User received: ", userReceived);
     const [isBestFriend, setIsBestFriend] = useState(false);
     const [isPinned, setIsPinned] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
@@ -18,31 +24,59 @@ const DetailSingleChatScreen = ({navigation, route}) => {
 
     return (
         <ScrollView style={styles.container}>
+
+            {/* Header */}
+            <View
+                style={{
+                    width: width,
+                    height: height * 0.06,
+                    backgroundColor: "#2196F3",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingHorizontal: width * 0.04,
+                    gap: 20
+                }}
+            >
+                <TouchableOpacity onPress={() => navigation.goBack()}>
+                    <Ionicons name="arrow-back" size={width * 0.07} color="white" />
+                </TouchableOpacity>
+                <Text
+                    style={{
+                        color: "white",
+                        fontSize: width * 0.05,
+                        fontWeight: "bold",
+                    }}
+                >
+                   Tùy chọn
+                </Text>                
+            </View>           
+
             {/* Ảnh đại diện + Tên */}
             <View style={styles.profileHeader}>
                 <Image
                     source={{
-                        uri: "https://avatars.githubusercontent.com/u/100653357?v=4",
+                        uri: userReceived?.avatar || "https://avatars.githubusercontent.com/u/100653357?v=4",
                     }}
                     style={styles.avatar}
                 />
-                <Text style={styles.name}>Dương</Text>
+                <Text style={styles.name}>{userReceived?.display_name}</Text>
             </View>
 
             {/* Các tùy chọn chính */}
             <View style={styles.optionsRow}>
-                <OptionButton icon="search" text="Tìm tin nhắn" />
-                <OptionButton icon="user" text="Trang cá nhân" navigation={() => navigation.navigate('Profile')}/>
+                <OptionButton icon="search" text="Tìm tin nhắn"  />
+                <OptionButton icon="user" text="Trang cá nhân" navigation={() => navigation.navigate('Profile', {userReceived})}/>
                 <OptionButton icon="image" text="Đổi hình nền" />
                 <OptionButton icon="bell-off" text="Tắt thông báo" />
             </View>
 
             {/* Đánh dấu bạn thân */}
-            <SettingToggle
+            {/* <SettingToggle
                 label="Đánh dấu bạn thân"
                 value={isBestFriend}
                 onChange={setIsBestFriend}
-            />
+                
+            /> */}
 
             {/* Ảnh, file, link */}
             <View style={styles.section}>
@@ -60,23 +94,23 @@ const DetailSingleChatScreen = ({navigation, route}) => {
 
             {/* Tạo nhóm & Thêm vào nhóm */}
             <TouchableOpacity style={styles.optionRow}>
-                <Ionicons name="people-outline" size={20} color="white" />
+                <Ionicons name="people-outline" size={20} color="#8F9499" />
                 <Text style={styles.optionText}>Tạo nhóm với Dương</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.optionRow}>
-                <Ionicons name="person-add-outline" size={20} color="white" />
+                <Ionicons name="person-add-outline" size={20} color="#8F9499" />
                 <Text style={styles.optionText}>Thêm Dương vào nhóm</Text>
             </TouchableOpacity>
 
             {/* Nhóm */}
             <TouchableOpacity style={styles.optionRow}>
-                <Ionicons name="people-outline" size={20} color="white" />
-                <Text style={styles.optionText}>Xem nhóm chung (11)</Text>
+                <Ionicons name="people-outline" size={20} color="#8F9499" />
+                <Text style={styles.optionText}>Xem nhóm chung ()</Text>
             </TouchableOpacity>
 
             {/* Ghim và ẩn trò chuyện */}
-            <SettingToggle
+            {/* <SettingToggle
                 label="Ghim trò chuyện"
                 value={isPinned}
                 onChange={setIsPinned}
@@ -90,11 +124,11 @@ const DetailSingleChatScreen = ({navigation, route}) => {
                 label="Báo cuộc gọi đến"
                 value={isCallAlert}
                 onChange={setIsCallAlert}
-            />
+            /> */}
 
             {/* Cài đặt khác */}
             <TouchableOpacity style={styles.optionRow}>
-                <Feather name="settings" size={20} color="white" />
+                <Feather name="settings" size={20} color="#8F9499" />
                 <Text style={styles.optionText}>Cài đặt cá nhân</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.optionRow}>
@@ -110,7 +144,7 @@ const DetailSingleChatScreen = ({navigation, route}) => {
 // Component hiển thị tùy chọn
 const OptionButton = ({ icon, text, navigation }) => (
     <TouchableOpacity style={styles.optionButton} onPress={navigation}>
-        <Feather name={icon} size={22} color="white" />
+        <Feather name={icon} size={22} color="black" />
         <Text style={styles.optionText}>{text}</Text>
     </TouchableOpacity>
 );
@@ -127,13 +161,12 @@ const SettingToggle = ({ label, value, onChange }) => (
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#121212",
-        paddingHorizontal: 15,
-        paddingTop: 20,
+        backgroundColor: "#ffff",
+        paddingTop: StatusBar.currentHeight + 10,
     },
     profileHeader: {
         alignItems: "center",
-        marginBottom: 20,
+        marginVertical: 20,
     },
     avatar: {
         width: 80,
@@ -142,7 +175,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     name: {
-        color: "white",
+        color: "#000",
         fontSize: 18,
         fontWeight: "bold",
     },
@@ -151,24 +184,27 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     optionsRow: {
+        display: "flex",
         flexDirection: "row",
         justifyContent: "space-between",
         marginBottom: 15,
+        // paddingRight: 10,
     },
     optionButton: {
         alignItems: "center",
         padding: 10,
     },
     optionText: {
-        color: "white",
+        color: "#000",
         fontSize: 14,
         marginTop: 5,
     },
     section: {
-        marginVertical: 15,
+        margin: 15,
+
     },
     sectionTitle: {
-        color: "white",
+        color: "#000",
         fontSize: 16,
         fontWeight: "bold",
         marginBottom: 10,
@@ -182,10 +218,12 @@ const styles = StyleSheet.create({
     optionRow: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#1E1E1E",
+        backgroundColor: "#F4F5F6",
         padding: 15,
         borderRadius: 10,
         marginVertical: 5,
+        marginHorizontal: 15,
+        gap: 10,
     },
     optionIcon: {
         marginRight: 10,

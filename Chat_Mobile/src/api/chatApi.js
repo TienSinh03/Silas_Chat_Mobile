@@ -5,7 +5,6 @@ export const getAllConversationsByUserIdService = async () => {
       const response = await instance.get(
         "/api/v1/conversations/getAllConversationsByUserId"
       );
-      console.log("Response data:", response.data);
       return response.data;
     } catch (error) {
       console.error(
@@ -22,8 +21,8 @@ export const getAllConversationsByUserIdService = async () => {
     console.log("conversationId api: ", conversationId);
     try {
       const response = await instance.get(`/api/v1/messages/${conversationId}`);
-      console.log("Response data:");
-      console.log(response.data);
+      // console.log("Response data:");
+      // console.log(response.data);
       return response.data;
     } catch (error) {
       console.error(
@@ -36,11 +35,11 @@ export const getAllConversationsByUserIdService = async () => {
     }
   };
   
-  export const sendMessageService = async (messageData) => {
+  export const sendMessageService = async (messageData) => {  
     console.log("messageData api: ", messageData);
     try {
       const response = await instance.post("/api/v1/messages", messageData);
-      console.log("Response data:");
+      // console.log("Response data:");
       console.log(response.data);
       return response.data;
     } catch (error) {

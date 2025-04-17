@@ -9,9 +9,11 @@ import {updateUserProfile, updateUserProfileSuccess } from "../store/slice/userS
 import * as ImagePicker from "expo-image-picker";
 import Loading from "../components/Loading";
 
-import { connectWebSocket, disconnectWebSocket } from "../config/socket";
+import { connectWebSocket, disconnectWebSocket, subscribeToUserProfile } from "../config/socket";
 
-const ProfileScreen = ({ navigation }) => {
+const ProfileScreen = ({ navigation, route }) => {
+    const { userReceived } = route.params || {};
+    
     // const navigation = useNavigation();
     const [modalVisible, setModalVisible] = useState(false);
     const [historyModalVisible, setHistoryModalVisible] = useState(false);
@@ -23,9 +25,7 @@ const ProfileScreen = ({ navigation }) => {
     const userProfile = useSelector(state => state.user.user);
     const isLoading = useSelector(state => state.user.isLoading);
 
-    const user = useMemo(() => {
-        return userProfile || null;
-    }, [userProfile]);
+    const user = useMemo(() => userReceived || userProfile, [userReceived, userProfile]); // Lấy thông tin người dùng từ props hoặc Redux
 
     const [fullName, setFullName] = useState(user?.display_name || "");
     const [gender, setGender] = useState(user?.gender || "");
@@ -48,11 +48,13 @@ const ProfileScreen = ({ navigation }) => {
             dispatch(updateUserProfileSuccess(updatedProfile));
         };
 
-        const client = connectWebSocket(user?.id, handleMessageReceived);
+        connectWebSocket(() => {
+            subscribeToUserProfile(user.id, handleMessageReceived);
+        });
 
             
         return () => {
-            disconnectWebSocket(client); // Ngắt kết nối khi component unmount
+            disconnectWebSocket(); // Ngắt kết nối khi component unmount
         }
     },[user?.id, dispatch]);
 
@@ -348,11 +350,13 @@ const ProfileScreen = ({ navigation }) => {
                             </Text>
 
                             <TouchableOpacity
-                                style={[styles.button, { marginTop: 20, alignSelf: "center" }]}
+                                style={[styles.button, { marginTop: 20, alignSelf: "center", display: user?.id === userProfile?.id ? "flex" : "none", }]}
                                 onPress={() => {
                                     setPersonalInfoModalVisible(false);
                                     setEditInfoModalVisible(true);
                                 }}
+                                disabled={user?.id !== userProfile?.id} // Disable button if not the same user
+                                aria-hidden={user?.id !== userProfile?.id}
                             >
                                 <Text style={styles.buttonText}>Chỉnh sửa</Text>
                             </TouchableOpacity>
