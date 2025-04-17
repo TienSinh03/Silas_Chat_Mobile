@@ -16,13 +16,31 @@ const messageSlice = createSlice({
     initialState,
     reducers: {
         addMessage(state, action) {
-            state.messages.push(action.payload);
+
+            // Dùng để cập nhật lại khi xóa message tại bất kỳ vị trí nào
+            // Lấy index của message đã tồn tại trong mảng
+            const indexMessage = state.messages.findIndex(msg => msg?.id === action.payload?.id);
+
+            
+            if(indexMessage !== -1) {
+                // Nếu tồn tại thì cập nhật lại message
+                state.messages[indexMessage] = action.payload;
+            }
+
+            // some() kiểm tra xem có tồn tại message id trong mảng hay không
+            // Nếu không tồn tại thì thêm mới message vào mảng
+            if (!state.messages.some(msg => msg?.id === action.payload?.id)) {
+                state.messages.push(action.payload);
+            }
         },
         setMessagesUpdate: (state, action) => {
             state.messages = action.payload;
         },
         clearMessages: (state) => {
             state.messages = [];
+        },
+        deleteMessage(state, action) {
+            state.messages = state.messages.filter(message => message.id !== action.payload.id);
         },
     },
     extraReducers: (builder) => {
@@ -53,6 +71,6 @@ const messageSlice = createSlice({
     }
 })
 
-export const { setMessagesUpdate, clearMessages, addMessage } = messageSlice.actions;
+export const { setMessagesUpdate, clearMessages, addMessage, deleteMessage } = messageSlice.actions;
 export { getAllMessagesByConversationId, sendMessageToUser };
 export default messageSlice.reducer;
