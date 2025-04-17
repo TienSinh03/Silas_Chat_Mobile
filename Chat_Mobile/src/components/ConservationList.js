@@ -94,8 +94,8 @@ const ConservationItem = ({ item , user}) => {
         
             navigation.navigate("GroupChatScreen", { conversationId: item?.id });
         } else {
-            const userReceived = item.members.find((member) => member.id !== user?.id);
-            navigation.navigate("SingleChatScreen", { conversationId: item.id, userReceived: userReceived });
+            const userReceived = item?.members.find((member) => member?.id !== user?.id);
+            navigation.navigate("SingleChatScreen", { conversationId: item?.id, userReceived: userReceived });
         }
     };
     return (
@@ -138,11 +138,11 @@ const ConservationList = ({ category}) => {
         dispatch(getProfile());
     },[dispatch]);
 
-    const userProfile = useSelector(state => state.user.user);
+    const userProfile = useSelector(state => state.user?.user);
     
         const user = useMemo(() => {
-            if(userProfile === null) return null;
-                return userProfile || null;
+            if(!userProfile) return null;
+            return userProfile;
         }, [userProfile]);
 
     // console.log("User Profile: ", userProfile);
@@ -170,24 +170,24 @@ const ConservationList = ({ category}) => {
 
 
      React.useEffect(() => {
-                if(!user?.id) return;
-                console.log("user", user.id);
+        if(!user?.id) return;
+        console.log("user", user.id);
                 
-                // function để xử lý khi nhận được tin nhắn từ WebSocket
-                const handleMessageReceived = (updatedProfile) => {
-                    console.log("Message received:", updatedProfile);
+        // function để xử lý khi nhận được tin nhắn từ WebSocket
+        const handleMessageReceived = (updatedProfile) => {
+            console.log("Message received:", updatedProfile);
                     
-                    // Xử lý thông điệp nhận được từ WebSocket
-                    dispatch(updateUserProfileSuccess(updatedProfile));
-                };
+            // Xử lý thông điệp nhận được từ WebSocket
+             dispatch(updateUserProfileSuccess(updatedProfile));
+        };
         
-                const client = connectWebSocket(user?.id, handleMessageReceived);
+        const client = connectWebSocket(user?.id, handleMessageReceived);
         
                     
-                return () => {
-                    disconnectWebSocket(client); // Ngắt kết nối khi component unmount
-                }
-        },[user?.id, dispatch]);
+        return () => {
+            disconnectWebSocket(client); // Ngắt kết nối khi component unmount
+        }
+    },[user?.id, dispatch]);
 
    
 

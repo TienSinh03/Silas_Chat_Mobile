@@ -15,13 +15,20 @@ import Icon from "react-native-vector-icons/Ionicons";
 import * as ImagePicker from "react-native-image-picker";
 import AudioRecorderPlayer from "react-native-audio-recorder-player";
 import { useSelector, useDispatch } from "react-redux";
-import { getAllMessagesByConversationId, sendMessageToUser } from "../store/slice/messageSlice";
+import { getAllMessagesByConversationId, sendMessageToUser, setMessagesUpdate, addMessage } from "../store/slice/messageSlice";
 import { convertHours } from "../utils/convertHours";
+
+import SockJS from 'sockjs-client';
+import { Client } from '@stomp/stompjs';
 
 const { width, height } = Dimensions.get("window");
 const audioRecorderPlayer = new AudioRecorderPlayer();
 
 const SingleChatScreen = ({ navigation, route }) => {
+
+    // tự động cuộn xuống cuối danh sách khi có tin nhắn mới
+    const bottomRef = useRef(null);
+
     const { conversationId, userReceived } = route.params; // Nhận userId từ params
     console.log("conversationId", conversationId);
 
@@ -33,11 +40,11 @@ const SingleChatScreen = ({ navigation, route }) => {
         if(!messages) return [];
         return messages;
     }, [messages]);
-    console.log("messages", messageMemo);
+    console.log("messages", messageMemo.length);
 
     // Nhận navigation từ props
-    const [messagesLocal, setMessages] = useState(messageMemo);
-    console.log("messagesLocal", messagesLocal);
+    const [messagesLocal, setMessages] = useState([]);
+    // console.log("messagesLocal", messagesLocal);
     const [inputText, setInputText] = useState("");
     const [imageUri, setImageUri] = useState(null);
     const [recording, setRecording] = useState(false);
@@ -54,6 +61,46 @@ const SingleChatScreen = ({ navigation, route }) => {
         dispatch(getAllMessagesByConversationId(conversationId)); // Gọi hàm lấy tin nhắn từ slice
     }, [conversationId, dispatch]);
 
+    useEffect(() => {
+        if (bottomRef.current) {
+            bottomRef.current.scrollToEnd({ animated: true });
+        }
+    }, [messagesLocal]);
+
+    const client = useRef(null);
+
+    // Kết nối WebSocket
+    useEffect(() => {
+        
+        const socket = new SockJS('http://192.168.236.41:8080/ws'); // Thay thế bằng URL WebSocket của bạn
+        client.current = new Client({
+            webSocketFactory: () => socket,
+            reconnectDelay: 5000,
+            debug: (str) => { console.log(str); },
+            onConnect: () => {
+                console.log("Connected to WebSocket");
+                client.current.subscribe(`/chat/message/single/${conversationId}`, (message) => {
+                    const newMessage = JSON.parse(message.body);
+                    console.log("Received message:");
+                    console.log(newMessage);
+                    // dispatch(setMessagesUpdate([]))
+                    // setMessages((prevMessages) => [...prevMessages, newMessage]);
+                    dispatch(addMessage(newMessage))
+                });
+            },
+            onStompError: (frame) => {
+                console.error('Broker reported error: ' + frame.headers['message']);
+                console.error('Additional details: ' + frame.body);
+            },
+        });
+        client.current.activate();
+
+        return () => {
+            client.current.deactivate();
+        };
+    }, [conversationId]);
+
+
     const sendMessage = () => {
         if (inputText.trim() || imageUri) {
             const messageData = {
@@ -64,7 +111,14 @@ const SingleChatScreen = ({ navigation, route }) => {
                 fileUrl: null,
                 replyToMessageId: null,
             };
-            dispatch(sendMessageToUser(messageData)); // Gọi hàm gửi tin nhắn từ slice
+
+            client.current.publish({
+                destination: '/app/chat/send',
+                body: JSON.stringify(messageData),
+            })
+
+
+            // dispatch(sendMessageToUser(messageData)); // Gọi hàm gửi tin nhắn từ slice
             setMessages([
                 ...messages,
                 {
@@ -173,19 +227,20 @@ const SingleChatScreen = ({ navigation, route }) => {
 
             {/* Hiển thị tin nhắn */}
             <FlatList
+                ref={bottomRef} 
                 data={messagesLocal}
                 renderItem={({ item }) => (
                     <View
                         style={{
                             padding: 10,
-                            alignSelf: item.senderId === user.id ? "flex-end" : "flex-start",
+                            alignSelf: item?.senderId === user?.id ? "flex-end" : "flex-start",
                             backgroundColor: "#4CAF50",
                             borderRadius: 10,
                             margin: 5,
                         }}
                     >
                         
-                        {item.messageType === "TEXT" ? (
+                        {item?.messageType === "TEXT" ? (
                             <View>
 
                                 <Text
@@ -194,14 +249,14 @@ const SingleChatScreen = ({ navigation, route }) => {
                                         fontSize: width * 0.04,
                                     }}
                                 >
-                                    {item.content}
+                                    {item?.content}
                                     {/* thoi gian */}
                                     
                                 </Text>
                             
                             </View>
                         ) : null}
-                        {item.messageType === "FILE" ? (
+                        {item?.messageType === "FILE" ? (
                             <Image
                                 source={{ uri: item.image }}
                                 style={{
@@ -212,7 +267,7 @@ const SingleChatScreen = ({ navigation, route }) => {
                                 }}
                             />
                         ) : null}
-                        {item.messageType === "AUDIO" ? (
+                        {item?.messageType === "AUDIO" ? (
                             <TouchableOpacity
                                 onPress={() => playAudio(item.audio)}
                             >
@@ -224,12 +279,14 @@ const SingleChatScreen = ({ navigation, route }) => {
                             </TouchableOpacity>
                         ) : null}
                         <Text style={{ fontSize: width * 0.03, color: "gray" }}>
-                            {convertHours(item.timestamp)}    
+                            {convertHours(item?.timestamp)}    
                         </Text>
                     </View>
                 )}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) => item?.id}
                 contentContainerStyle={{ padding: 10 }}
+                onContentSizeChange={() => bottomRef.current?.scrollToEnd({ animated: true })}
+                // Tham chiếu đến FlatList để cuộn xuống cuối
             />
 
             {/* Nhập tin nhắn */}

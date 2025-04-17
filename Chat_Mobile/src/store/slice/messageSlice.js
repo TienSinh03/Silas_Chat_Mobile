@@ -15,8 +15,10 @@ const messageSlice = createSlice({
     name: "message",
     initialState,
     reducers: {
-
-        setMessages: (state, action) => {
+        addMessage(state, action) {
+            state.messages.push(action.payload);
+        },
+        setMessagesUpdate: (state, action) => {
             state.messages = action.payload;
         },
         clearMessages: (state) => {
@@ -51,6 +53,6 @@ const messageSlice = createSlice({
     }
 })
 
-export const { setMessages, clearMessages } = messageSlice.actions;
+export const { setMessagesUpdate, clearMessages, addMessage } = messageSlice.actions;
 export { getAllMessagesByConversationId, sendMessageToUser };
 export default messageSlice.reducer;
