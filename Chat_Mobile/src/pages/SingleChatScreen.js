@@ -20,10 +20,9 @@ import { useSelector, useDispatch } from "react-redux";
 import { getAllMessagesByConversationId, sendMessageToUser, setMessagesUpdate, addMessage } from "../store/slice/messageSlice";
 import { convertHours } from "../utils/convertHours";
 import ActionSheet from "react-native-actions-sheet";
-import SockJS from 'sockjs-client';
-import { Client } from '@stomp/stompjs';
+import dayjs from "dayjs";
 
-import { connectWebSocket, disconnectWebSocket, subscribeToChat, sendMessageToWebSocket } from "../config/socket";
+import { connectWebSocket, disconnectWebSocket, subscribeToChat, sendMessageToWebSocket, recallMessageToWebSocket } from "../config/socket";
 
 
 const { width, height } = Dimensions.get("window");
@@ -56,6 +55,8 @@ const SingleChatScreen = ({ navigation, route }) => {
     const [imageUri, setImageUri] = useState(null);
     const [recording, setRecording] = useState(false);
     const audioPath = useRef(null);
+
+    const [selectedMessage, setSelectedMessage] = useState(null);
     
 
     // Gọi hàm lấy tin nhắn từ slice khi component được mount
@@ -163,6 +164,38 @@ const SingleChatScreen = ({ navigation, route }) => {
         }
     };
 
+    //Mở ActionSheet khi nhấn giữ tin nhắn
+    const handleSelectMessage = (item) => {
+        actionSheetRef.current?.show();
+        setSelectedMessage(item);
+        // console.log("Selected message: ", item);
+    }
+
+    // xu ly set thời gian có thể xóa tin nhắn
+    const canRecallMessage = (timestamp) => {
+        const messageTime = dayjs(timestamp);
+        const currentTime = dayjs();
+        const diffInMinutes = currentTime.diff(messageTime, "minute");
+        return diffInMinutes <= 5; // cho pheps thu hoi trong 5 phut
+    }
+
+    // xu ly thu hoi tin nhan
+    const handleRecallMessage = () => {
+        if(selectedMessage && canRecallMessage(selectedMessage.timestamp)) {
+            const request = {
+                messageId: selectedMessage.id,
+                senderId: user?.id,
+                conversationId: conversationId,
+            }
+            recallMessageToWebSocket(request);
+            actionSheetRef.current?.hide();
+        } else {
+            alert("Không thể thu hồi tin nhắn này. Vui lòng thử lại sau 2 phút.");
+            actionSheetRef.current?.hide();
+        }
+    }
+
+
     return (
         <View style={{ flex: 1, backgroundColor: "#EBF4FF", marginTop: StatusBar.currentHeight }}>
             {/* Header */}
@@ -215,7 +248,7 @@ const SingleChatScreen = ({ navigation, route }) => {
                         ): null}
 
                         <TouchableOpacity
-                            onLongPress={() => actionSheetRef.current?.show()}
+                            onLongPress={() => handleSelectMessage(item)}
                             style={{
                                 padding: 10,
                                 alignSelf: item?.senderId === user?.id ? "flex-end" : "flex-start",
@@ -369,14 +402,17 @@ const SingleChatScreen = ({ navigation, route }) => {
                     </TouchableOpacity>
 
                     {/* Thu hồi tin nhắn */}
-                    <TouchableOpacity
-                        onPress={() => {}}
-                        style={{ padding: 10, flexDirection: 'row', alignItems: 'center', gap: 10 }}
-                    >
-                        <IconF name="rotate-ccw" size={20} color="#E85C0D" />
+                    {selectedMessage?.senderId === user?.id && (
+                        <TouchableOpacity
+                            onPress={handleRecallMessage}
+                            style={{ padding: 10, flexDirection: 'row', alignItems: 'center', gap: 10 }}
+                        >
+                            <IconM name="message-reply-text" size={20} color="#E85C0D" />
 
-                        <Text style={{ fontSize: 16, color: '#E85C0D' }}>Thu hồi</Text>
-                    </TouchableOpacity>
+                            <Text style={{ fontSize: 16, color: '#E85C0D' }}>Thu hồi</Text>
+                        </TouchableOpacity>
+                    )}
+                   
 
                     {/* Xóa tin nhắn phía mình*/}
                     <TouchableOpacity

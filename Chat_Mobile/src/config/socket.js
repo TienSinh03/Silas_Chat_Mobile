@@ -76,6 +76,18 @@ export const sendMessageToWebSocket = (messageData) => {
     })
 }
 
+export const recallMessageToWebSocket = (messageData) => {
+    if (!stompClient || !stompClient.connected) {
+        console.error('WebSocket is not connected');
+        return;
+    }
+
+    stompClient.publish({
+        destination: '/app/chat/recall',
+        body: JSON.stringify(messageData),
+    })
+}
+
 
 export const disconnectWebSocket = () => {
     if (stompClient && stompClient.connected) {
