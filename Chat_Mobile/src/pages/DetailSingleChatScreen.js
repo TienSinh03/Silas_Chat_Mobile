@@ -7,9 +7,13 @@ import {
     Switch,
     TouchableOpacity,
     StyleSheet,
+    StatusBar,
+    Dimensions
 } from "react-native";
 import { Ionicons, Feather } from "@expo/vector-icons";
 
+
+const { width, height } = Dimensions.get("window");
 const DetailSingleChatScreen = ({navigation, route}) => {
     const {userReceived} = route.params;
     console.log("User received: ", userReceived);
@@ -20,6 +24,33 @@ const DetailSingleChatScreen = ({navigation, route}) => {
 
     return (
         <ScrollView style={styles.container}>
+
+            {/* Header */}
+            <View
+                style={{
+                    width: width,
+                    height: height * 0.06,
+                    backgroundColor: "#2196F3",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingHorizontal: width * 0.04,
+                    gap: 20
+                }}
+            >
+                <TouchableOpacity onPress={() => navigation.goBack()}>
+                    <Ionicons name="arrow-back" size={width * 0.07} color="white" />
+                </TouchableOpacity>
+                <Text
+                    style={{
+                        color: "white",
+                        fontSize: width * 0.05,
+                        fontWeight: "bold",
+                    }}
+                >
+                   Tùy chọn
+                </Text>                
+            </View>           
+
             {/* Ảnh đại diện + Tên */}
             <View style={styles.profileHeader}>
                 <Image
@@ -131,12 +162,11 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#ffff",
-        paddingHorizontal: 15,
-        paddingTop: 20,
+        paddingTop: StatusBar.currentHeight + 10,
     },
     profileHeader: {
         alignItems: "center",
-        marginBottom: 20,
+        marginVertical: 20,
     },
     avatar: {
         width: 80,
@@ -154,9 +184,11 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     optionsRow: {
+        display: "flex",
         flexDirection: "row",
         justifyContent: "space-between",
         marginBottom: 15,
+        // paddingRight: 10,
     },
     optionButton: {
         alignItems: "center",
@@ -168,7 +200,8 @@ const styles = StyleSheet.create({
         marginTop: 5,
     },
     section: {
-        marginVertical: 15,
+        margin: 15,
+
     },
     sectionTitle: {
         color: "#000",
@@ -189,6 +222,7 @@ const styles = StyleSheet.create({
         padding: 15,
         borderRadius: 10,
         marginVertical: 5,
+        marginHorizontal: 15,
         gap: 10,
     },
     optionIcon: {

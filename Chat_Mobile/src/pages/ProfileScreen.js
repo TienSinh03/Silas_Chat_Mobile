@@ -9,7 +9,7 @@ import {updateUserProfile, updateUserProfileSuccess } from "../store/slice/userS
 import * as ImagePicker from "expo-image-picker";
 import Loading from "../components/Loading";
 
-import { connectWebSocket, disconnectWebSocket } from "../config/socket";
+import { connectWebSocket, disconnectWebSocket, subscribeToUserProfile } from "../config/socket";
 
 const ProfileScreen = ({ navigation, route }) => {
     const { userReceived } = route.params || {};
@@ -48,11 +48,13 @@ const ProfileScreen = ({ navigation, route }) => {
             dispatch(updateUserProfileSuccess(updatedProfile));
         };
 
-        const client = connectWebSocket(user?.id, handleMessageReceived);
+        connectWebSocket(() => {
+            subscribeToUserProfile(user.id, handleMessageReceived);
+        });
 
             
         return () => {
-            disconnectWebSocket(client); // Ngắt kết nối khi component unmount
+            disconnectWebSocket(); // Ngắt kết nối khi component unmount
         }
     },[user?.id, dispatch]);
 

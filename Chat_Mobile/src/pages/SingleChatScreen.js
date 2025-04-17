@@ -21,6 +21,9 @@ import { convertHours } from "../utils/convertHours";
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 
+import { connectWebSocket, disconnectWebSocket, subscribeToChat, sendMessageToWebSocket } from "../config/socket";
+
+
 const { width, height } = Dimensions.get("window");
 const audioRecorderPlayer = new AudioRecorderPlayer();
 
@@ -72,31 +75,15 @@ const SingleChatScreen = ({ navigation, route }) => {
     // Kết nối WebSocket
     useEffect(() => {
         
-        const socket = new SockJS('http://192.168.236.41:8080/ws'); // Thay thế bằng URL WebSocket của bạn
-        client.current = new Client({
-            webSocketFactory: () => socket,
-            reconnectDelay: 5000,
-            debug: (str) => { console.log(str); },
-            onConnect: () => {
-                console.log("Connected to WebSocket");
-                client.current.subscribe(`/chat/message/single/${conversationId}`, (message) => {
-                    const newMessage = JSON.parse(message.body);
-                    console.log("Received message:");
-                    console.log(newMessage);
-                    // dispatch(setMessagesUpdate([]))
-                    // setMessages((prevMessages) => [...prevMessages, newMessage]);
-                    dispatch(addMessage(newMessage))
-                });
-            },
-            onStompError: (frame) => {
-                console.error('Broker reported error: ' + frame.headers['message']);
-                console.error('Additional details: ' + frame.body);
-            },
-        });
-        client.current.activate();
+        connectWebSocket(() => {
+            subscribeToChat(conversationId, (newMessage) => {
+                console.log("Received message:", newMessage);
+                dispatch(addMessage(newMessage))
+            })
+        })
 
         return () => {
-            client.current.deactivate();
+           disconnectWebSocket(); // Ngắt kết nối khi component unmount
         };
     }, [conversationId]);
 
@@ -112,10 +99,7 @@ const SingleChatScreen = ({ navigation, route }) => {
                 replyToMessageId: null,
             };
 
-            client.current.publish({
-                destination: '/app/chat/send',
-                body: JSON.stringify(messageData),
-            })
+            sendMessageToWebSocket(messageData);
 
 
             // dispatch(sendMessageToUser(messageData)); // Gọi hàm gửi tin nhắn từ slice
@@ -181,7 +165,7 @@ const SingleChatScreen = ({ navigation, route }) => {
             <View
                 style={{
                     width: width,
-                    height: height * 0.08,
+                    height: height * 0.07,
                     backgroundColor: "#2196F3",
                     flexDirection: "row",
                     alignItems: "center",
@@ -221,63 +205,73 @@ const SingleChatScreen = ({ navigation, route }) => {
                 ref={bottomRef} 
                 data={messagesLocal}
                 renderItem={({ item }) => (
-                    <View
-                        style={{
-                            padding: 10,
-                            alignSelf: item?.senderId === user?.id ? "flex-end" : "flex-start",
-                            backgroundColor: "#4CAF50",
-                            borderRadius: 10,
-                            margin: 5,
-                        }}
-                    >
-                        
-                        {item?.messageType === "TEXT" ? (
-                            <View>
+                    <View>
+                        {item?.senderId !== user?.id ? (
+                            <Image source={{uri: userReceived?.avatar}} style={{width:30, height:30, borderRadius: 15, marginTop: 5}}/>
+                        ): null}
 
-                                <Text
-                                    style={{
-                                        color: "white",
-                                        fontSize: width * 0.04,
-                                    }}
-                                >
-                                    {item?.content}
-                                    {/* thoi gian */}
-                                    
-                                </Text>
+                        <View
+                            style={{
+                                padding: 10,
+                                alignSelf: item?.senderId === user?.id ? "flex-end" : "flex-start",
+                                backgroundColor: item?.senderId === user?.id ? "#8FC1FF" : "white",
+                                borderRadius: 10,
+                                margin: 5,
+                                borderWidth: 1,
+                                borderColor: "#52A0FF",
+                                marginLeft: item?.senderId !== user?.id ? 25 : 0,
+                            }}
+                        >
                             
-                            </View>
-                        ) : null}
-                        {item?.messageType === "FILE" ? (
-                            <Image
-                                source={{ uri: item.image }}
-                                style={{
-                                    width: 150,
-                                    height: 150,
-                                    borderRadius: 10,
-                                    marginTop: 5,
-                                }}
-                            />
-                        ) : null}
-                        {item?.messageType === "AUDIO" ? (
-                            <TouchableOpacity
-                                onPress={() => playAudio(item.audio)}
-                            >
-                                <Icon
-                                    name="play-circle"
-                                    size={40}
-                                    color="white"
+                            {item?.messageType === "TEXT" ? (
+                                <View>
+
+                                    <Text
+                                        style={{
+                                            color: "black",
+                                            fontSize: width * 0.04,
+                                        }}
+                                    >
+                                        {item?.content}
+                                        {/* thoi gian */}
+                                        
+                                    </Text>
+                                
+                                </View>
+                            ) : null}
+                            {item?.messageType === "FILE" ? (
+                                <Image
+                                    source={{ uri: item.image }}
+                                    style={{
+                                        width: 150,
+                                        height: 150,
+                                        borderRadius: 10,
+                                        marginTop: 5,
+                                    }}
                                 />
-                            </TouchableOpacity>
-                        ) : null}
-                        <Text style={{ fontSize: width * 0.03, color: "gray" }}>
-                            {convertHours(item?.timestamp)}    
-                        </Text>
+                            ) : null}
+                            {item?.messageType === "AUDIO" ? (
+                                <TouchableOpacity
+                                    onPress={() => playAudio(item.audio)}
+                                >
+                                    <Icon
+                                        name="play-circle"
+                                        size={40}
+                                        color="white"
+                                    />
+                                </TouchableOpacity>
+                            ) : null}
+                            <Text style={{ fontSize: width * 0.03, color: "gray" }}>
+                                {convertHours(item?.timestamp)}    
+                            </Text>
+                        </View>
                     </View>
                 )}
                 keyExtractor={(item) => item?.id}
-                contentContainerStyle={{ padding: 10 }}
+                initialNumToRender={20} // Số lượng tin nhắn ban đầu được render
+                maxToRenderPerBatch={10} // Số lượng tin nhắn được render mỗi lần
+                contentContainerStyle={{ padding: 10, backgroundColor: "#EBF4FF" }}
                 onContentSizeChange={() => bottomRef.current?.scrollToEnd({ animated: true })}
-                // Tham chiếu đến FlatList để cuộn xuống cuối
             />
 
             {/* Nhập tin nhắn */}

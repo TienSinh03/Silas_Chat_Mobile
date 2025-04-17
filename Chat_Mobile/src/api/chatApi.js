@@ -5,7 +5,6 @@ export const getAllConversationsByUserIdService = async () => {
       const response = await instance.get(
         "/api/v1/conversations/getAllConversationsByUserId"
       );
-      console.log("Response data:", response.data);
       return response.data;
     } catch (error) {
       console.error(
