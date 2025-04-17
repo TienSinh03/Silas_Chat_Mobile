@@ -15,73 +15,7 @@ import { getProfile } from "../store/slice/userSlice";
 import { updateUserProfileSuccess } from '../store/slice/userSlice';
 
 import { connectWebSocket, disconnectWebSocket } from "../config/socket";
-const messagesData = [
-    {
-        id: "1",
-        name: "Nguyễn Văn A",
-        message: "Bạn có khỏe không?",
-        time: "10:30",
-        avatar: "https://i.pravatar.cc/300?img=1",
-        category: "priority",
-        isGroup: false,
-    },
-    {
-        id: "2",
-        name: "Trần Văn B",
-        message: "Đi nhậu không?",
-        time: "08:15",
-        avatar: "https://i.pravatar.cc/300?img=2",
-        category: "other",
-        isGroup: false,
-    },
-    {
-        id: "3",
-        name: "Đinh Văn C",
-        message: "Làm gì đấy",
-        time: "21:30",
-        avatar: "https://i.pravatar.cc/300?img=1",
-        category: "priority",
-        isGroup: false,
-    },
-    {
-        id: "4",
-        name: "Phan Văn Teo",
-        message: "Hello",
-        time: "07:15",
-        avatar: "https://i.pravatar.cc/300?img=2",
-        category: "priority",
-        isGroup: false,
-    },
 
-    {
-        id: "5",
-        name: "Nhóm CNM",
-        message: "Làm tới đâu rồi",
-        time: "09:22",
-        avatar: "https://i.pravatar.cc/300?img=3",
-        category: "other",
-        isGroup: true,
-        members: [
-            { name: "Nguyễn Văn A", avatar: "https://i.pravatar.cc/300?img=1" },
-            { name: "Trần Văn B", avatar: "https://i.pravatar.cc/300?img=2" },
-            { name: "Lê Thị C", avatar: "https://i.pravatar.cc/300?img=4" },
-        ],
-    },
-    {
-        id: "6",
-        name: "Nhom dep traiz",
-        message: "Nào đẹp trai vào đây",
-        time: "14:15",
-        avatar: "https://i.pravatar.cc/300?img=4",
-        category: "priority",
-        isGroup: true,
-        members: [
-            { name: "Nguyễn Văn A", avatar: "https://i.pravatar.cc/300?img=1" },
-            { name: "Trần Văn B", avatar: "https://i.pravatar.cc/300?img=2" },
-            { name: "Lê Thị C", avatar: "https://i.pravatar.cc/300?img=4" },
-        ],
-    },
-];
 
 const ConservationItem = ({ item , user}) => {
     const navigation = useNavigation();
@@ -169,25 +103,25 @@ const ConservationList = ({ category}) => {
     }, [dispatch]);
 
 
-     React.useEffect(() => {
-        if(!user?.id) return;
-        console.log("user", user.id);
+    //  React.useEffect(() => {
+    //     if(!user?.id) return;
+    //     console.log("user", user.id);
                 
-        // function để xử lý khi nhận được tin nhắn từ WebSocket
-        const handleMessageReceived = (updatedProfile) => {
-            console.log("Message received:", updatedProfile);
+    //     // function để xử lý khi nhận được tin nhắn từ WebSocket
+    //     const handleMessageReceived = (updatedProfile) => {
+    //         console.log("Message received:", updatedProfile);
                     
-            // Xử lý thông điệp nhận được từ WebSocket
-             dispatch(updateUserProfileSuccess(updatedProfile));
-        };
+    //         // Xử lý thông điệp nhận được từ WebSocket
+    //          dispatch(updateUserProfileSuccess(updatedProfile));
+    //     };
         
-        const client = connectWebSocket(user?.id, handleMessageReceived);
+    //     const client = connectWebSocket(user?.id, handleMessageReceived);
         
                     
-        return () => {
-            disconnectWebSocket(client); // Ngắt kết nối khi component unmount
-        }
-    },[user?.id, dispatch]);
+    //     return () => {
+    //         disconnectWebSocket(client); // Ngắt kết nối khi component unmount
+    //     }
+    // },[user?.id, dispatch]);
 
    
 

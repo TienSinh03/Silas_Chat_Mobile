@@ -209,7 +209,7 @@ const SingleChatScreen = ({ navigation, route }) => {
                 </View>
                 <TouchableOpacity
                     onPress={() =>
-                        navigation.navigate("DetailSingleChatScreen")
+                        navigation.navigate("DetailSingleChatScreen", {userReceived})
                     }
                 >
                     <Icon name="menu" size={width * 0.07} color="white" />
