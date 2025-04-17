@@ -121,16 +121,7 @@ const SingleChatScreen = ({ navigation, route }) => {
             // dispatch(sendMessageToUser(messageData)); // Gọi hàm gửi tin nhắn từ slice
             setMessages([
                 ...messages,
-                {
-                    id: Date.now().toString(),
-                    senderId: user?.id,
-                    conversationId: conversationId,
-                    content: inputText,
-                    messageType: imageUri ? "FILE" : "TEXT",
-                    fileUrl: null,
-                    replyToMessageId: null,
-                    // audio: null,
-                },
+                messageData,
             ]);
             setInputText("");
             setImageUri(null);
