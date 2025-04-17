@@ -12,12 +12,14 @@ import {
     StatusBar
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
+import IconF from "react-native-vector-icons/Feather";
+import IconM from "react-native-vector-icons/MaterialCommunityIcons";
 import * as ImagePicker from "react-native-image-picker";
 import AudioRecorderPlayer from "react-native-audio-recorder-player";
 import { useSelector, useDispatch } from "react-redux";
 import { getAllMessagesByConversationId, sendMessageToUser, setMessagesUpdate, addMessage } from "../store/slice/messageSlice";
 import { convertHours } from "../utils/convertHours";
-
+import ActionSheet from "react-native-actions-sheet";
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 
@@ -31,6 +33,8 @@ const SingleChatScreen = ({ navigation, route }) => {
 
     // tự động cuộn xuống cuối danh sách khi có tin nhắn mới
     const bottomRef = useRef(null);
+
+    const actionSheetRef = useRef(null);
 
     const { conversationId, userReceived } = route.params; // Nhận userId từ params
     console.log("conversationId", conversationId);
@@ -160,7 +164,7 @@ const SingleChatScreen = ({ navigation, route }) => {
     };
 
     return (
-        <View style={{ flex: 1, backgroundColor: "#D3CFCF", marginTop: StatusBar.currentHeight }}>
+        <View style={{ flex: 1, backgroundColor: "#EBF4FF", marginTop: StatusBar.currentHeight }}>
             {/* Header */}
             <View
                 style={{
@@ -210,7 +214,8 @@ const SingleChatScreen = ({ navigation, route }) => {
                             <Image source={{uri: userReceived?.avatar}} style={{width:30, height:30, borderRadius: 15, marginTop: 5}}/>
                         ): null}
 
-                        <View
+                        <TouchableOpacity
+                            onLongPress={() => actionSheetRef.current?.show()}
                             style={{
                                 padding: 10,
                                 alignSelf: item?.senderId === user?.id ? "flex-end" : "flex-start",
@@ -264,13 +269,13 @@ const SingleChatScreen = ({ navigation, route }) => {
                             <Text style={{ fontSize: width * 0.03, color: "gray" }}>
                                 {convertHours(item?.timestamp)}    
                             </Text>
-                        </View>
+                        </TouchableOpacity>
                     </View>
                 )}
                 keyExtractor={(item) => item?.id}
                 initialNumToRender={20} // Số lượng tin nhắn ban đầu được render
                 maxToRenderPerBatch={10} // Số lượng tin nhắn được render mỗi lần
-                contentContainerStyle={{ padding: 10, backgroundColor: "#EBF4FF" }}
+                contentContainerStyle={{ padding: 10 }}
                 onContentSizeChange={() => bottomRef.current?.scrollToEnd({ animated: true })}
             />
 
@@ -337,6 +342,60 @@ const SingleChatScreen = ({ navigation, route }) => {
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
+
+            {/* Action sheet */}
+            <ActionSheet ref={actionSheetRef} gestureEnabled={true}>
+                <View style={{ padding: 20 }}>
+                    <Text style={{fontSize: 16}}>Tùy chọn</Text>
+
+                    {/* Trả lời tin nhắn */}
+                    <TouchableOpacity
+                        onPress={() => {}}
+                        style={{ padding: 10, flexDirection: 'row', alignItems: 'center', gap: 10 }}
+                    >
+                        <IconM name="message-reply-text-outline" size={20} color="#7C00FE" />
+
+                        <Text style={{ fontSize: 16, color: '#000' }}>Trả lời</Text>
+                    </TouchableOpacity>
+
+                    {/* Chuyển tiếp tin nhắn */}
+                    <TouchableOpacity
+                        onPress={() => {}}
+                        style={{ padding: 10, flexDirection: 'row', alignItems: 'center', gap: 10 }}
+                    >
+                        <IconM name="reply-outline"  size={20} color="#2196F3" />
+
+                        <Text style={{ fontSize: 16, color: '#000' }}>Chuyển tiếp</Text>
+                    </TouchableOpacity>
+
+                    {/* Thu hồi tin nhắn */}
+                    <TouchableOpacity
+                        onPress={() => {}}
+                        style={{ padding: 10, flexDirection: 'row', alignItems: 'center', gap: 10 }}
+                    >
+                        <IconF name="rotate-ccw" size={20} color="#E85C0D" />
+
+                        <Text style={{ fontSize: 16, color: '#E85C0D' }}>Thu hồi</Text>
+                    </TouchableOpacity>
+
+                    {/* Xóa tin nhắn phía mình*/}
+                    <TouchableOpacity
+                        onPress={() => {}}
+                        style={{ padding: 10, flexDirection: 'row', alignItems: 'center', gap: 10 }}
+                    >
+                        <Icon name="trash-outline" size={20} color="red" />
+                        <Text style={{ fontSize: 16, color: 'red' }}>Xóa phía mình</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={() => actionSheetRef.current?.hide()}
+                        style={{ padding: 10 }}
+                    >
+                        <Text style={{ fontSize: 16, color: 'gray' }}>Hủy</Text>
+                    </TouchableOpacity>
+
+                </View>
+            </ActionSheet>
         </View>
     );
 };
