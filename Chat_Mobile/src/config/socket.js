@@ -1,7 +1,7 @@
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 
-const HOST_IP = "192.168.11.94"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
+const HOST_IP = "192.168.236.41"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
 
 const WEBSOCKET_URL = `http://${HOST_IP}:8080/ws`;
 
@@ -50,6 +50,7 @@ export const subscribeToUserProfile = (userId, onMessageReceived) => {
   subscribers.set(userId, subscription);
 };
 
+
 export const subscribeToChat = (conversationId, onMessageReceived) => {
   if (!stompClient || !stompClient.connected) {
     console.error("WebSocket is not connected");
@@ -88,6 +89,19 @@ export const recallMessageToWebSocket = (messageData) => {
 
   stompClient.publish({
     destination: "/app/chat/recall",
+    body: JSON.stringify(messageData),
+  });
+};
+
+export const deleteMessageToWebSocket = (messageData) => {
+  if (!stompClient || !stompClient.connected) {
+    console.error("WebSocket is not connected");
+    return;
+  }
+  console.log("deleteMessageToWebSocket", messageData);
+
+  stompClient.publish({
+    destination: "/app/chat/delete-for-user",
     body: JSON.stringify(messageData),
   });
 };

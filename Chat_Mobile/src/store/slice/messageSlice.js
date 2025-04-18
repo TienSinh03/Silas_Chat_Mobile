@@ -9,40 +9,40 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const initialState = {
   messages: [],
   deletedMessageIds: [],
+  deletedMessage: null,
   message: null,
   error: null,
   isLoading: true,
 };
 
-// const getAllMessagesByConversationId = createAsyncThunk('conversation/getAllMessagesByConversationId', getMessagesByConversationIdService);
 const getAllMessagesByConversationId = createAsyncThunk(
   "conversation/getAllMessagesByConversationId",
-  async (conversationId, { getState }) => {
-    // lấy deletedMessageIds từ state
-    const {
-      message: { deletedMessageIds },
-    } = getState();
-    //   AsyncStorage.removeItem(`deletedMessages_${conversationId}`);
-    console.log("deletedMessageIds: ", deletedMessageIds);
-
-    // lấy ra danh sách deletedMessageIds theo conversationId
-    const deletedIds = deletedMessageIds[conversationId] || [];
-
-    const response = await getMessagesByConversationIdService(conversationId);
-
-    // Lọc tin nhắn đã xóa trước khi trả về
-    return {
-      response: response.response.filter(
-        (msg) => !deletedIds.includes(msg?.id)
-      ),
-      conversationId,
-    };
-  }
+  getMessagesByConversationIdService
 );
 
 const sendMessageToUser = createAsyncThunk(
   "conversation/sendMessage",
   sendMessageService
+);
+
+// export const deleteMessageForUserThunk = createAsyncThunk(
+//   "message/deleteForUser",
+//   async ({ messageId, userId }, { dispatch }) => {
+//     const response = await deleteMessageForUserService(messageId, userId);
+//     // Sau khi xóa trên server thành công, gọi action local để cập nhật UI
+//     dispatch(
+//       deleteMessage({
+//         id: messageId,
+//         conversationId: response.response.conversationId,
+//       })
+//     );
+//     return response;
+//   }
+// );
+
+const deleteMessageForUserThunk = createAsyncThunk(
+  "message/deleteForUser",
+  deleteMessageForUserService
 );
 
 const messageSlice = createSlice({
@@ -65,14 +65,15 @@ const messageSlice = createSlice({
 
       // some() kiểm tra xem có tồn tại message id trong mảng hay không
       // Nếu không tồn tại thì thêm mới message vào mảng
-      const deletedId =
-        state.deletedMessageIds[action.payload.conversationId] || [];
+      // const deletedId =
+      //   state.deletedMessageIds[action.payload.conversationId] || [];
 
-      if (deletedId.includes(action.payload?.id)) {
-        return;
-      }
+      // if (deletedId.includes(action.payload?.id)) {
+      //   return;
+      // }
 
-      // Kiểm tra xem message đã bị xóa trước đó chưa
+      // some() kiểm tra xem có tồn tại message id trong mảng hay không
+      // Nếu không tồn tại thì thêm mới message vào mảng
       if (!state.messages.some((msg) => msg?.id === action.payload?.id)) {
         // if(!deletedId.includes(action.payload?.id)) {
         state.messages.push(action.payload);
@@ -86,48 +87,40 @@ const messageSlice = createSlice({
       state.messages = [];
     },
     deleteMessage(state, action) {
-      const { id, conversationId } = action.payload;
-      state.messages = state.messages.filter(
-        (message) => message.id !== action.payload.id
-      );
-
-      // Kiểm tra xem conversationId đã tồn tại trong deletedMessageIds chưa
-      if (!state.deletedMessageIds[conversationId]) {
-        state.deletedMessageIds[conversationId] = [];
-      }
-      // them messageId vào mảng deletedMessageIds
-      state.deletedMessageIds[conversationId].push(id);
-
-      // Lưu deletedMessageIds vào AsyncStorage
-      AsyncStorage.setItem(
-        `deletedMessages_${conversationId}`,
-        JSON.stringify(state.deletedMessageIds[conversationId])
-      );
+      // const { id, conversationId } = action.payload;
+      // state.messages = state.messages.filter(
+      //   (message) => message.id !== action.payload.id
+      // );
+      // // Kiểm tra xem conversationId đã tồn tại trong deletedMessageIds chưa
+      // if (!state.deletedMessageIds[conversationId]) {
+      //   state.deletedMessageIds[conversationId] = [];
+      // }
+      // // them messageId vào mảng deletedMessageIds
+      // state.deletedMessageIds[conversationId].push(id);
+      // // Lưu deletedMessageIds vào AsyncStorage
+      // AsyncStorage.setItem(
+      //   `deletedMessages_${conversationId}`,
+      //   JSON.stringify(state.deletedMessageIds[conversationId])
+      // );
     },
 
     loadDeletedMessageIds: (state, action) => {
-      const { conversationId, deletedMessageIds } = action.payload;
-      state.deletedMessageIds[conversationId] = deletedMessageIds;
+      // const { conversationId, deletedMessageIds } = action.payload;
+      // state.deletedMessageIds[conversationId] = deletedMessageIds;
     },
   },
   extraReducers: (builder) => {
     builder.addCase(getAllMessagesByConversationId.pending, (state) => {
       state.isLoading = true;
     });
-    builder.addCase(
-      getAllMessagesByConversationId.fulfilled,
-      (state, action) => {
-        state.messages = action.payload.response;
-        state.isLoading = false;
-      }
-    );
-    builder.addCase(
-      getAllMessagesByConversationId.rejected,
-      (state, action) => {
-        state.isLoading = false;
-        state.error = action.error.message;
-      }
-    );
+    builder.addCase(getAllMessagesByConversationId.fulfilled, (state, action) => {
+      state.messages = action.payload.response;
+      state.isLoading = false;
+    });
+    builder.addCase(getAllMessagesByConversationId.rejected, (state, action) => {
+      state.isLoading = false;
+      state.error = action.error.message;
+    });
 
     //sendMessage
     builder.addCase(sendMessageToUser.pending, (state) => {
@@ -141,6 +134,19 @@ const messageSlice = createSlice({
       state.isLoading = false;
       state.error = action.error.message;
     });
+
+    //deleteMessageForUser
+    builder.addCase(deleteMessageForUserThunk.pending, (state) => {
+      state.isLoading = true;
+    });
+    builder.addCase(deleteMessageForUserThunk.fulfilled, (state, action) => {
+      state.isLoading = false;
+      state.deletedMessage = action.payload.response;
+    });
+    builder.addCase(deleteMessageForUserThunk.rejected, (state, action) => {
+      state.isLoading = false;
+      state.error = action.error.message;
+    });
   },
 });
 
@@ -151,7 +157,11 @@ export const {
   deleteMessage,
   loadDeletedMessageIds,
 } = messageSlice.actions;
-export { getAllMessagesByConversationId, sendMessageToUser };
+export {
+  getAllMessagesByConversationId,
+  sendMessageToUser,
+  deleteMessageForUserThunk,
+};
 export default messageSlice.reducer;
 
 export const loadDeletedMessageIdsAsync =
@@ -173,18 +183,3 @@ export const loadDeletedMessageIdsAsync =
       console.error("Lỗi khi tải deletedMessageIds:", error);
     }
   };
-
-export const deleteMessageForUserThunk = createAsyncThunk(
-  "message/deleteForUser",
-  async ({ messageId, userId }, { dispatch }) => {
-    const response = await deleteMessageForUserService(messageId, userId);
-    // Sau khi xóa trên server thành công, gọi action local để cập nhật UI
-    dispatch(
-      deleteMessage({
-        id: messageId,
-        conversationId: response.response.conversationId,
-      })
-    );
-    return response;
-  }
-);

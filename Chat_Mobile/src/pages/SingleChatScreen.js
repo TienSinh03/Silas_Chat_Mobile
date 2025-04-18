@@ -36,6 +36,7 @@ import {
   subscribeToChat,
   sendMessageToWebSocket,
   recallMessageToWebSocket,
+  deleteMessageToWebSocket,
 } from "../config/socket";
 
 const { width, height } = Dimensions.get("window");
@@ -76,9 +77,10 @@ const SingleChatScreen = ({ navigation, route }) => {
   }, [messageMemo]);
 
   useEffect(() => {
-    dispatch(loadDeletedMessageIdsAsync(conversationId)); // Gọi hàm lấy deletedMessageIds từ slice
     dispatch(getAllMessagesByConversationId(conversationId)); // Gọi hàm lấy tin nhắn từ slice
   }, [conversationId, dispatch]);
+
+ 
 
   useEffect(() => {
     if (bottomRef.current) {
@@ -101,6 +103,20 @@ const SingleChatScreen = ({ navigation, route }) => {
       disconnectWebSocket(); // Ngắt kết nối khi component unmount
     };
   }, [conversationId]);
+
+  // Lọc tin nhắn đã xóa của user hiện tại
+  useEffect(() => {
+    if (messageMemo) {
+
+        // Lọc các tin nhắn để không hiển thị những tin nhắn đã bị xóa của user hiện tại
+        const filteredMessages = messageMemo.filter((msg) =>
+            // Nếu deletedByUserIds tồn tại và chứa ID của user hiện tại thì không hiển thị tin nhắn này
+             !(msg.deletedByUserIds && msg.deletedByUserIds.includes(user?.id))
+        );
+        console.log("filteredMessages: ", filteredMessages);
+        setMessages(filteredMessages); // Cập nhật localMessages từ messagesMemo
+    }
+}, [messageMemo, user.id]);
 
   const sendMessage = () => {
     if (inputText.trim() || imageUri) {
@@ -203,12 +219,18 @@ const SingleChatScreen = ({ navigation, route }) => {
   // xu ly xoa tin nhan ở phía mình
   const handleDeleteMessage = () => {
     if (selectedMessage) {
-      dispatch(
-        deleteMessageForUserThunk({
-          messageId: selectedMessage.id,
-          userId: user?.id,
-        })
-      );
+      // dispatch(
+      //   deleteMessageForUserThunk({
+      //     messageId: selectedMessage?.id,
+      //     userId: user?.id,
+      //   })
+      // );
+
+      deleteMessageToWebSocket({
+        messageId: selectedMessage?.id,
+        userId: user?.id,
+      });
+
       actionSheetRef.current?.hide();
     }
   };
