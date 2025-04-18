@@ -221,6 +221,7 @@ const FindInfo = () => {
       }
 
       const response = await dispatch(createConversation(request)).unwrap();
+      console.log("response", response);
       
       // Cập nhật danh sách cuộc trò chuyện sau khi tạo thành công
       await dispatch(getAllConversationsByUserId()).unwrap();

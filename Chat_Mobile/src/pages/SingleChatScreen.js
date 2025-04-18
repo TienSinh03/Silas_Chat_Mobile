@@ -17,7 +17,7 @@ import IconM from "react-native-vector-icons/MaterialCommunityIcons";
 import * as ImagePicker from "react-native-image-picker";
 import AudioRecorderPlayer from "react-native-audio-recorder-player";
 import { useSelector, useDispatch } from "react-redux";
-import { getAllMessagesByConversationId, sendMessageToUser, setMessagesUpdate, addMessage } from "../store/slice/messageSlice";
+import { getAllMessagesByConversationId, sendMessageToUser, setMessagesUpdate, addMessage, deleteMessage, loadDeletedMessageIdsAsync } from "../store/slice/messageSlice";
 import { convertHours } from "../utils/convertHours";
 import ActionSheet from "react-native-actions-sheet";
 import dayjs from "dayjs";
@@ -66,6 +66,7 @@ const SingleChatScreen = ({ navigation, route }) => {
 
 
     useEffect(() => {
+        dispatch(loadDeletedMessageIdsAsync(conversationId)); // Gọi hàm lấy deletedMessageIds từ slice
         dispatch(getAllMessagesByConversationId(conversationId)); // Gọi hàm lấy tin nhắn từ slice
     }, [conversationId, dispatch]);
 
@@ -168,7 +169,7 @@ const SingleChatScreen = ({ navigation, route }) => {
     const handleSelectMessage = (item) => {
         actionSheetRef.current?.show();
         setSelectedMessage(item);
-        // console.log("Selected message: ", item);
+        console.log("Selected message: ", item);
     }
 
     // xu ly set thời gian có thể xóa tin nhắn
@@ -191,6 +192,14 @@ const SingleChatScreen = ({ navigation, route }) => {
             actionSheetRef.current?.hide();
         } else {
             alert("Không thể thu hồi tin nhắn này. Vui lòng thử lại sau 2 phút.");
+            actionSheetRef.current?.hide();
+        }
+    }
+
+    // xu ly xoa tin nhan ở phía mình
+    const handleDeleteMessage = () => {
+        if(selectedMessage) {
+            dispatch(deleteMessage(selectedMessage));
             actionSheetRef.current?.hide();
         }
     }
@@ -402,7 +411,7 @@ const SingleChatScreen = ({ navigation, route }) => {
                     </TouchableOpacity>
 
                     {/* Thu hồi tin nhắn */}
-                    {selectedMessage?.senderId === user?.id && (
+                    {selectedMessage?.senderId === user?.id && !selectedMessage?.recalled && (
                         <TouchableOpacity
                             onPress={handleRecallMessage}
                             style={{ padding: 10, flexDirection: 'row', alignItems: 'center', gap: 10 }}
@@ -416,7 +425,7 @@ const SingleChatScreen = ({ navigation, route }) => {
 
                     {/* Xóa tin nhắn phía mình*/}
                     <TouchableOpacity
-                        onPress={() => {}}
+                        onPress={handleDeleteMessage}
                         style={{ padding: 10, flexDirection: 'row', alignItems: 'center', gap: 10 }}
                     >
                         <Icon name="trash-outline" size={20} color="red" />
