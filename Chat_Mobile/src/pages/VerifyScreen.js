@@ -11,16 +11,19 @@ import {
 import { AntDesign } from "@expo/vector-icons";
 
 import { useAuth } from "../contexts/AuthContext";
+import Loading from "../components/Loading";
 
 const { width, height } = Dimensions.get("window");
 
 const VerifyScreen = ({ navigation, route }) => {
-  const { phone } = route.params || { phone: "0862 058 920" };
+  const { phone, nextScreen } = route.params || { phone: "0862 058 920" };
+  // console.log("Screen từ VerifyScreen:", nextScreen);
+
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [focusedIndex, setFocusedIndex] = useState(null);
   const inputs = useRef([]);
 
-  const { verify} = useAuth();
+  const { verify, isLoading } = useAuth();
 
   useEffect(() => {
     if (inputs.current[0]) {
@@ -60,8 +63,15 @@ const VerifyScreen = ({ navigation, route }) => {
         const response = await verify(phone, enteredOtp);
 
         Alert.alert("Xác thực thành công", response.message, [{ text: "OK" }]);
-        navigation.navigate("NameRegisterScreen", { phone: phone });
-        
+        switch (nextScreen) {
+          case "HomeScreen":
+            navigation.replace("NameRegisterScreen", { phone: phone });
+            break;
+          case "LoginScreen":
+            navigation.replace("ResetPasswordScreen", { phone: phone });
+            break;
+        }   
+      
       } catch (error) {
         Alert.alert("Lỗi",  error?.response?.data?.message || error?.message, [{ text: "OK" }]);
       }
@@ -120,6 +130,7 @@ const VerifyScreen = ({ navigation, route }) => {
       >
         <Text style={styles.continueText}>Tiếp tục</Text>
       </TouchableOpacity>
+      <Loading isLoading={isLoading} />
     </View>
   );
 };

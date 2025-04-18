@@ -1,14 +1,20 @@
 import React, { useState, useMemo } from "react";
-import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, Modal, StatusBar, TextInput, Alert } from "react-native";
+import { View, Text, Image, ActivityIndicator,TouchableOpacity, StyleSheet, ScrollView, Modal, StatusBar, TextInput, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Platform } from 'react-native';
 import { useDispatch, useSelector } from "react-redux";
-import {updateUserProfile } from "../store/slice/userSlice";
+import {updateUserProfile, updateUserProfileSuccess } from "../store/slice/userSlice";
+import { checkFriendStatus } from "../store/slice/friendSlice";
 import * as ImagePicker from "expo-image-picker";
+import Loading from "../components/Loading";
 
-const ProfileScreen = ({ navigation }) => {
+import { connectWebSocket, disconnectWebSocket, subscribeToUserProfile } from "../config/socket";
+
+const ProfileScreen = ({ navigation, route }) => {
+    const { userReceived } = route.params || {};
+    
     // const navigation = useNavigation();
     const [modalVisible, setModalVisible] = useState(false);
     const [historyModalVisible, setHistoryModalVisible] = useState(false);
@@ -18,9 +24,12 @@ const ProfileScreen = ({ navigation }) => {
 
     const dispatch = useDispatch();
     const userProfile = useSelector(state => state.user.user);
-    const user = useMemo(() => {
-        return userProfile || null;
-    }, [userProfile]);
+    const isLoading = useSelector(state => state.user.isLoading);
+
+    const { friendStatus } = useSelector(state => state.friend); // Lấy trạng thái bạn bè từ Redux
+    console.log("Friend status:", friendStatus); // Kiểm tra trạng thái bạn bè
+
+    const user = useMemo(() => userReceived || userProfile, [userReceived, userProfile]); // Lấy thông tin người dùng từ props hoặc Redux
 
     const [fullName, setFullName] = useState(user?.display_name || "");
     const [gender, setGender] = useState(user?.gender || "");
@@ -29,6 +38,37 @@ const ProfileScreen = ({ navigation }) => {
     const [showDatePicker, setShowDatePicker] = useState(false);
 
     const [avatarUpdate, setAvatarUpdate] = useState(null); // Avatar mặc định là null
+
+    const [avatarUrl, setAvatarUrl] = useState( user?.avatar ||'');
+
+    
+    React.useEffect(() => {
+        if(!user?.id) return;
+
+        dispatch(checkFriendStatus(user?.id));
+    }, [user?.id, dispatch]);
+
+
+    React.useEffect(() => {
+        if(!user?.id) return;
+        
+        // function để xử lý khi nhận được tin nhắn từ WebSocket
+        const handleMessageReceived = (updatedProfile) => {
+            console.log("Message received:", updatedProfile);
+            
+            // Xử lý thông điệp nhận được từ WebSocket
+            dispatch(updateUserProfileSuccess(updatedProfile));
+        };
+
+        connectWebSocket(() => {
+            subscribeToUserProfile(user.id, handleMessageReceived);
+        });
+
+            
+        return () => {
+            disconnectWebSocket(); // Ngắt kết nối khi component unmount
+        }
+    },[user?.id, dispatch]);
 
     // Format lại ngày sinh:
     const formatDate = (date) => {
@@ -50,8 +90,60 @@ const ProfileScreen = ({ navigation }) => {
                 name: image.fileName || "avatar.jpg",
                 type: "image/jpeg",
             });
+            setModalVisible(false);
+
         }
     }
+
+    const pickImageImageSingle= async () => {
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 1,
+        });
+    
+        if (!result.canceled) {
+            const image = result.assets[0];
+            const imageData = {
+                uri: image.uri,
+                name: image.fileName || "avatar.jpg",
+                type: "image/jpeg",
+            };
+    
+            setAvatarUpdate(imageData); // lưu avatar
+            console.log("Avatar update:", imageData);
+            handleSaveImageSingle(imageData); // gọi lưu
+        }
+    };
+    
+
+    const handleSaveImageSingle = async (imageData) => {
+        const formattedDob = dobDate.toISOString().split("T")[0];
+        const request = {
+            display_name: fullName,
+            gender: gender,
+            dob: formattedDob,
+        };
+    
+        const formData = new FormData();
+        formData.append("request", JSON.stringify(request), "application/json");
+    
+        if (imageData) {
+            formData.append("avatar", imageData);
+            console.log("Avatar update:", imageData);
+        }
+
+        try {
+            await dispatch(updateUserProfile(formData)).unwrap();
+            console.log("Cập nhật thành công:", user.avatar);
+            Alert.alert("Cập nhật thành công", "Thông tin cá nhân đã được cập nhật.");
+        } catch (error) {
+            console.log("Update error:", error);
+            Alert.alert("Cập nhật thất bại", "Vui lòng thử lại sau.");
+        }
+    };
+    
 
     const handleSave = async () => {
         const formattedDob = dobDate.toISOString().split("T")[0]; // Chuyển đổi ngày sinh thành định dạng YYYY-MM-DD
@@ -71,6 +163,7 @@ const ProfileScreen = ({ navigation }) => {
         if(avatarUpdate) { 
             formData.append("avatar", avatarUpdate);
         }
+
         try {
 
             await dispatch(updateUserProfile(formData)).unwrap(); // unwrap để lấy giá trị trả về từ thunk fulfilled khi thành công hoặc thất bại
@@ -83,6 +176,9 @@ const ProfileScreen = ({ navigation }) => {
             Alert.alert("Cập nhật thất bại", "Vui lòng thử lại sau.");
         }
     };
+
+
+    
 
     return (
         <ScrollView style={styles.container}>
@@ -179,7 +275,7 @@ const ProfileScreen = ({ navigation }) => {
                         </TouchableOpacity>
 
 
-                        <TouchableOpacity style={styles.modalItem}>
+                        <TouchableOpacity style={styles.modalItem} onPress={pickImageImageSingle}>
                             <Text>Đổi ảnh đại diện</Text>
                         </TouchableOpacity>
 
@@ -249,7 +345,7 @@ const ProfileScreen = ({ navigation }) => {
                         <View style={{ paddingHorizontal: 16, paddingVertical: 20 }}>
                             <View style={styles.infoRow}>
                                 <Text style={styles.infoLabel}>Giới tính</Text>
-                                <Text style={styles.infoValue}>{user?.gender}</Text>
+                                <Text style={styles.infoValue}>{user?.gender === "MALE" ? "Nam" : "Nữ"}</Text>
                             </View>
 
                             <View style={styles.infoRow}>
@@ -267,11 +363,13 @@ const ProfileScreen = ({ navigation }) => {
                             </Text>
 
                             <TouchableOpacity
-                                style={[styles.button, { marginTop: 20, alignSelf: "center" }]}
+                                style={[styles.button, { marginTop: 20, alignSelf: "center", display: user?.id === userProfile?.id ? "flex" : "none", }]}
                                 onPress={() => {
                                     setPersonalInfoModalVisible(false);
                                     setEditInfoModalVisible(true);
                                 }}
+                                disabled={user?.id !== userProfile?.id} // Disable button if not the same user
+                                aria-hidden={user?.id !== userProfile?.id}
                             >
                                 <Text style={styles.buttonText}>Chỉnh sửa</Text>
                             </TouchableOpacity>
@@ -377,10 +475,10 @@ const ProfileScreen = ({ navigation }) => {
                         <View style={{ flexDirection: "row", marginBottom: 20 }}>
                             <TouchableOpacity
                                 style={{ flexDirection: "row", alignItems: "center", marginRight: 20 }}
-                                onPress={() => setGender("Nam")}
+                                onPress={() => setGender("MALE")}
                             >
                                 <Ionicons
-                                    name={gender === "Nam" ? "checkmark-circle" : "ellipse-outline"}
+                                    name={gender === "MALE" ? "checkmark-circle" : "ellipse-outline"}
                                     size={20}
                                     color="#007AFF"
                                 />
@@ -388,10 +486,10 @@ const ProfileScreen = ({ navigation }) => {
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={{ flexDirection: "row", alignItems: "center" }}
-                                onPress={() => setGender("Nữ")}
+                                onPress={() => setGender("FEMALE")}
                             >
                                 <Ionicons
-                                    name={gender === "Nữ" ? "checkmark-circle" : "ellipse-outline"}
+                                    name={gender === "FEMALE" ? "checkmark-circle" : "ellipse-outline"}
                                     size={20}
                                     color="#007AFF"
                                 />
@@ -413,6 +511,7 @@ const ProfileScreen = ({ navigation }) => {
                         </TouchableOpacity>
                     </View>
                 </View>
+                <Loading isLoading={isLoading} /> 
             </Modal>
 
 
@@ -431,32 +530,75 @@ const ProfileScreen = ({ navigation }) => {
                     source={{ uri: user?.avatar || "https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://gcs.tripi.vn/public-tripi/tripi-feed/img/482741PIj/anh-mo-ta.png" }}
                     style={styles.avatar}
                 />
+                    <TouchableOpacity
+                        style={{
+                            backgroundColor: "#eee",
+                            borderRadius: 20,
+                            padding: 5,
+                            position: "absolute",
+                            top: 80,
+                            right: 140
+                        }}
+                        onPress={pickImageImageSingle}
+                    >
+                <Ionicons name="camera-outline" size={18} color="black"/>
+                </TouchableOpacity>
                 <Text style={styles.userName}>{user?.display_name}</Text>
                 <TouchableOpacity onPress={() => navigation.navigate("EditStatus")}>
                     <Text style={styles.status}>"Đường còn dài, tuổi còn trẻ"</Text>
                 </TouchableOpacity>
-
             </View>
+
+            {/* Kết bạn và nhắn tin */}
+            {user?.id !== userProfile?.id && (
+                <View style={styles.actions}>
+                
+                    <TouchableOpacity
+                        style={[styles.button, { marginTop: 20, alignSelf: "center"}]}
+                            onPress={() => {
+                                
+                            }}
+                    >
+                        <Text style={styles.buttonText}>Nhắn tin</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.button, { marginTop: 20, alignSelf: "center", display: !friendStatus ? "flex" : "none", }]}
+                            onPress={() => {
+                                
+                            }}
+                        disabled={user?.id !== userProfile?.id} // Disable button if not the same user
+                        aria-hidden={user?.id !== userProfile?.id}
+                    >
+                        <Text style={styles.buttonText}>Kết bạn</Text>
+                    </TouchableOpacity>
+
+                </View>
+            )}
 
             {/* Các mục khác */}
             <View style={styles.menu}>
-                <TouchableOpacity style={styles.menuItem}>
+                {/* <TouchableOpacity style={styles.menuItem}>
                     <Ionicons name="images-outline" size={24} color="black" />
                     <Text style={styles.menuText}>Ảnh của tôi</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
+
+
 
                 <TouchableOpacity style={styles.menuItem}>
                     <Ionicons name="bookmark-outline" size={24} color="black" />
                     <Text style={styles.menuText}>Kho khoảnh khắc</Text>
                 </TouchableOpacity>
             </View>
+            <Loading isLoading={isLoading} />        
+
         </ScrollView>
     );
 };
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: "#fff" },
-    coverPhotoContainer: { height: 200, backgroundColor: "#ccc" },
+    coverPhotoContainer: { height: 300, backgroundColor: "#ccc" },
     coverPhoto: { width: "100%", height: "100%" },
     profileInfo: { alignItems: "center", marginTop: -50 },
     avatar: { width: 100, height: 100, borderRadius: 50, borderWidth: 3, borderColor: "#fff" },
@@ -477,8 +619,8 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "space-between",
         paddingHorizontal: 15, // Tăng padding ngang để có khoảng cách đều hơn
-        paddingVertical: 10, // Thêm padding dọc để căn giữa
-        top: 40
+        // paddingVertical: 10, // Thêm padding dọc để căn giữa
+        top: 60
     },
 
     backButton: {

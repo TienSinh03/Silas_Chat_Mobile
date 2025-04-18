@@ -16,7 +16,6 @@ const AccountSecurityScreen = ({ navigation }) => {
                     <Icon name="lock" size={20} color="#007AFF" style={styles.icon} />
                     <Text style={styles.optionText}>Thay đổi mật khẩu</Text>
                 </TouchableOpacity>
-                // nut xoa tai khoan
                 <TouchableOpacity style={styles.option}>
                     <Icon name="trash" size={20} color="#FF3B30" style={styles.icon} />
                     <Text style={styles.optionText}>Xóa tài khoản</Text>

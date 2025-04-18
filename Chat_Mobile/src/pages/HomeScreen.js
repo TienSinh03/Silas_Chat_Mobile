@@ -10,7 +10,7 @@ import {
 const {removeToken} = require("../utils/authHelper");
 
 const { width, height } = Dimensions.get("window");
-const ZaloLoginScreen = ({ navigation }) => {
+const ZaloLoginScreen = ({ navigation, route }) => {
   return (
     <View style={styles.container}>
       {/* Logo Zalo */}
@@ -40,7 +40,7 @@ const ZaloLoginScreen = ({ navigation }) => {
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.registerButton}
-        onPress={() => navigation.navigate("RegisterScreen")}
+        onPress={() => navigation.navigate("RegisterScreen", {nextScreen: "HomeScreen"})}
       >
         <Text style={styles.registerText}>Tạo tài khoản mới</Text>
       </TouchableOpacity>

@@ -14,7 +14,9 @@ import { useAuth } from "../contexts/AuthContext";
 
 const { width, height } = Dimensions.get("window");
 
-const RegisterScreen = ({ navigation }) => {
+const RegisterScreen = ({ navigation, route }) => {
+
+  const { nextScreen } = route.params || { nextScreen: "HomeScreen" };
 
   const { sendOTP } = useAuth();
 
@@ -50,7 +52,8 @@ const RegisterScreen = ({ navigation }) => {
 
       const formattedPhone = formatPhoneNumber(phone);
       await sendOTP(formattedPhone);
-      navigation.navigate("VerifyScreen", { phone: formattedPhone });
+      console.log("Mã OTP đã được gửi đến số điện thoại:", formattedPhone);
+      navigation.navigate("VerifyScreen", { phone: formattedPhone, nextScreen });
     
     } catch (error) {
       console.error("Error sending OTP:", error);

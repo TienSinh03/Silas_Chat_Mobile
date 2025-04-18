@@ -30,6 +30,8 @@ import AddFriendScreen from "./src/pages/AddFriendScreen";
 import CreateGroupScreen from "./src/pages/CreateGroupScreen";
 import AccountSecurityScreen from "./src/pages/AccountSecurityScreen";
 import ChangePasswordScreen from "./src/pages/ChangePasswordScreen";
+import ResetPasswordScreen from "./src/pages/ResetPasswordScreen";
+import TabTopFriendRequest from "./src/navigation/TabTopFriendRequest";
 
 import { getToken } from "./src/utils/authHelper";
 import { AuthProvider } from "./src/contexts/AuthContext";
@@ -38,7 +40,7 @@ import { Provider } from "react-redux";
 import store from "./src/store/store";
 const Stack = createStackNavigator();
 
-const AppNavigation = () => {
+const AppNavigation =  () => {
   const { isLoggedIn, isLoading } = useAuth();
 
   if (isLoading) return null;
@@ -123,6 +125,11 @@ const AppNavigation = () => {
                 component={ChangePasswordScreen}
                 options={{ headerTitle: "Thay đổi mật khẩu" }}
               />
+              <Stack.Screen
+                name="TabTopFriendRequest"
+                component={TabTopFriendRequest}
+                options={{ headerTitle: "Lời mời kết bạn" }}
+              />
             </>
           ) : (
             <>
@@ -161,6 +168,11 @@ const AppNavigation = () => {
                 name="AvatarScreen"
                 component={AvatarScreen}
                 options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="ResetPasswordScreen"
+                component={ResetPasswordScreen}
+                options={{ headerTitle: "Tạo mật khẩu mới" }}
               />
             </>
           )}

@@ -47,7 +47,7 @@ const LoginScreen = ({ navigation, route }) => {
             routes: [{ name: "Main" }],
           })
         );
-      },100)
+      },1)
 
     } catch (error) {
       console.error("Login failed:", error);
@@ -108,7 +108,7 @@ const LoginScreen = ({ navigation, route }) => {
       </View>
 
       {/* Forgot Password */}
-      <TouchableOpacity>
+      <TouchableOpacity onPress={() => navigation.navigate("RegisterScreen", {nextScreen: "LoginScreen"})}>
         <Text style={styles.forgotText}>Lấy lại mật khẩu</Text>
       </TouchableOpacity>
 
