@@ -99,3 +99,22 @@ export const uploadFile = async (formData) => {
     throw new Error(error.response?.data?.message || "Lỗi khi xóa tin nhắn");
   }
 };
+
+// Function to forward a message
+export const forwardMessage = async ({ messageId, senderId, receiverId, content, messageType, fileUrl, additionalMessage }) => {
+  try {
+    const response = await instance.post('/api/v1/messages/forward', {
+      messageId,
+      senderId,
+      receiverId,
+      content: content || '', 
+      messageType: messageType || 'TEXT',
+      fileUrl: fileUrl || null, 
+      additionalMessage: additionalMessage || null, 
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error forwarding message:', error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || "Lỗi khi chuyển tiếp tin nhắn");
+  }
+};

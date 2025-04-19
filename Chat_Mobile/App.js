@@ -33,6 +33,8 @@ import ChangePasswordScreen from "./src/pages/ChangePasswordScreen";
 import ResetPasswordScreen from "./src/pages/ResetPasswordScreen";
 import TabTopFriendRequest from "./src/navigation/TabTopFriendRequest";
 
+import MessageForwarding from "./src/pages/MessageForwarding";
+
 import { getToken } from "./src/utils/authHelper";
 import { AuthProvider } from "./src/contexts/AuthContext";
 import { useAuth } from "./src/contexts/AuthContext";
@@ -130,6 +132,11 @@ const AppNavigation =  () => {
                 component={TabTopFriendRequest}
                 options={{ headerTitle: "Lời mời kết bạn" }}
               />
+              <Stack.Screen
+                name="MessageForwarding"
+                component={MessageForwarding}
+                options={{ headerTitle: "Chia sẻ tin nhắn", headerShown: false }}
+              />
             </>
           ) : (
             <>
@@ -172,8 +179,9 @@ const AppNavigation =  () => {
               <Stack.Screen
                 name="ResetPasswordScreen"
                 component={ResetPasswordScreen}
-                options={{ headerTitle: "Tạo mật khẩu mới" }}
+                options={{ headerTitle: "Tạo mật khẩu mới", headerShown: false }}
               />
+              
             </>
           )}
 

@@ -114,7 +114,7 @@ const ProfileMainScreen = ({ navigation }) => {
                 {/* <MenuItem icon="qrcode" title="Ví QR" subtitle="Lưu trữ và xuất trình các mã QR quan trọng" /> */}
                 <MenuItem icon="shield" title="Tài khoản và bảo mật" onPress={() => navigation.navigate("AccountSecurity")} />
 
-                <MenuItem icon="lock" title="Quyền riêng tư" />
+                <MenuItem icon="lock" title="Quyền riêng tư"/>
             </ScrollView>
         </View>
     );

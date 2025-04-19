@@ -132,7 +132,7 @@ const SingleChatScreen = ({ navigation, route }) => {
         // console.log("filteredMessages: ", filteredMessages);
         setMessages(filteredMessages); // Cập nhật localMessages từ messagesMemo
     }
-}, [messageMemo, user?.id]);
+  }, [messageMemo, user?.id]);
 
   // Hien thi thanh toolbar
   const togleToolbar = () => {
@@ -186,12 +186,12 @@ const SingleChatScreen = ({ navigation, route }) => {
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing:true,
+      allowsEditing: true,
       aspect: [1, 1],
       quality: 1,
     });
 
-    if(!result.canceled) {
+    if (!result.canceled) {
       const img = result.assets[0];
       const imageUri = {
         uri: img.uri,
@@ -414,7 +414,7 @@ const SingleChatScreen = ({ navigation, route }) => {
 
   return (
 
-      <View style={{ flex: 1, marginTop: StatusBar.currentHeight || 0, }}>
+      <View style={{ flex: 1 }}>
     <View
       style={{
         flex: 1,
@@ -432,7 +432,6 @@ const SingleChatScreen = ({ navigation, route }) => {
           alignItems: "center",
           justifyContent: "space-between",
           paddingHorizontal: width * 0.04,
-          marginTop: StatusBar.currentHeight || 0,
         }}
       >
         <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -530,7 +529,7 @@ const SingleChatScreen = ({ navigation, route }) => {
                     {item?.fileUrl ? (
                       <TouchableOpacity onPress={() => openFile(item?.fileUrl)} style={{ flexDirection: "row", alignItems: "center" }}>
                         <IconF5 name={getFileIcon(item?.content)} size={24} color="black" style={{ marginRight: 5, paddingVertical:5 }} />
-                        <Text style={{ color: "blue",fontSize: width * 0.04, }}>{item?.content}</Text>
+                        <Text style={{ color: "blue",fontSize: width * 0.04, paddingRight: 10}}>{item?.content}</Text>
                       </TouchableOpacity>
                     ) : null} 
                   </Text>
@@ -627,7 +626,7 @@ const SingleChatScreen = ({ navigation, route }) => {
 
           {/* Trả lời tin nhắn */}
           <TouchableOpacity
-            onPress={() => {}}
+            onPress={() => { }}
             style={{
               padding: 10,
               flexDirection: "row",
@@ -646,7 +645,10 @@ const SingleChatScreen = ({ navigation, route }) => {
 
           {/* Chuyển tiếp tin nhắn */}
           <TouchableOpacity
-            onPress={() => {}}
+            onPress={() => {
+              navigation.navigate("MessageForwarding", { forwardedMessage: selectedMessage });
+              actionSheetRef.current?.hide();
+            }}
             style={{
               padding: 10,
               flexDirection: "row",
@@ -655,7 +657,6 @@ const SingleChatScreen = ({ navigation, route }) => {
             }}
           >
             <IconM name="reply-outline" size={20} color="#2196F3" />
-
             <Text style={{ fontSize: 16, color: "#000" }}>Chuyển tiếp</Text>
           </TouchableOpacity>
 
