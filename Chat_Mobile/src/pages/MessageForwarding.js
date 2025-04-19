@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, Image, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, FlatList, Image, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useSelector, useDispatch } from 'react-redux';
 import { getMyFriends } from '../store/slice/friendSlice'; 
 import Loading from '../components/Loading'; 
 import { forwardMessage } from '../api/chatApi';
+import { forwardMessageToWebSocket } from '../config/socket';
 
 const MessageForwarding = ({ navigation, route }) => {
   const dispatch = useDispatch();
   const { friends, isLoading } = useSelector((state) => state.friend);
   const { user } = useSelector((state) => state.user);
-  const [activeTab, setActiveTab] = useState('Nhóm mới');
+  const [activeTab, setActiveTab] = useState('Bạn bè');
   const [message, setMessage] = useState('');
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [forwarding, setForwarding] = useState(false);
@@ -24,7 +25,7 @@ const MessageForwarding = ({ navigation, route }) => {
 
   const filteredFriends = friends.filter(friend => {
     if (activeTab === 'Nhóm mới') return friend.type === 'group' || friend.type === 'contact' || !friend.type;
-    if (activeTab === 'Nhật ký') return friend.type === 'contact' || !friend.type;
+    if (activeTab === 'Bạn bè') return friend.type === 'contact' || !friend.type;
     if (activeTab === 'App khác') return friend.type === 'app';
     return true;
   });
@@ -56,8 +57,8 @@ const MessageForwarding = ({ navigation, route }) => {
     setForwarding(true);
     try {
       for (const friendId of selectedFriends) {
-        console.log(`Forwarding message to ${friendId}`);
-        await forwardMessage({
+        // console.log(`Forwarding message to ${friendId}`);
+        const requestData = {
           messageId: forwardedMessage.id,
           senderId: user.id,
           receiverId: friendId,
@@ -65,7 +66,10 @@ const MessageForwarding = ({ navigation, route }) => {
           messageType: forwardedMessage.messageType, // Pass the message type (TEXT, IMAGE, AUDIO)
           fileUrl: forwardedMessage.fileUrl || null, // Pass the fileUrl for images/audio
           additionalMessage: message.trim(), // Optional additional message
-        });
+        }
+        // await forwardMessage(requestData);
+
+        forwardMessageToWebSocket(requestData);
       }
 
       alert('Tin nhắn đã được chuyển tiếp thành công!');
@@ -101,7 +105,7 @@ const MessageForwarding = ({ navigation, route }) => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-left" size={24} color="#FFFFFF" />
+          <Icon name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Chia sẻ</Text>
         <Text style={styles.selectedCount}>Đã chọn: {selectedFriends.length}</Text>
@@ -137,13 +141,13 @@ const MessageForwarding = ({ navigation, route }) => {
       )}
 
       <View style={styles.tabContainer}>
-        {['Nhóm mới', 'Nhật ký', 'App khác'].map(tab => (
+        {['Bạn bè', 'Nhật ký', 'App khác'].map(tab => (
           <TouchableOpacity
             key={tab}
             style={[styles.tab, activeTab === tab ? styles.activeTab : null]}
             onPress={() => setActiveTab(tab)}
           >
-            <Text style={[styles.tabText, activeTab === tab ? styles.activeTabText : null]}>
+            <Text style={[styles.tabText, activeTab === tab ? styles.activeTabText : null, { fontSize: 16 }]}>
               {tab}
             </Text>
           </TouchableOpacity>
@@ -186,16 +190,19 @@ const MessageForwarding = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1C2526',
+    backgroundColor: '#ffff',
+    marginTop: StatusBar.currentHeight || 0
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#2A3435',
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E9EBED',
   },
   headerTitle: {
-    color: '#FFFFFF',
+    color: '#000',
     fontSize: 18,
     fontWeight: 'bold',
     marginLeft: 15,
@@ -208,7 +215,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#3A4445',
+    backgroundColor: '#F4F5F6',
     margin: 15,
     borderRadius: 10,
     paddingHorizontal: 10,
@@ -223,19 +230,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   forwardedMessageContainer: {
-    backgroundColor: '#2A3435',
+    backgroundColor: '#EBF4FF',
     marginHorizontal: 15,
     padding: 10,
     borderRadius: 10,
     marginBottom: 10,
   },
   forwardedMessageLabel: {
-    color: '#A0A0A0',
+    color: '#000',
     fontSize: 14,
     marginBottom: 5,
+    fontSize: 16,
+
   },
   forwardedMessageText: {
-    color: '#FFFFFF',
+    color: '#006AF5',
     fontSize: 16,
   },
   forwardedMessageImage: {
@@ -246,8 +255,8 @@ const styles = StyleSheet.create({
   },
   tabContainer: {
     flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#3A4445',
+    // borderBottomWidth: 1,
+    // borderBottomColor: '#3A4445',
   },
   tab: {
     flex: 1,
@@ -292,8 +301,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contactName: {
-    color: '#FFFFFF',
-    fontSize: 16,
+    color: '#000',
+    fontSize: 17,
     fontWeight: '500',
   },
   checkbox: {
@@ -311,14 +320,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 15,
-    backgroundColor: '#2A3435',
+    borderTopWidth: 1,
+    borderTopColor: '#E9EBED',
   },
   messageInput: {
     flex: 1,
     color: '#FFFFFF',
     paddingVertical: 10,
     fontSize: 16,
-    backgroundColor: '#3A4445',
+    backgroundColor: '#F4F5F6',
     borderRadius: 10,
     paddingHorizontal: 10,
     marginRight: 10,
