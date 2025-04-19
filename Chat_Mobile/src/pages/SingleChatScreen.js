@@ -10,11 +10,17 @@ import {
   KeyboardAvoidingView,
   Platform,
   StatusBar,
+  Animated,
+  TouchableNativeFeedback,
+  Linking
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import IconF from "react-native-vector-icons/Feather";
 import IconM from "react-native-vector-icons/MaterialCommunityIcons";
+import IconE from "react-native-vector-icons/Entypo";
+import IconF5 from "react-native-vector-icons/FontAwesome5";
 import * as ImagePicker from "expo-image-picker";
+import * as  DocumentPicker from "expo-document-picker";
 import AudioRecorderPlayer from "react-native-audio-recorder-player";
 import { useSelector, useDispatch } from "react-redux";
 import {
@@ -41,6 +47,7 @@ import {
 } from "../config/socket";
 
 import { uploadFile } from "../api/chatApi";
+import Loading from "../components/Loading"; 
 
 const { width, height } = Dimensions.get("window");
 const audioRecorderPlayer = new AudioRecorderPlayer();
@@ -54,6 +61,10 @@ const SingleChatScreen = ({ navigation, route }) => {
   const { conversationId, userReceived } = route.params; // Nhận userId từ params
   console.log("conversationId", conversationId);
 
+  // state để điều khiển hiển thị thanh công cụ
+  const [toolbarVisible, setToolbarVisible] = useState(false);
+  const sideAnimation = useRef(new Animated.Value(0)).current;
+
   const dispatch = useDispatch();
   const { messages } = useSelector((state) => state.message);
   const { user } = useSelector((state) => state.user);
@@ -63,6 +74,9 @@ const SingleChatScreen = ({ navigation, route }) => {
     return messages;
   }, [messages]);
   console.log("messages", messageMemo.length);
+
+  const [loading, setLoading] = useState(false);
+  console.log("loading", loading);
 
   // Nhận navigation từ props
   const [messagesLocal, setMessages] = useState([]);
@@ -82,7 +96,6 @@ const SingleChatScreen = ({ navigation, route }) => {
   useEffect(() => {
     dispatch(getAllMessagesByConversationId(conversationId)); // Gọi hàm lấy tin nhắn từ slice
   }, [conversationId, dispatch]);
-
 
 
   useEffect(() => {
@@ -111,15 +124,43 @@ const SingleChatScreen = ({ navigation, route }) => {
   useEffect(() => {
     if (messageMemo) {
 
-      // Lọc các tin nhắn để không hiển thị những tin nhắn đã bị xóa của user hiện tại
-      const filteredMessages = messageMemo.filter((msg) =>
-        // Nếu deletedByUserIds tồn tại và chứa ID của user hiện tại thì không hiển thị tin nhắn này
-        !(msg.deletedByUserIds && msg.deletedByUserIds.includes(user?.id))
-      );
-      console.log("filteredMessages: ", filteredMessages);
-      setMessages(filteredMessages); // Cập nhật localMessages từ messagesMemo
+        // Lọc các tin nhắn để không hiển thị những tin nhắn đã bị xóa của user hiện tại
+        const filteredMessages = messageMemo.filter((msg) =>
+            // Nếu deletedByUserIds tồn tại và chứa ID của user hiện tại thì không hiển thị tin nhắn này
+             !(msg.deletedByUserIds && msg.deletedByUserIds.includes(user?.id))
+        );
+        // console.log("filteredMessages: ", filteredMessages);
+        setMessages(filteredMessages); // Cập nhật localMessages từ messagesMemo
     }
   }, [messageMemo, user?.id]);
+
+  // Hien thi thanh toolbar
+  const togleToolbar = () => {
+    Animated.timing(sideAnimation, {
+      toValue: toolbarVisible ? 0 : 1,
+      duration: 300,
+      useNativeDriver: false // Chuyển đổi giá trị animation
+    }).start();
+    setToolbarVisible(!toolbarVisible);
+  }
+
+  // height của thanh công cụ
+  const toolbarHeight = sideAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 150] // Chiều cao của thanh công cụ
+  })
+
+    // Ẩn thanh toolbar nếu đang hiển thị
+    const hideToolbar = () => {
+      if (toolbarVisible) {
+        Animated.timing(sideAnimation, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: false
+        }).start();
+        setToolbarVisible(false);
+      }
+    };
 
   const sendMessage = () => {
     if (inputText.trim() || imageUri) {
@@ -160,35 +201,127 @@ const SingleChatScreen = ({ navigation, route }) => {
       setImageUri(imageUri);
 
       handleSendImage(imageUri);
-
     }
   };
 
+
   //send image;
   const handleSendImage = async (imageUri) => {
-
-    const request = {
-      senderId: user?.id,
-      conversationId: conversationId,
-      content: "",
-      messageType: "IMAGE",
+    setLoading(true); // Bật loading
+    try {
+      const request = {
+        senderId: user?.id,
+        conversationId: conversationId,
+        content: "",
+        messageType: "IMAGE",
+      };
+  
+      const formData = new FormData();
+      formData.append("request", JSON.stringify(request), "application/json");
+  
+      if (imageUri) {
+        formData.append("anh", imageUri);
+        console.log("image :", imageUri);
+      }
+  
+      const response = await uploadFile(formData);
+      console.log("response uploadFile: ", response);
+  
+      request.fileUrl = response?.response?.fileUrl;
+      sendMessageToWebSocket(request);
+    } catch (error) {
+      console.error("Lỗi khi gửi ảnh: ", error);
+      // Có thể thêm thông báo lỗi cho người dùng
+    } finally {
+      setLoading(false); // Tắt loading
     }
+  };
 
-    const formData = new FormData();
-    formData.append("request", JSON.stringify(request), "application/json");
+  // chon tài liệu từ thư viện
+  const pickDocument = async () => {
+    const result = await DocumentPicker.getDocumentAsync({
+      type: "*/*",
+      copyToCacheDirectory: true,
+    });
 
-    if (imageUri) {
-      formData.append("anh", imageUri);
-      console.log("image :", imageUri);
+    if(!result.canceled) {
+      const asset = result.assets[0];
+      const documentUri = {
+        uri: asset.uri,
+        name: asset.name || "document.pdf",
+        type: asset.mimeType || "application/octet-stream",
+      };
+      console.log("documentUri: ", documentUri);
+      setImageUri(documentUri);
+
+      handleSendFile(documentUri);
     }
-
-    // Gọi hàm uploadFile từ API để gửi ảnh lên server
-    const response = await uploadFile(formData);
-    console.log("response uploadFile: ", response);
-
-    request.fileUrl = response?.response?.fileUrl;
-    sendMessageToWebSocket(request);
   }
+
+  const handleSendFile = async (imageUri) => {
+    setLoading(true); // Bật loading
+    console.log("imageUri: ", imageUri?.name);
+    try {
+      const request = {
+        senderId: user?.id,
+        conversationId: conversationId,
+        content: imageUri?.name || "Tài liệu",
+        messageType: "FILE",
+      };
+  
+      const formData = new FormData();
+      formData.append("request", JSON.stringify(request), "application/json");
+  
+      if (imageUri) {
+        formData.append("anh", imageUri);
+        // console.log("file :", imageUri);
+      }
+  
+      const response = await uploadFile(formData);
+      // console.log("response uploadFile: ", response);
+  
+      request.fileUrl = response?.response?.fileUrl;
+      sendMessageToWebSocket(request);
+    } catch (error) {
+      console.error("Lỗi khi gửi file: ", error);
+      // Có thể thêm thông báo lỗi cho người dùng
+    } finally {
+      setLoading(false); // Tắt loading
+    }
+  };
+
+  const getFileIcon = (fileName) => {
+    const extension = fileName?.split(".").pop()?.toLowerCase();
+    switch (extension) {
+      case "pdf":
+        return "file-pdf";
+      case "doc":
+      case "docx":
+        return "file-word";
+      case "xls":
+      case "xlsx":
+        return "file-excel";
+      case "ppt":
+      case "pptx":
+        return "file-powerpoint"; // Icon cho PowerPoint
+      default:
+        return "file";
+    }
+  };
+
+  // click vào tin nhắn để mở tài liệu
+  const openFile = async (url) => {
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Lỗi', 'Không thể mở file');
+      }
+    } catch (error) {
+      Alert.alert('Lỗi', 'Không thể mở file: ' + error.message);
+    }
+  };
 
   const startRecording = async () => {
     try {
@@ -280,6 +413,8 @@ const SingleChatScreen = ({ navigation, route }) => {
   };
 
   return (
+
+      <View style={{ flex: 1 }}>
     <View
       style={{
         flex: 1,
@@ -383,6 +518,23 @@ const SingleChatScreen = ({ navigation, route }) => {
                   }}
                 />
               ) : null}
+
+              {item?.messageType === "FILE" ? (
+                  <Text
+                  style={{
+                    color: "black",
+                    fontSize: width * 0.04,
+                  }}
+                >
+                    {item?.fileUrl ? (
+                      <TouchableOpacity onPress={() => openFile(item?.fileUrl)} style={{ flexDirection: "row", alignItems: "center" }}>
+                        <IconF5 name={getFileIcon(item?.content)} size={24} color="black" style={{ marginRight: 5, paddingVertical:5 }} />
+                        <Text style={{ color: "blue",fontSize: width * 0.04, paddingRight: 10}}>{item?.content}</Text>
+                      </TouchableOpacity>
+                    ) : null} 
+                  </Text>
+              ) : null}
+
               {item?.messageType === "AUDIO" ? (
                 <TouchableOpacity onPress={() => playAudio(item.audio)}>
                   <Icon name="play-circle" size={40} color="white" />
@@ -416,9 +568,9 @@ const SingleChatScreen = ({ navigation, route }) => {
             paddingVertical: 10,
           }}
         >
-          <TouchableOpacity onPress={pickImage}>
-            <Icon
-              name="image"
+          <TouchableOpacity onPress={togleToolbar}>
+            <IconE
+              name="dots-three-horizontal"
               size={width * 0.07}
               color="gold"
               style={{ marginRight: width * 0.02 }}
@@ -548,7 +700,29 @@ const SingleChatScreen = ({ navigation, route }) => {
           </TouchableOpacity>
         </View>
       </ActionSheet>
+
+      {/* Thanh công cụ */}
+      {/* <TouchableNativeFeedback onPress={hideToolbar}>
+      </TouchableNativeFeedback>  */}
+      <Animated.View style={ { height: toolbarHeight, backgroundColor: "#fff", overflow: 'hidden',borderTopWidth:1, borderTopColor:"#ccc"}}>
+        <View style={{ flexDirection: "row", justifyContent: "flex-start", alignItems: "center", paddingHorizontal: 20, paddingTop: 15, gap:30 }}>
+          <TouchableOpacity onPress={pickImage} style={{ alignItems: "center" }}>
+            <Icon name="image" size={28} color="#f66"  />  
+            <Text style={{ fontSize: 14, color: "#000", paddingTop: 5 }}>Hình ảnh</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={pickDocument} style={{ alignItems: "center" }}>
+            <Icon name="document-text" size={28} color="#36f" />
+            <Text style={{ fontSize: 14, color: "#000", paddingTop: 5 }}>Tài liệu</Text>
+          </TouchableOpacity>
+       
+        </View> 
+      </Animated.View>
+
+      {/* Hiển thị thanh trạng thái */}
     </View>
+      <Loading isLoading={loading} />
+      </View>
   );
 };
 
