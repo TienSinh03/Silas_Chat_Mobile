@@ -118,6 +118,19 @@ export const sendFileToWebSocket = (messageFormData) => {
   });
 };
 
+export const forwardMessageToWebSocket = (messageFormData) => {
+  if (!stompClient || !stompClient.connected) {
+    console.error("WebSocket is not connected");
+    return;
+  }
+  console.log("forwardMessageToWebSocket", messageFormData.parts);
+
+  stompClient.publish({
+    destination: "/app/chat/forward",
+    body: JSON.stringify(messageFormData),
+  });
+};
+
 export const disconnectWebSocket = () => {
   if (stompClient && stompClient.connected) {
     stompClient.deactivate();
