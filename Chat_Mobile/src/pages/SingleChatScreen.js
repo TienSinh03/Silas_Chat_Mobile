@@ -83,7 +83,7 @@ const SingleChatScreen = ({ navigation, route }) => {
     dispatch(getAllMessagesByConversationId(conversationId)); // Gọi hàm lấy tin nhắn từ slice
   }, [conversationId, dispatch]);
 
- 
+
 
   useEffect(() => {
     if (bottomRef.current) {
@@ -111,15 +111,15 @@ const SingleChatScreen = ({ navigation, route }) => {
   useEffect(() => {
     if (messageMemo) {
 
-        // Lọc các tin nhắn để không hiển thị những tin nhắn đã bị xóa của user hiện tại
-        const filteredMessages = messageMemo.filter((msg) =>
-            // Nếu deletedByUserIds tồn tại và chứa ID của user hiện tại thì không hiển thị tin nhắn này
-             !(msg.deletedByUserIds && msg.deletedByUserIds.includes(user?.id))
-        );
-        console.log("filteredMessages: ", filteredMessages);
-        setMessages(filteredMessages); // Cập nhật localMessages từ messagesMemo
+      // Lọc các tin nhắn để không hiển thị những tin nhắn đã bị xóa của user hiện tại
+      const filteredMessages = messageMemo.filter((msg) =>
+        // Nếu deletedByUserIds tồn tại và chứa ID của user hiện tại thì không hiển thị tin nhắn này
+        !(msg.deletedByUserIds && msg.deletedByUserIds.includes(user?.id))
+      );
+      console.log("filteredMessages: ", filteredMessages);
+      setMessages(filteredMessages); // Cập nhật localMessages từ messagesMemo
     }
-}, [messageMemo, user?.id]);
+  }, [messageMemo, user?.id]);
 
   const sendMessage = () => {
     if (inputText.trim() || imageUri) {
@@ -145,12 +145,12 @@ const SingleChatScreen = ({ navigation, route }) => {
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing:true,
+      allowsEditing: true,
       aspect: [1, 1],
       quality: 1,
     });
 
-    if(!result.canceled) {
+    if (!result.canceled) {
       const img = result.assets[0];
       const imageUri = {
         uri: img.uri,
@@ -177,7 +177,7 @@ const SingleChatScreen = ({ navigation, route }) => {
     const formData = new FormData();
     formData.append("request", JSON.stringify(request), "application/json");
 
-    if(imageUri) {
+    if (imageUri) {
       formData.append("anh", imageUri);
       console.log("image :", imageUri);
     }
@@ -474,7 +474,7 @@ const SingleChatScreen = ({ navigation, route }) => {
 
           {/* Trả lời tin nhắn */}
           <TouchableOpacity
-            onPress={() => {}}
+            onPress={() => { }}
             style={{
               padding: 10,
               flexDirection: "row",
@@ -493,7 +493,10 @@ const SingleChatScreen = ({ navigation, route }) => {
 
           {/* Chuyển tiếp tin nhắn */}
           <TouchableOpacity
-            onPress={() => {}}
+            onPress={() => {
+              navigation.navigate("MessageForwarding", { forwardedMessage: selectedMessage });
+              actionSheetRef.current?.hide();
+            }}
             style={{
               padding: 10,
               flexDirection: "row",
@@ -502,7 +505,6 @@ const SingleChatScreen = ({ navigation, route }) => {
             }}
           >
             <IconM name="reply-outline" size={20} color="#2196F3" />
-
             <Text style={{ fontSize: 16, color: "#000" }}>Chuyển tiếp</Text>
           </TouchableOpacity>
 
