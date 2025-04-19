@@ -16,7 +16,8 @@ import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useDispatch, useSelector } from "react-redux";
 import { search } from "../store/slice/userSlice";
-import { sendReq } from "../store/slice/friendSlice";
+import { sendReq, checkFriendStatus } from "../store/slice/friendSlice";
+import { createConversation, getAllConversationsByUserId } from "../store/slice/conversationSlice"
 import { checkFriend } from "../api/friendApi";
 import { Alert } from "react-native";
 
@@ -48,12 +49,13 @@ const { width } = Dimensions.get("window"); // Lấy kích thước màn hình
   // Lịch sử tìm kiếm
   const searchHistory = ["ch", "0869188794", "thái", "mẹ", "sinh"];
 
-const ItemSerch = ({item, isFriend, isSuccessSent, sendRequest}) => {
+const ItemSerch = ({item, isFriend, isSuccessSent, sendRequest, getChat}) => {
 
+  console.log("isFriend", isFriend);
   return (
-      <View key={item.id} 
-          onClick={() => {dispatch(setShowConversation(true))}}
+      <TouchableOpacity key={item.id} 
           style={{cursor: 'pointer', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, paddingVertical: 8, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: '#E0E0E0'}}
+          onPress={() => { getChat(item); }}
       >
           <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Image source={{ uri: item.avatar }} style={styles.contactImage} />
@@ -68,30 +70,55 @@ const ItemSerch = ({item, isFriend, isSuccessSent, sendRequest}) => {
               
           ): (<View></View>)}
           
-      </View>
+      </TouchableOpacity>
   )
 }
 
 const FindInfo = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const { searchResults } = useSelector((state) => state.user);
+  const { searchResults, user } = useSelector((state) => state.user);
   const { isSuccess, error } = useSelector((state) => state.friend);
+
+  const { conversation, conversations } = useSelector((state) => state.conversation);
   console.log("isSuccess", isSuccess);
   console.log("error", error);
+  // console.log("conversation", conversation);
 
 
   const [searchText, setSearchText] = useState("");
-  const [isFriend, setIsFriend] = useState(false);
-  const [isSuccessSent, setIsSuccessSent] = useState(false);
+  const [friendStatus, setFriendStatus] = useState({}); 
+
   console.log("searchText", searchText);
 
   const result = useMemo(() => {
     if (searchResults === null || searchText.trim() === "") return [];
-    return searchResults;
+    return searchResults.filter((item) => item.id !== user.id); // Loại bỏ người dùng hiện tại khỏi danh sách kết quả
   }, [searchResults]);
 
   console.log("result", result);
+
+  // Kiểm tra trạng thái bạn bè
+  useEffect(() => {
+    const checkIsFriend = async () => {
+      if (!result || result.length === 0) return;
+
+      const statusUpdates = {};
+      for (const item of result) {
+        try {
+          const response = await dispatch(checkFriendStatus(item.id)).unwrap();
+          statusUpdates[item.id] = response; 
+        } catch (error) {
+          console.log(`Lỗi khi kiểm tra trạng thái bạn bè cho ${item.id}:`, error);
+          statusUpdates[item.id] = false; 
+        }
+      }
+      setFriendStatus((prev) => ({ ...prev, ...statusUpdates }));
+    };
+
+    checkIsFriend();
+  }, [result, dispatch]);
+
 
   // Xu lý tìm kiếm
   const handleSearch = async (keyword) => {
@@ -165,6 +192,48 @@ const FindInfo = () => {
     []
   );
 
+  // createConversation
+  const handleCreateConversation = async (item) => {
+    // Xử lý khi người dùng nhấn vào một mục trong danh sách tìm kiếm
+    if(!item?.id || !item) return;
+    
+
+    try {
+      if(Array.isArray(conversations)) {
+
+        for ( const conversation of conversations) {
+          const userReceived = conversation?.members.find((member) => member?.id === item?.id);
+  
+          if(userReceived) {
+            // Alert.alert("Thông báo", "Cuộc trò chuyện đã tồn tại", [{ text: "OK" }], { cancelable: false });
+            console.log("Cuộc trò chuyện đã tồn tại");
+  
+            navigation.navigate("SingleChatScreen", { conversationId: conversation?.id, userReceived: userReceived });
+  
+            return;
+          }
+        }
+      }
+
+      const request = {
+        is_group: false,
+        member_id: [item?.id],
+      }
+
+      const response = await dispatch(createConversation(request)).unwrap();
+      console.log("response", response);
+      
+      // Cập nhật danh sách cuộc trò chuyện sau khi tạo thành công
+      await dispatch(getAllConversationsByUserId()).unwrap();
+      navigation.navigate("SingleChatScreen", { conversationId: response?.id, userReceived: item });
+      
+      console.log("Đã cập nhật danh sách cuộc trò chuyện.");
+    } catch (error) {
+      console.log("Lỗi khi tạo cuộc trò chuyện:", error);
+      Alert.alert("Lỗi", "Không thể tạo cuộc trò chuyện. Vui lòng thử lại.", [{ text: "OK" }]);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -231,8 +300,14 @@ const FindInfo = () => {
           </Text>
           <FlatList
             data={result}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => ItemSerch({item, sendRequest: (id) => handleSendRequest(id), isSuccessSent: isSuccess})}
+            keyExtractor={(item) => item?.id}
+            renderItem={({ item }) => 
+              ItemSerch({item, 
+                sendRequest: (id) => handleSendRequest(id), 
+                isSuccessSent: isSuccess, 
+                isFriend: friendStatus[item?.id],
+                getChat: (item) => handleCreateConversation(item)
+              })}
           />
         </View>
       )}

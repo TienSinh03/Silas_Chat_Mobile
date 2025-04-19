@@ -13,18 +13,20 @@ import { useDispatch, useSelector } from "react-redux";
 import { getAllConversationsByUserId } from "../store/slice/conversationSlice";
 import { getProfile } from "../store/slice/userSlice";
 import { updateUserProfileSuccess } from '../store/slice/userSlice';
+import { setSelectedConversationId } from "../store/slice/conversationSlice";
 
 import { connectWebSocket, disconnectWebSocket } from "../config/socket";
 
 
-const ConservationItem = ({ item , user}) => {
+const ConservationItem = ({ item , user, dispatch}) => {
     const navigation = useNavigation();
     
-    console.log("Item: ", item);
-    console.log("User con: ", user);
+    // console.log("Item: ", item);
+    // console.log("User con: ", user);
+    // dispatch(setSelectedConversationId(item.id));
    
     const handleChooseChat = (item) => {
-        if (item.is_group) {
+        if (item?.is_group) {
         
             navigation.navigate("GroupChatScreen", { conversationId: item?.id });
         } else {
@@ -34,28 +36,28 @@ const ConservationItem = ({ item , user}) => {
     };
     return (
 
-        <TouchableOpacity key={item.id} style={styles.conservationItem} onPress={() => handleChooseChat(item)}>
+        <TouchableOpacity key={item?.id} style={styles.conservationItem} onPress={() => handleChooseChat(item)}>
             {/* Avata group và cá nhân */}
-            {item.is_group ? (
+            {item?.is_group ? (
                 <View style={styles.groupAvatars}>
-                    {item.members.slice(0, 4).map((member, index) => (
+                    {item?.members.slice(0, 4).map((member, index) => (
                         <Image
                             key={index}
-                            source={{ uri: member.avatar || "https://i.pravatar.cc/300?img=4"}}
+                            source={{ uri: member?.avatar || "https://i.pravatar.cc/300?img=4"}}
                             style={styles.groupAvatar}
                         />
                     ))}
                 </View>
             ) : (
-                <Image source={{ uri: item.members.find((member) => member.id !== user?.id)?.avatar || "https://i.pravatar.cc/300?img=4"}} style={styles.avatar} />
+                <Image source={{ uri: item?.members.find((member) => member?.id !== user?.id)?.avatar || "https://i.pravatar.cc/300?img=4"}} style={styles.avatar} />
             )}
     
             {/* Nội dung */}
             <View style={styles.conservationContent}>
-                <Text style={styles.name}>{!item.is_group ? item.members.find((member) => member.id !== user.id)?.display_name  : item.name}</Text>
-                <Text style={styles.message}>{item.message}</Text>
+                <Text style={styles.name}>{!item?.is_group ? item?.members.find((member) => member?.id !== user?.id)?.display_name  : item?.name}</Text>
+                <Text style={styles.message}>{item?.message}</Text>
             </View>
-            <Text style={styles.time}>{item.time}</Text>
+            <Text style={styles.time}>{item?.time}</Text>
         </TouchableOpacity>
     )
 };
@@ -88,7 +90,6 @@ const ConservationList = ({ category}) => {
         return conversations;
     }, [conversations]);
 
-    // console.log("Conversations Memo: ", conversationsMemo);
 
     React.useEffect(() => {
         const fetchConversations = async () => {
@@ -125,16 +126,16 @@ const ConservationList = ({ category}) => {
 
    
 
-    const filteredMessages = conversationsMemo.filter(
-        (item) => item.category === category
-    );
+    // const filteredMessages = conversationsMemo.filter(
+    //     (item) => item.category === category
+    // );
     
     return (
         <View style={{ flex: 1 }}>
             <FlatList
                 data={conversationsMemo}
-                renderItem={({ item }) => <ConservationItem item={item} user={user} />} 
-                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => <ConservationItem item={item} user={user} dispatch={dispatch}/>} 
+                keyExtractor={(item) => item?.id}
             />
         </View>
     );
