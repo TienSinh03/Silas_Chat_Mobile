@@ -82,3 +82,20 @@ export const deleteMessageForUserService = async (messageId, userId) => {
     throw new Error(error.response?.data?.message || "Lỗi khi xóa tin nhắn");
   }
 };
+
+export const uploadFile = async (formData) => {
+  try {
+    const response = await instance.post("/api/v1/messages/upload-img", formData, {
+      headers: {
+          'Content-Type': 'multipart/form-data'
+      }
+  });
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error uploading file:",
+      error.response?.data || error.message
+    );
+    throw new Error(error.response?.data?.message || "Lỗi khi xóa tin nhắn");
+  }
+};
