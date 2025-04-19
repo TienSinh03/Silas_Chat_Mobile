@@ -14,7 +14,7 @@ import {
 import Icon from "react-native-vector-icons/Ionicons";
 import IconF from "react-native-vector-icons/Feather";
 import IconM from "react-native-vector-icons/MaterialCommunityIcons";
-import * as ImagePicker from "react-native-image-picker";
+import * as ImagePicker from "expo-image-picker";
 import AudioRecorderPlayer from "react-native-audio-recorder-player";
 import { useSelector, useDispatch } from "react-redux";
 import {
@@ -37,7 +37,10 @@ import {
   sendMessageToWebSocket,
   recallMessageToWebSocket,
   deleteMessageToWebSocket,
+  sendFileToWebSocket,
 } from "../config/socket";
+
+import { uploadFile } from "../api/chatApi";
 
 const { width, height } = Dimensions.get("window");
 const audioRecorderPlayer = new AudioRecorderPlayer();
@@ -116,7 +119,7 @@ const SingleChatScreen = ({ navigation, route }) => {
         console.log("filteredMessages: ", filteredMessages);
         setMessages(filteredMessages); // Cập nhật localMessages từ messagesMemo
     }
-}, [messageMemo, user.id]);
+}, [messageMemo, user?.id]);
 
   const sendMessage = () => {
     if (inputText.trim() || imageUri) {
@@ -138,13 +141,54 @@ const SingleChatScreen = ({ navigation, route }) => {
     }
   };
 
-  const pickImage = () => {
-    ImagePicker.launchImageLibrary({ mediaType: "photo" }, (response) => {
-      if (!response.didCancel && response.assets) {
-        setImageUri(response.assets[0].uri);
-      }
+  // Chọn ảnh từ thư viện
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing:true,
+      aspect: [1, 1],
+      quality: 1,
     });
+
+    if(!result.canceled) {
+      const img = result.assets[0];
+      const imageUri = {
+        uri: img.uri,
+        name: img.fileName || "image.jpg",
+        type: "image/jpeg",
+      };
+      setImageUri(imageUri);
+
+      handleSendImage(imageUri);
+
+    }
   };
+
+  //send image;
+  const handleSendImage = async (imageUri) => {
+
+    const request = {
+      senderId: user?.id,
+      conversationId: conversationId,
+      content: "",
+      messageType: "IMAGE",
+    }
+
+    const formData = new FormData();
+    formData.append("request", JSON.stringify(request), "application/json");
+
+    if(imageUri) {
+      formData.append("anh", imageUri);
+      console.log("image :", imageUri);
+    }
+
+    // Gọi hàm uploadFile từ API để gửi ảnh lên server
+    const response = await uploadFile(formData);
+    console.log("response uploadFile: ", response);
+
+    request.fileUrl = response?.response?.fileUrl;
+    sendMessageToWebSocket(request);
+  }
 
   const startRecording = async () => {
     try {
@@ -328,9 +372,9 @@ const SingleChatScreen = ({ navigation, route }) => {
                   </Text>
                 </View>
               ) : null}
-              {item?.messageType === "FILE" ? (
+              {item?.messageType === "IMAGE" ? (
                 <Image
-                  source={{ uri: item.image }}
+                  source={{ uri: item?.fileUrl }}
                   style={{
                     width: 150,
                     height: 150,

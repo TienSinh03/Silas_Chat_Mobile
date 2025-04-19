@@ -3,6 +3,7 @@ import {
   deleteMessageForUserService,
   getMessagesByConversationIdService,
   sendMessageService,
+  uploadFile,
 } from "../../api/chatApi";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -24,6 +25,8 @@ const sendMessageToUser = createAsyncThunk(
   "conversation/sendMessage",
   sendMessageService
 );
+
+// const uploadFileThunk = createAsyncThunk("conversation/uploadFile", uploadFile);
 
 // export const deleteMessageForUserThunk = createAsyncThunk(
 //   "message/deleteForUser",
