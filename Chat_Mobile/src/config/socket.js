@@ -31,7 +31,22 @@ export const connectWebSocket = (onConnectCallBack) => {
   stompClient.activate();
 };
 
-export const subscribeToUserProfile = (userId, onMessageReceived) => {
+// kiem tra xem websocket da ket noi chua, neu chua thi ket noi lai
+const ensureWebSocketConnected = async () => {
+  if (!stompClient || !stompClient.connected) {
+    console.log("WebSocket not connected, attempting to reconnect...");
+    await new Promise((resolve) => {
+      connectWebSocket(() => {
+        console.log("Reconnected successfully");
+        resolve();
+      });
+    });
+  }
+  return stompClient;
+};
+
+export const subscribeToUserProfile = async(userId, onMessageReceived) => {
+  await ensureWebSocketConnected();
   if (!stompClient || !stompClient.connected) {
     console.error("WebSocket is not connected");
     return;
@@ -51,7 +66,8 @@ export const subscribeToUserProfile = (userId, onMessageReceived) => {
 };
 
 
-export const subscribeToChat = (conversationId, onMessageReceived) => {
+export const subscribeToChat = async (conversationId, onMessageReceived) => {
+  await ensureWebSocketConnected();
   if (!stompClient || !stompClient.connected) {
     console.error("WebSocket is not connected");
     return;
@@ -69,7 +85,8 @@ export const subscribeToChat = (conversationId, onMessageReceived) => {
   subscribers.set(conversationId, subscription);
 };
 
-export const sendMessageToWebSocket = (messageData) => {
+export const sendMessageToWebSocket = async (messageData) => {
+  await ensureWebSocketConnected();
   if (!stompClient || !stompClient.connected) {
     console.error("WebSocket is not connected");
     return;
@@ -81,7 +98,8 @@ export const sendMessageToWebSocket = (messageData) => {
   });
 };
 
-export const recallMessageToWebSocket = (messageData) => {
+export const recallMessageToWebSocket = async (messageData) => {
+  await ensureWebSocketConnected();
   if (!stompClient || !stompClient.connected) {
     console.error("WebSocket is not connected");
     return;
@@ -93,7 +111,8 @@ export const recallMessageToWebSocket = (messageData) => {
   });
 };
 
-export const deleteMessageToWebSocket = (messageData) => {
+export const deleteMessageToWebSocket = async (messageData) => {
+  await ensureWebSocketConnected();
   if (!stompClient || !stompClient.connected) {
     console.error("WebSocket is not connected");
     return;
@@ -105,7 +124,8 @@ export const deleteMessageToWebSocket = (messageData) => {
     body: JSON.stringify(messageData),
   });
 };
-export const sendFileToWebSocket = (messageFormData) => {
+export const sendFileToWebSocket = async (messageFormData) => {
+  await ensureWebSocketConnected();
   if (!stompClient || !stompClient.connected) {
     console.error("WebSocket is not connected");
     return;
@@ -118,7 +138,8 @@ export const sendFileToWebSocket = (messageFormData) => {
   });
 };
 
-export const forwardMessageToWebSocket = (messageFormData) => {
+export const forwardMessageToWebSocket = async (messageFormData) => {
+  await ensureWebSocketConnected();
   if (!stompClient || !stompClient.connected) {
     console.error("WebSocket is not connected");
     return;
