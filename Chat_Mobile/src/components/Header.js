@@ -36,6 +36,7 @@ const Header = ({ iconLeft, onIconLeftPress, iconRight, onIconRightPress }) => {
         placeholder="Tìm kiếm"
         placeholderTextColor={"#B8D9FF"}
         style={styles.search}
+        editable={false}
       />
     </TouchableOpacity>
 

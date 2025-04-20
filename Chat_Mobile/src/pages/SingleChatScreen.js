@@ -12,13 +12,15 @@ import {
   StatusBar,
   Animated,
   TouchableNativeFeedback,
-  Linking
+  Linking,
+  Alert
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import IconF from "react-native-vector-icons/Feather";
 import IconM from "react-native-vector-icons/MaterialCommunityIcons";
 import IconE from "react-native-vector-icons/Entypo";
 import IconF5 from "react-native-vector-icons/FontAwesome5";
+import IconA from "react-native-vector-icons/AntDesign";
 import * as ImagePicker from "expo-image-picker";
 import * as  DocumentPicker from "expo-document-picker";
 import AudioRecorderPlayer from "react-native-audio-recorder-player";
@@ -46,11 +48,14 @@ import {
   sendFileToWebSocket,
 } from "../config/socket";
 
+import { sendReq, checkFriendStatus } from "../store/slice/friendSlice";
+
 import { uploadFile } from "../api/chatApi";
 import Loading from "../components/Loading"; 
 
 const { width, height } = Dimensions.get("window");
 const audioRecorderPlayer = new AudioRecorderPlayer();
+import { getFileIcon } from "../utils/FormatIconFile"; // Import hàm getFileIcon từ file FormatIconFile.js
 
 const SingleChatScreen = ({ navigation, route }) => {
   // tự động cuộn xuống cuối danh sách khi có tin nhắn mới
@@ -68,6 +73,10 @@ const SingleChatScreen = ({ navigation, route }) => {
   const dispatch = useDispatch();
   const { messages } = useSelector((state) => state.message);
   const { user } = useSelector((state) => state.user);
+
+  // check friend
+  const [isFriend, setIsFriend] = useState(false); // Track friend status
+
 
   const messageMemo = useMemo(() => {
     if (!messages) return [];
@@ -104,7 +113,7 @@ const SingleChatScreen = ({ navigation, route }) => {
     }
   }, [messagesLocal]);
 
-  const client = useRef(null);
+  
 
   // Kết nối WebSocket
   useEffect(() => {
@@ -163,15 +172,16 @@ const SingleChatScreen = ({ navigation, route }) => {
     };
 
   const sendMessage = () => {
-    if (inputText.trim() || imageUri) {
+    if (inputText.trim()) {
       const messageData = {
         senderId: user?.id,
         conversationId: conversationId,
-        messageType: imageUri ? "FILE" : "TEXT",
+        messageType: "TEXT",
         content: inputText,
         fileUrl: null,
         replyToMessageId: null,
       };
+      console.log("messageData: ", messageData);
 
       sendMessageToWebSocket(messageData);
 
@@ -274,7 +284,7 @@ const SingleChatScreen = ({ navigation, route }) => {
   
       if (imageUri) {
         formData.append("anh", imageUri);
-        // console.log("file :", imageUri);
+        console.log("file :", imageUri);
       }
   
       const response = await uploadFile(formData);
@@ -287,25 +297,6 @@ const SingleChatScreen = ({ navigation, route }) => {
       // Có thể thêm thông báo lỗi cho người dùng
     } finally {
       setLoading(false); // Tắt loading
-    }
-  };
-
-  const getFileIcon = (fileName) => {
-    const extension = fileName?.split(".").pop()?.toLowerCase();
-    switch (extension) {
-      case "pdf":
-        return "file-pdf";
-      case "doc":
-      case "docx":
-        return "file-word";
-      case "xls":
-      case "xlsx":
-        return "file-excel";
-      case "ppt":
-      case "pptx":
-        return "file-powerpoint"; // Icon cho PowerPoint
-      default:
-        return "file";
     }
   };
 
@@ -384,11 +375,13 @@ const SingleChatScreen = ({ navigation, route }) => {
         messageId: selectedMessage.id,
         senderId: user?.id,
         conversationId: conversationId,
+        fileUrl: null,
+        messageType: "TEXT",
       };
       recallMessageToWebSocket(request);
       actionSheetRef.current?.hide();
     } else {
-      alert("Không thể thu hồi tin nhắn này. Vui lòng thử lại sau 2 phút.");
+      alert("Không thể thu hồi tin nhắn này sau 2 phút.");
       actionSheetRef.current?.hide();
     }
   };
@@ -412,6 +405,55 @@ const SingleChatScreen = ({ navigation, route }) => {
     }
   };
 
+  // Kiểm tra trạng thái bạn bè
+  useEffect(() => {
+    const checkIsFriend = async () => {
+        try {
+          const response = await dispatch(checkFriendStatus(userReceived?.id)).unwrap();
+          setIsFriend(response); // Cập nhật trạng thái bạn bè
+          console.log("Trạng thái bạn bè:", response);
+        } catch (error) {
+          console.log(`Lỗi khi kiểm tra trạng thái bạn bè cho:`, error);
+          setIsFriend(false); // Nếu có lỗi, coi như không phải bạn bè
+        }
+      
+    };
+
+    if(userReceived?.id) {
+      checkIsFriend();
+    }
+  }, [userReceived?.id, dispatch]);
+
+  // Gửi lời mời kết bạn
+  const handleSendRequest = async (friendId) => {
+
+    try {
+      const response = await dispatch(sendReq(friendId)).unwrap();
+      console.log("response", response);
+      if (response.status === "SUCCESS") {
+        console.log("Lời mời kết bạn đã được gửi thành công.");
+
+        Alert.alert(
+          "Thông báo",
+          "Lời mời kết bạn đã được gửi thành công.",
+          [{ text: "OK" }],
+          { cancelable: false }
+        );
+
+      } else {
+        console.log("Không thể gửi lời mời kết bạn.");
+      }
+    } catch (error) {
+      console.log("Lỗi khi gửi lời mời kết bạn:", error);
+      Alert.alert(
+        "Thông báo",
+        error || "Không thể gửi lời mời kết bạn.",
+        [{ text: "OK" }],
+        { cancelable: false }
+      );
+    }
+  }
+
   return (
 
       <View style={{ flex: 1 }}>
@@ -434,32 +476,56 @@ const SingleChatScreen = ({ navigation, route }) => {
           paddingHorizontal: width * 0.04,
         }}
       >
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-back" size={width * 0.07} color="white" />
-        </TouchableOpacity>
-        <Text
-          style={{
-            color: "white",
-            fontSize: width * 0.05,
-            fontWeight: "bold",
-          }}
-        >
-          {userReceived?.display_name}
-        </Text>
-        <View style={{ flexDirection: "row", gap: width * 0.04 }}>
-          <TouchableOpacity onPress={() => navigation.navigate("CallScreen")}>
-            <Icon name="call" size={width * 0.07} color="white" />
+        <View style={{ flexDirection: "row", alignItems: "center", gap: width * 0.04 }}>
+
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Icon name="arrow-back" size={width * 0.07} color="white" />
           </TouchableOpacity>
-          <Icon name="videocam" size={width * 0.07} color="white" />
+          <View>
+
+            <Text
+              style={{
+                color: "white",
+                fontSize: width * 0.05,
+                fontWeight: "bold",
+              }}
+            >
+              {userReceived?.display_name}
+            </Text>
+            <Text style={{ color: "white", fontSize: width * 0.03 }}>
+              {!isFriend ? "Người lạ" : "Bạn bè"}
+            </Text>
+
+          </View>
         </View>
-        <TouchableOpacity
-          onPress={() =>
-            navigation.navigate("DetailSingleChatScreen", { userReceived })
-          }
-        >
-          <Icon name="menu" size={width * 0.07} color="white" />
-        </TouchableOpacity>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: width * 0.04 }}>
+
+          <View style={{ flexDirection: "row", gap: width * 0.04 }}>
+            <TouchableOpacity onPress={() => navigation.navigate("CallScreen")}>
+              <Icon name="call" size={width * 0.07} color="white" />
+            </TouchableOpacity>
+            <Icon name="videocam" size={width * 0.07} color="white" />
+          </View>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("DetailSingleChatScreen", { userReceived })
+            }
+          >
+            <Icon name="menu" size={width * 0.07} color="white" />
+          </TouchableOpacity>
+        </View>
       </View>
+
+      {/* Check friend */}
+      {conversationId && !isFriend ? (
+      
+          <TouchableOpacity  style={{fontSize: 12, backgroundColor: '#fff', paddingHorizontal: 15, paddingVertical: 10}} onPress={() => {handleSendRequest(userReceived?.id)}}>
+            <Text style={{color: "#000", textAlign:'center', fontSize: 18}}> <IconA size={24} name="adduser" ></IconA> Kết bạn</Text>
+          </TouchableOpacity>
+                    
+      ): (<View></View>)}
+
+
 
       {/* Hiển thị tin nhắn */}
       <FlatList
@@ -507,7 +573,7 @@ const SingleChatScreen = ({ navigation, route }) => {
                   </Text>
                 </View>
               ) : null}
-              {item?.messageType === "IMAGE" ? (
+              {item?.messageType === "IMAGE" || item?.messageType === "GIF" ? (
                 <Image
                   source={{ uri: item?.fileUrl }}
                   style={{
@@ -515,7 +581,9 @@ const SingleChatScreen = ({ navigation, route }) => {
                     height: 150,
                     borderRadius: 10,
                     marginTop: 5,
+                    
                   }}
+                  resizeMode="contain"
                 />
               ) : null}
 
@@ -528,8 +596,12 @@ const SingleChatScreen = ({ navigation, route }) => {
                 >
                     {item?.fileUrl ? (
                       <TouchableOpacity onPress={() => openFile(item?.fileUrl)} style={{ flexDirection: "row", alignItems: "center" }}>
-                        <IconF5 name={getFileIcon(item?.content)} size={24} color="black" style={{ marginRight: 5, paddingVertical:5 }} />
-                        <Text style={{ color: "blue",fontSize: width * 0.04, paddingRight: 10}}>{item?.content}</Text>
+                        <IconF5 name={getFileIcon(item?.content)} size={30} color="black" style={{ marginRight: 5, paddingVertical:5, paddingHorizontal: 10 }} />
+                        <View>
+
+                          <Text style={{ color: "",fontSize: width * 0.04, paddingRight: 10}}>{item?.content}</Text>
+                          <Text style={{ fontSize: width * 0.03, color: "blue", paddingRight: 10, paddingTop: 2 }}>Tải về để xem lâu dài </Text>
+                        </View>
                       </TouchableOpacity>
                     ) : null} 
                   </Text>
