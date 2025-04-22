@@ -28,7 +28,7 @@ const ConservationItem = ({ item , user, dispatch}) => {
     const handleChooseChat = (item) => {
         if (item?.is_group) {
         
-            navigation.navigate("GroupChatScreen", { conversationId: item?.id });
+            navigation.navigate("GroupChatScreen", { conversation: item});
         } else {
             const userReceived = item?.members.find((member) => member?.id !== user?.id);
             navigation.navigate("SingleChatScreen", { conversationId: item?.id, userReceived: userReceived });
