@@ -8,10 +8,15 @@ import {
     TouchableOpacity,
     StyleSheet,
     Alert,
+    StatusBar,
 } from "react-native";
 import { Ionicons, Feather } from "@expo/vector-icons";
 
-const GroupSettingsScreen = () => {
+const GroupSettingsScreen = ({navigation, route}) => {
+
+    const { conversation } = route.params;
+
+
     const [isPinned, setIsPinned] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const leaveGroup = () => {
@@ -35,40 +40,43 @@ const GroupSettingsScreen = () => {
         <ScrollView style={styles.container}>
             {/* Ảnh đại diện + Tên nhóm */}
             <View style={styles.profileHeader}>
-                <View style={styles.avatarContainer}>
-                    <Ionicons name="people" size={40} color="white" />
-                </View>
-                <Text style={styles.name}>TH_CNM_CN_10-12</Text>
+            <Image
+                    source={{
+                        uri: "https://avatars.githubusercontent.com/u/100653357?v=4",
+                    }}
+                    style={styles.avatarContainer}
+            />
+                <Text style={styles.name}>{conversation?.name}</Text>
             </View>
 
             {/* Các tùy chọn chính */}
             <View style={styles.optionsRow}>
-                <OptionButton icon="search" text="Tìm tin nhắn" />
-                <OptionButton icon="user-plus" text="Thêm thành viên" />
-                <OptionButton icon="image" text="Đổi hình nền" />
-                <OptionButton icon="bell-off" text="Tắt thông báo" />
+                <OptionButton color="black" icon="search" text="Tìm tin nhắn" />
+                <OptionButton color="black" icon="user-plus" text="Thêm thành viên" />
+                <OptionButton color="black" icon="image" text="Đổi hình nền" />
+                <OptionButton color="black" icon="bell-off" text="Tắt thông báo" />
             </View>
 
             {/* Danh sách tùy chọn */}
-            <OptionRow icon="folder" text="Ảnh, file, link" />
-            <OptionRow icon="calendar" text="Lịch nhóm" />
-            <OptionRow icon="bookmark" text="Tin nhắn đã ghim" />
-            <OptionRow icon="bar-chart-2" text="Bình chọn" />
-            <OptionRow icon="users" text="Xem thành viên (27)" />
-            <OptionRow icon="link" text="Link nhóm" />
+            <OptionRow color="black" icon="folder" text="Ảnh, file, link" />
+            <OptionRow color="black" icon="calendar" text="Lịch nhóm" />
+            <OptionRow color="black" icon="bookmark" text="Tin nhắn đã ghim" />
+            <OptionRow color="black" icon="bar-chart-2" text="Bình chọn" />
+            <OptionRow color="black" icon="users" text={`Xem thành viên (${conversation?.membersGroup.length})`} />
+            <OptionRow color="black" icon="link" text="Link nhóm" />
 
             {/* Ghim trò chuyện */}
-            <SettingToggle
+            {/* <SettingToggle
                 label="Ghim trò chuyện"
                 value={isPinned}
                 onChange={setIsPinned}
-            />
+            /> */}
             {/* Ẩn trò chuyện */}
-            <SettingToggle
+            {/* <SettingToggle
                 label="Ẩn trò chuyện"
                 value={isMuted}
                 onChange={setIsMuted}
-            />
+            /> */}
             {/* Rời nhóm & Xóa lịch sử trò chuyện */}
             <OptionRow
                 icon="log-out"
@@ -89,20 +97,20 @@ const GroupSettingsScreen = () => {
 // Component hiển thị tùy chọn
 const OptionButton = ({ icon, text }) => (
     <TouchableOpacity style={styles.optionButton}>
-        <Feather name={icon} size={22} color="white" />
+        <Feather name={icon} size={22} color="black" />
         <Text style={styles.optionText}>{text}</Text>
     </TouchableOpacity>
 );
 
-const OptionRow = ({ icon, text }) => (
+const OptionRow = ({ icon, text, color }) => (
     <TouchableOpacity style={styles.optionRow}>
         <Feather
             name={icon}
             size={20}
-            color="white"
+            color={color}
             style={styles.optionIcon}
         />
-        <Text style={styles.optionText}>{text}</Text>
+        <Text style={[styles.optionText, {color: color}]}>{text}</Text>
     </TouchableOpacity>
 );
 
@@ -118,49 +126,51 @@ const SettingToggle = ({ label, value, onChange }) => (
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#121212",
-        paddingHorizontal: 15,
-        paddingTop: 20,
+        backgroundColor: "#ffff",
+        marginTop: StatusBar.currentHeight || 0,
     },
     profileHeader: {
         alignItems: "center",
-        marginBottom: 20,
+        marginVertical: 20,
     },
     avatarContainer: {
         width: 80,
         height: 80,
         borderRadius: 40,
-        backgroundColor: "#444",
         justifyContent: "center",
         alignItems: "center",
     },
     name: {
-        color: "white",
+        color: "black",
         fontSize: 18,
         fontWeight: "bold",
         marginTop: 10,
     },
     optionsRow: {
+        display: "flex",
         flexDirection: "row",
-        justifyContent: "space-around",
+        justifyContent: "space-between",
         marginBottom: 15,
+        padding: 10
     },
     optionButton: {
         alignItems: "center",
-        padding: 10,
+        // padding: 10,
     },
     optionText: {
-        color: "white",
+        color: "black",
         fontSize: 14,
         marginTop: 5,
     },
     optionRow: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#1E1E1E",
+        backgroundColor: "#F4F5F6",
         padding: 15,
         borderRadius: 10,
         marginVertical: 5,
+        marginHorizontal: 15,
+        gap: 10,
     },
     optionIcon: {
         marginRight: 10,
