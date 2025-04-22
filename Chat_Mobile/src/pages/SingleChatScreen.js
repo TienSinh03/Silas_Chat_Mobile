@@ -46,12 +46,14 @@ import {
   recallMessageToWebSocket,
   deleteMessageToWebSocket,
   sendFileToWebSocket,
+  pinMessageToWebSocket,
+  unpinMessageToWebSocket,
 } from "../config/socket";
 
 import { sendReq, checkFriendStatus } from "../store/slice/friendSlice";
 
 import { uploadFile } from "../api/chatApi";
-import Loading from "../components/Loading"; 
+import Loading from "../components/Loading";
 
 const { width, height } = Dimensions.get("window");
 const audioRecorderPlayer = new AudioRecorderPlayer();
@@ -96,6 +98,7 @@ const SingleChatScreen = ({ navigation, route }) => {
   const audioPath = useRef(null);
 
   const [selectedMessage, setSelectedMessage] = useState(null);
+  const [pinnedMessages, setPinnedMessages] = useState([]);
 
   // Gọi hàm lấy tin nhắn từ slice khi component được mount
   useEffect(() => {
@@ -113,7 +116,7 @@ const SingleChatScreen = ({ navigation, route }) => {
     }
   }, [messagesLocal]);
 
-  
+
 
   // Kết nối WebSocket
   useEffect(() => {
@@ -121,25 +124,43 @@ const SingleChatScreen = ({ navigation, route }) => {
       subscribeToChat(conversationId, (newMessage) => {
         console.log("Received message:", newMessage);
         dispatch(addMessage(newMessage));
+
+        
+        if (newMessage.pinned) {
+          setPinnedMessages((prev) =>
+            prev.find((msg) => msg.id === newMessage.id)
+              ? prev
+              : [...prev, newMessage]
+          );
+        } 
+        else {
+          setPinnedMessages((prev) =>
+            prev.filter((msg) => msg.id !== newMessage.id)
+          );
+        }
       });
     });
+    
 
     return () => {
       disconnectWebSocket(); // Ngắt kết nối khi component unmount
     };
-  }, [conversationId]);
+  }, [conversationId], dispatch);
 
   // Lọc tin nhắn đã xóa của user hiện tại
   useEffect(() => {
     if (messageMemo) {
 
-        // Lọc các tin nhắn để không hiển thị những tin nhắn đã bị xóa của user hiện tại
-        const filteredMessages = messageMemo.filter((msg) =>
-            // Nếu deletedByUserIds tồn tại và chứa ID của user hiện tại thì không hiển thị tin nhắn này
-             !(msg.deletedByUserIds && msg.deletedByUserIds.includes(user?.id))
-        );
-        // console.log("filteredMessages: ", filteredMessages);
-        setMessages(filteredMessages); // Cập nhật localMessages từ messagesMemo
+      // Lọc các tin nhắn để không hiển thị những tin nhắn đã bị xóa của user hiện tại
+      const filteredMessages = messageMemo.filter((msg) =>
+        // Nếu deletedByUserIds tồn tại và chứa ID của user hiện tại thì không hiển thị tin nhắn này
+        !(msg.deletedByUserIds && msg.deletedByUserIds.includes(user?.id))
+      );
+      // console.log("filteredMessages: ", filteredMessages);
+      setMessages(filteredMessages); // Cập nhật localMessages từ messagesMemo
+      setPinnedMessages(filteredMessages.filter((msg) => msg.pinned));
+      console.log("filteredMessages: ", filteredMessages);
+
     }
   }, [messageMemo, user?.id]);
 
@@ -159,17 +180,17 @@ const SingleChatScreen = ({ navigation, route }) => {
     outputRange: [0, 150] // Chiều cao của thanh công cụ
   })
 
-    // Ẩn thanh toolbar nếu đang hiển thị
-    const hideToolbar = () => {
-      if (toolbarVisible) {
-        Animated.timing(sideAnimation, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: false
-        }).start();
-        setToolbarVisible(false);
-      }
-    };
+  // Ẩn thanh toolbar nếu đang hiển thị
+  const hideToolbar = () => {
+    if (toolbarVisible) {
+      Animated.timing(sideAnimation, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: false
+      }).start();
+      setToolbarVisible(false);
+    }
+  };
 
   const sendMessage = () => {
     if (inputText.trim()) {
@@ -225,18 +246,18 @@ const SingleChatScreen = ({ navigation, route }) => {
         content: "",
         messageType: "IMAGE",
       };
-  
+
       const formData = new FormData();
       formData.append("request", JSON.stringify(request), "application/json");
-  
+
       if (imageUri) {
         formData.append("anh", imageUri);
         console.log("image :", imageUri);
       }
-  
+
       const response = await uploadFile(formData);
       console.log("response uploadFile: ", response);
-  
+
       request.fileUrl = response?.response?.fileUrl;
       sendMessageToWebSocket(request);
     } catch (error) {
@@ -254,7 +275,7 @@ const SingleChatScreen = ({ navigation, route }) => {
       copyToCacheDirectory: true,
     });
 
-    if(!result.canceled) {
+    if (!result.canceled) {
       const asset = result.assets[0];
       const documentUri = {
         uri: asset.uri,
@@ -278,18 +299,18 @@ const SingleChatScreen = ({ navigation, route }) => {
         content: imageUri?.name || "Tài liệu",
         messageType: "FILE",
       };
-  
+
       const formData = new FormData();
       formData.append("request", JSON.stringify(request), "application/json");
-  
+
       if (imageUri) {
         formData.append("anh", imageUri);
         console.log("file :", imageUri);
       }
-  
+
       const response = await uploadFile(formData);
       // console.log("response uploadFile: ", response);
-  
+
       request.fileUrl = response?.response?.fileUrl;
       sendMessageToWebSocket(request);
     } catch (error) {
@@ -408,18 +429,18 @@ const SingleChatScreen = ({ navigation, route }) => {
   // Kiểm tra trạng thái bạn bè
   useEffect(() => {
     const checkIsFriend = async () => {
-        try {
-          const response = await dispatch(checkFriendStatus(userReceived?.id)).unwrap();
-          setIsFriend(response); // Cập nhật trạng thái bạn bè
-          console.log("Trạng thái bạn bè:", response);
-        } catch (error) {
-          console.log(`Lỗi khi kiểm tra trạng thái bạn bè cho:`, error);
-          setIsFriend(false); // Nếu có lỗi, coi như không phải bạn bè
-        }
-      
+      try {
+        const response = await dispatch(checkFriendStatus(userReceived?.id)).unwrap();
+        setIsFriend(response); // Cập nhật trạng thái bạn bè
+        console.log("Trạng thái bạn bè:", response);
+      } catch (error) {
+        console.log(`Lỗi khi kiểm tra trạng thái bạn bè cho:`, error);
+        setIsFriend(false); // Nếu có lỗi, coi như không phải bạn bè
+      }
+
     };
 
-    if(userReceived?.id) {
+    if (userReceived?.id) {
       checkIsFriend();
     }
   }, [userReceived?.id, dispatch]);
@@ -454,289 +475,408 @@ const SingleChatScreen = ({ navigation, route }) => {
     }
   }
 
+  // xử lý pin tin nhắn
+  const handlePinMessage = async () => {
+    if (selectedMessage) {
+      try {
+        await pinMessageToWebSocket({
+          messageId: selectedMessage?.id,
+          userId: user?.id,
+        });
+        Alert.alert("Thành công", "Tin nhắn đã được ghim");
+      } catch (error) {
+        Alert.alert("Lỗi", "Không thể ghim tin nhắn: " + error.message);
+      }
+      actionSheetRef.current?.hide();
+    }
+  };
+
+  // xử lý unpin tin nhắn
+  const handleUnpinMessage = async () => {
+    if (selectedMessage) {
+      try {
+        await unpinMessageToWebSocket({
+          messageId: selectedMessage?.id,
+          userId: user?.id,
+        });
+        Alert.alert("Thành công", "Tin nhắn đã được bỏ ghim");
+      } catch (error) {
+        Alert.alert("Lỗi", "Không thể bỏ ghim tin nhắn: " + error.message);
+      }
+      actionSheetRef.current?.hide();
+    }
+  };
+
+  const handlePinButtonPress = () => {
+    if (selectedMessage?.pinned) {
+      handleUnpinMessage();
+    } else {
+      handlePinMessage();
+    }
+  };
+
+
   return (
 
-      <View style={{ flex: 1 }}>
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: "#EBF4FF",
-        marginTop: StatusBar.currentHeight,
-      }}
-    >
-      {/* Header */}
+    <View style={{ flex: 1 }}>
       <View
         style={{
-          width: width,
-          height: height * 0.07,
-          backgroundColor: "#2196F3",
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          paddingHorizontal: width * 0.04,
+          flex: 1,
+          backgroundColor: "#EBF4FF",
+          marginTop: StatusBar.currentHeight,
         }}
       >
-        <View style={{ flexDirection: "row", alignItems: "center", gap: width * 0.04 }}>
+        {/* Header */}
+        <View
+          style={{
+            width: width,
+            height: height * 0.07,
+            backgroundColor: "#2196F3",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            paddingHorizontal: width * 0.04,
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: width * 0.04 }}>
 
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Icon name="arrow-back" size={width * 0.07} color="white" />
-          </TouchableOpacity>
-          <View>
-
-            <Text
-              style={{
-                color: "white",
-                fontSize: width * 0.05,
-                fontWeight: "bold",
-              }}
-            >
-              {userReceived?.display_name}
-            </Text>
-            <Text style={{ color: "white", fontSize: width * 0.03 }}>
-              {!isFriend ? "Người lạ" : "Bạn bè"}
-            </Text>
-
-          </View>
-        </View>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: width * 0.04 }}>
-
-          <View style={{ flexDirection: "row", gap: width * 0.04 }}>
-            <TouchableOpacity onPress={() => navigation.navigate("CallScreen")}>
-              <Icon name="call" size={width * 0.07} color="white" />
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Icon name="arrow-back" size={width * 0.07} color="white" />
             </TouchableOpacity>
-            <Icon name="videocam" size={width * 0.07} color="white" />
-          </View>
-          <TouchableOpacity
-            onPress={() =>
-              navigation.navigate("DetailSingleChatScreen", { userReceived })
-            }
-          >
-            <Icon name="menu" size={width * 0.07} color="white" />
-          </TouchableOpacity>
-        </View>
-      </View>
+            <View>
 
-      {/* Check friend */}
-      {conversationId && !isFriend ? (
-      
-          <TouchableOpacity  style={{fontSize: 12, backgroundColor: '#fff', paddingHorizontal: 15, paddingVertical: 10}} onPress={() => {handleSendRequest(userReceived?.id)}}>
-            <Text style={{color: "#000", textAlign:'center', fontSize: 18}}> <IconA size={24} name="adduser" ></IconA> Kết bạn</Text>
-          </TouchableOpacity>
-                    
-      ): (<View></View>)}
-
-
-
-      {/* Hiển thị tin nhắn */}
-      <FlatList
-        ref={bottomRef}
-        data={messagesLocal}
-        renderItem={({ item }) => (
-          <View>
-            {item?.senderId !== user?.id ? (
-              <Image
-                source={{ uri: userReceived?.avatar }}
+              <Text
                 style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 15,
-                  marginTop: 5,
+                  color: "white",
+                  fontSize: width * 0.05,
+                  fontWeight: "bold",
                 }}
-              />
-            ) : null}
+              >
+                {userReceived?.display_name}
+              </Text>
+              <Text style={{ color: "white", fontSize: width * 0.03 }}>
+                {!isFriend ? "Người lạ" : "Bạn bè"}
+              </Text>
 
+            </View>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: width * 0.04 }}>
+
+            <View style={{ flexDirection: "row", gap: width * 0.04 }}>
+              <TouchableOpacity onPress={() => navigation.navigate("CallScreen")}>
+                <Icon name="call" size={width * 0.07} color="white" />
+              </TouchableOpacity>
+              <Icon name="videocam" size={width * 0.07} color="white" />
+            </View>
             <TouchableOpacity
-              onLongPress={() => handleSelectMessage(item)}
-              style={{
-                padding: 10,
-                alignSelf:
-                  item?.senderId === user?.id ? "flex-end" : "flex-start",
-                backgroundColor:
-                  item?.senderId === user?.id ? "#8FC1FF" : "white",
-                borderRadius: 10,
-                margin: 5,
-                borderWidth: 1,
-                borderColor: "#52A0FF",
-                marginLeft: item?.senderId !== user?.id ? 25 : 0,
-              }}
+              onPress={() =>
+                navigation.navigate("DetailSingleChatScreen", { userReceived })
+              }
             >
-              {item?.messageType === "TEXT" ? (
-                <View>
+              <Icon name="menu" size={width * 0.07} color="white" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Check friend */}
+        {conversationId && !isFriend ? (
+
+          <TouchableOpacity style={{ fontSize: 12, backgroundColor: '#fff', paddingHorizontal: 15, paddingVertical: 10 }} onPress={() => { handleSendRequest(userReceived?.id) }}>
+            <Text style={{ color: "#000", textAlign: 'center', fontSize: 18 }}> <IconA size={24} name="adduser" ></IconA> Kết bạn</Text>
+          </TouchableOpacity>
+
+        ) : (<View></View>)}
+
+        {/* xử lý hiện ghim tin nhắn hiện tin nhắn và khi chọn nhảy đến tin nhắn và unpin */}
+        {pinnedMessages.length > 0 && (
+          <View style={{ padding: 10, backgroundColor: "#FFF3E0", borderRadius: 5, margin: 10 }}>
+            <Text style={{ fontSize: 16, fontWeight: "bold", color: "#000" }}>
+              Tin nhắn đã ghim
+            </Text>
+            {pinnedMessages.map((msg) => (
+              <TouchableOpacity
+                key={msg.id}
+                onPress={() => {
+                  bottomRef.current.scrollToItem({ item: msg, animated: true });
+                }}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  padding: 5,
+                  borderBottomWidth: 1,
+                  borderBottomColor: "#ccc",
+                }}
+              >
+                <Text style={{ flex: 1, fontSize: 14, color: "#000" }}>
+                  {msg.messageType === "TEXT"
+                    ? msg.content
+                    : msg.messageType === "IMAGE"
+                    ? "[Hình ảnh]"
+                    : "[Tệp]"}
+                </Text>
+                <TouchableOpacity 
+                  onPress={() => {
+                    unpinMessageToWebSocket({
+                      messageId: msg.id,
+                      userId: user?.id,
+                    });
+                  }}
+                >
+                  <IconM name="pin-off" size={20} color="#FF9800" />
+                </TouchableOpacity>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {/* Hiển thị tin nhắn */}
+        <FlatList
+          ref={bottomRef}
+          data={messagesLocal}
+          renderItem={({ item }) => (
+            <View>
+              {item?.senderId !== user?.id ? (
+                <Image
+                  source={{ uri: userReceived?.avatar }}
+                  style={{
+                    width: 30,
+                    height: 30,
+                    borderRadius: 15,
+                    marginTop: 5,
+                  }}
+                />
+              ) : null}
+
+              <TouchableOpacity
+                onLongPress={() => handleSelectMessage(item)}
+                style={{
+                  padding: 10,
+                  alignSelf:
+                    item?.senderId === user?.id ? "flex-end" : "flex-start",
+                  backgroundColor:
+                    item?.senderId === user?.id ? "#8FC1FF" : "white",
+                  borderRadius: 10,
+                  margin: 5,
+                  borderWidth: 1,
+                  borderColor: "#52A0FF",
+                  marginLeft: item?.senderId !== user?.id ? 25 : 0,
+                }}
+              >
+                {item?.messageType === "TEXT" ? (
+                  <View>
+                    <Text
+                      style={{
+                        color: "black",
+                        fontSize: width * 0.04,
+                      }}
+                    >
+                      {item?.content}
+                      {/* thoi gian */}
+                    </Text>
+                  </View>
+                ) : null}
+                {item?.messageType === "IMAGE" || item?.messageType === "GIF" ? (
+                  <Image
+                    source={{ uri: item?.fileUrl }}
+                    style={{
+                      width: 150,
+                      height: 150,
+                      borderRadius: 10,
+                      marginTop: 5,
+
+                    }}
+                    resizeMode="contain"
+                  />
+                ) : null}
+
+                {item?.messageType === "FILE" ? (
                   <Text
                     style={{
                       color: "black",
                       fontSize: width * 0.04,
                     }}
                   >
-                    {item?.content}
-                    {/* thoi gian */}
-                  </Text>
-                </View>
-              ) : null}
-              {item?.messageType === "IMAGE" || item?.messageType === "GIF" ? (
-                <Image
-                  source={{ uri: item?.fileUrl }}
-                  style={{
-                    width: 150,
-                    height: 150,
-                    borderRadius: 10,
-                    marginTop: 5,
-                    
-                  }}
-                  resizeMode="contain"
-                />
-              ) : null}
-
-              {item?.messageType === "FILE" ? (
-                  <Text
-                  style={{
-                    color: "black",
-                    fontSize: width * 0.04,
-                  }}
-                >
                     {item?.fileUrl ? (
                       <TouchableOpacity onPress={() => openFile(item?.fileUrl)} style={{ flexDirection: "row", alignItems: "center" }}>
-                        <IconF5 name={getFileIcon(item?.content)} size={30} color="black" style={{ marginRight: 5, paddingVertical:5, paddingHorizontal: 10 }} />
+                        <IconF5 name={getFileIcon(item?.content)} size={30} color="black" style={{ marginRight: 5, paddingVertical: 5, paddingHorizontal: 10 }} />
                         <View>
 
-                          <Text style={{ color: "",fontSize: width * 0.04, paddingRight: 10}}>{item?.content}</Text>
+                          <Text style={{ color: "", fontSize: width * 0.04, paddingRight: 10 }}>{item?.content}</Text>
                           <Text style={{ fontSize: width * 0.03, color: "blue", paddingRight: 10, paddingTop: 2 }}>Tải về để xem lâu dài </Text>
                         </View>
                       </TouchableOpacity>
-                    ) : null} 
+                    ) : null}
                   </Text>
-              ) : null}
+                ) : null}
 
-              {item?.messageType === "AUDIO" ? (
-                <TouchableOpacity onPress={() => playAudio(item.audio)}>
-                  <Icon name="play-circle" size={40} color="white" />
-                </TouchableOpacity>
-              ) : null}
-              <Text style={{ fontSize: width * 0.03, color: "gray" }}>
-                {convertHours(item?.timestamp)}
-              </Text>
+                {item?.messageType === "AUDIO" ? (
+                  <TouchableOpacity onPress={() => playAudio(item.audio)}>
+                    <Icon name="play-circle" size={40} color="white" />
+                  </TouchableOpacity>
+                ) : null}
+                <Text style={{ fontSize: width * 0.03, color: "gray" }}>
+                  {convertHours(item?.timestamp)}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          keyExtractor={(item) => item?.id}
+          initialNumToRender={20} // Số lượng tin nhắn ban đầu được render
+          maxToRenderPerBatch={10} // Số lượng tin nhắn được render mỗi lần
+          contentContainerStyle={{ padding: 10 }}
+          onContentSizeChange={() =>
+            bottomRef.current?.scrollToEnd({ animated: true })
+          }
+          getItemLayout={(data, index) => ({
+            length: 100, // Giả sử chiều cao trung bình của item
+            offset: 100 * index,
+            index,
+          })}
+        />
+
+        {/* Nhập tin nhắn */}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: "white",
+              paddingHorizontal: width * 0.04,
+              paddingVertical: 10,
+            }}
+          >
+            <TouchableOpacity onPress={togleToolbar}>
+              <IconE
+                name="dots-three-horizontal"
+                size={width * 0.07}
+                color="gold"
+                style={{ marginRight: width * 0.02 }}
+              />
+            </TouchableOpacity>
+            <TextInput
+              placeholder="Tin nhắn..."
+              value={inputText}
+              onChangeText={setInputText}
+              style={{
+                flex: 1,
+                borderWidth: 1,
+                borderColor: "#ccc",
+                borderRadius: width * 0.05,
+                paddingHorizontal: width * 0.04,
+                fontSize: width * 0.04,
+              }}
+            />
+            {recording ? (
+              <TouchableOpacity onPress={stopRecording}>
+                <Icon
+                  name="stop"
+                  size={width * 0.07}
+                  color="red"
+                  style={{ marginLeft: width * 0.02 }}
+                />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity onPress={startRecording}>
+                <Icon
+                  name="mic"
+                  size={width * 0.07}
+                  color="black"
+                  style={{ marginLeft: width * 0.02 }}
+                />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity onPress={sendMessage}>
+              <Icon
+                name="send"
+                size={width * 0.07}
+                color="blue"
+                style={{ marginLeft: width * 0.02 }}
+              />
             </TouchableOpacity>
           </View>
-        )}
-        keyExtractor={(item) => item?.id}
-        initialNumToRender={20} // Số lượng tin nhắn ban đầu được render
-        maxToRenderPerBatch={10} // Số lượng tin nhắn được render mỗi lần
-        contentContainerStyle={{ padding: 10 }}
-        onContentSizeChange={() =>
-          bottomRef.current?.scrollToEnd({ animated: true })
-        }
-      />
+        </KeyboardAvoidingView>
 
-      {/* Nhập tin nhắn */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            backgroundColor: "white",
-            paddingHorizontal: width * 0.04,
-            paddingVertical: 10,
-          }}
-        >
-          <TouchableOpacity onPress={togleToolbar}>
-            <IconE
-              name="dots-three-horizontal"
-              size={width * 0.07}
-              color="gold"
-              style={{ marginRight: width * 0.02 }}
-            />
-          </TouchableOpacity>
-          <TextInput
-            placeholder="Tin nhắn..."
-            value={inputText}
-            onChangeText={setInputText}
-            style={{
-              flex: 1,
-              borderWidth: 1,
-              borderColor: "#ccc",
-              borderRadius: width * 0.05,
-              paddingHorizontal: width * 0.04,
-              fontSize: width * 0.04,
-            }}
-          />
-          {recording ? (
-            <TouchableOpacity onPress={stopRecording}>
-              <Icon
-                name="stop"
-                size={width * 0.07}
-                color="red"
-                style={{ marginLeft: width * 0.02 }}
+        {/* Action sheet */}
+        <ActionSheet ref={actionSheetRef} gestureEnabled={true}>
+          <View style={{ padding: 20 }}>
+            <Text style={{ fontSize: 16 }}>Tùy chọn</Text>
+
+            {/* Trả lời tin nhắn */}
+            <TouchableOpacity
+              onPress={() => { }}
+              style={{
+                padding: 10,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
+              <IconM
+                name="message-reply-text-outline"
+                size={20}
+                color="#7C00FE"
               />
+
+              <Text style={{ fontSize: 16, color: "#000" }}>Trả lời</Text>
             </TouchableOpacity>
-          ) : (
-            <TouchableOpacity onPress={startRecording}>
-              <Icon
-                name="mic"
-                size={width * 0.07}
-                color="black"
-                style={{ marginLeft: width * 0.02 }}
-              />
+
+            {/* Chuyển tiếp tin nhắn */}
+            <TouchableOpacity
+              onPress={() => {
+                navigation.navigate("MessageForwarding", { forwardedMessage: selectedMessage });
+                actionSheetRef.current?.hide();
+              }}
+              style={{
+                padding: 10,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
+              <IconM name="reply-outline" size={20} color="#2196F3" />
+              <Text style={{ fontSize: 16, color: "#000" }}>Chuyển tiếp</Text>
             </TouchableOpacity>
-          )}
-          <TouchableOpacity onPress={sendMessage}>
-            <Icon
-              name="send"
-              size={width * 0.07}
-              color="blue"
-              style={{ marginLeft: width * 0.02 }}
-            />
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
 
-      {/* Action sheet */}
-      <ActionSheet ref={actionSheetRef} gestureEnabled={true}>
-        <View style={{ padding: 20 }}>
-          <Text style={{ fontSize: 16 }}>Tùy chọn</Text>
 
-          {/* Trả lời tin nhắn */}
-          <TouchableOpacity
-            onPress={() => { }}
-            style={{
-              padding: 10,
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 10,
-            }}
-          >
-            <IconM
-              name="message-reply-text-outline"
-              size={20}
-              color="#7C00FE"
-            />
+            {/* Thu hồi tin nhắn */}
+            {selectedMessage?.senderId === user?.id &&
+              !selectedMessage?.recalled && (
+                <TouchableOpacity
+                  onPress={handleRecallMessage}
+                  style={{
+                    padding: 10,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 10,
+                  }}
+                >
+                  <IconM name="message-reply-text" size={20} color="#E85C0D" />
 
-            <Text style={{ fontSize: 16, color: "#000" }}>Trả lời</Text>
-          </TouchableOpacity>
+                  <Text style={{ fontSize: 16, color: "#E85C0D" }}>Thu hồi</Text>
+                </TouchableOpacity>
+              )}
 
-          {/* Chuyển tiếp tin nhắn */}
-          <TouchableOpacity
-            onPress={() => {
-              navigation.navigate("MessageForwarding", { forwardedMessage: selectedMessage });
-              actionSheetRef.current?.hide();
-            }}
-            style={{
-              padding: 10,
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 10,
-            }}
-          >
-            <IconM name="reply-outline" size={20} color="#2196F3" />
-            <Text style={{ fontSize: 16, color: "#000" }}>Chuyển tiếp</Text>
-          </TouchableOpacity>
+            {/* Xóa tin nhắn phía mình*/}
+            <TouchableOpacity
+              onPress={handleDeleteMessage}
+              style={{
+                padding: 10,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
+              <Icon name="trash-outline" size={20} color="red" />
+              <Text style={{ fontSize: 16, color: "red" }}>Xóa phía mình</Text>
+            </TouchableOpacity>
 
-          {/* Thu hồi tin nhắn */}
-          {selectedMessage?.senderId === user?.id &&
-            !selectedMessage?.recalled && (
+            {/* Ghim tin nhắn */}
+
+            {selectedMessage?.pinned ? (
               <TouchableOpacity
-                onPress={handleRecallMessage}
+                onPress={handlePinButtonPress}
                 style={{
                   padding: 10,
                   flexDirection: "row",
@@ -744,57 +884,61 @@ const SingleChatScreen = ({ navigation, route }) => {
                   gap: 10,
                 }}
               >
-                <IconM name="message-reply-text" size={20} color="#E85C0D" />
-
-                <Text style={{ fontSize: 16, color: "#E85C0D" }}>Thu hồi</Text>
+                <IconM name="pin-off" size={20} color="#FF9800" />
+                <Text style={{ fontSize: 16, color: "#000" }}>Bỏ ghim</Text>
               </TouchableOpacity>
-            )}
+            ) : null
+            }
+            <TouchableOpacity
+              onPress={handlePinButtonPress}
+              style={{
+                padding: 10,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
+              <IconM
+                name={selectedMessage?.pinned ? "pin-off" : "pin"}
+                size={20}
+                color="#FF9800"
+              />
+              <Text style={{ fontSize: 16, color: "#000" }}>
+                {selectedMessage?.pinned ? "Bỏ ghim" : "Ghim"}
+              </Text>
+            </TouchableOpacity>
 
-          {/* Xóa tin nhắn phía mình*/}
-          <TouchableOpacity
-            onPress={handleDeleteMessage}
-            style={{
-              padding: 10,
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 10,
-            }}
-          >
-            <Icon name="trash-outline" size={20} color="red" />
-            <Text style={{ fontSize: 16, color: "red" }}>Xóa phía mình</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => actionSheetRef.current?.hide()}
+              style={{ padding: 10 }}
+            >
+              <Text style={{ fontSize: 16, color: "gray" }}>Hủy</Text>
+            </TouchableOpacity>
+          </View>
+        </ActionSheet>
 
-          <TouchableOpacity
-            onPress={() => actionSheetRef.current?.hide()}
-            style={{ padding: 10 }}
-          >
-            <Text style={{ fontSize: 16, color: "gray" }}>Hủy</Text>
-          </TouchableOpacity>
-        </View>
-      </ActionSheet>
-
-      {/* Thanh công cụ */}
-      {/* <TouchableNativeFeedback onPress={hideToolbar}>
+        {/* Thanh công cụ */}
+        {/* <TouchableNativeFeedback onPress={hideToolbar}>
       </TouchableNativeFeedback>  */}
-      <Animated.View style={ { height: toolbarHeight, backgroundColor: "#fff", overflow: 'hidden',borderTopWidth:1, borderTopColor:"#ccc"}}>
-        <View style={{ flexDirection: "row", justifyContent: "flex-start", alignItems: "center", paddingHorizontal: 20, paddingTop: 15, gap:30 }}>
-          <TouchableOpacity onPress={pickImage} style={{ alignItems: "center" }}>
-            <Icon name="image" size={28} color="#f66"  />  
-            <Text style={{ fontSize: 14, color: "#000", paddingTop: 5 }}>Hình ảnh</Text>
-          </TouchableOpacity>
+        <Animated.View style={{ height: toolbarHeight, backgroundColor: "#fff", overflow: 'hidden', borderTopWidth: 1, borderTopColor: "#ccc" }}>
+          <View style={{ flexDirection: "row", justifyContent: "flex-start", alignItems: "center", paddingHorizontal: 20, paddingTop: 15, gap: 30 }}>
+            <TouchableOpacity onPress={pickImage} style={{ alignItems: "center" }}>
+              <Icon name="image" size={28} color="#f66" />
+              <Text style={{ fontSize: 14, color: "#000", paddingTop: 5 }}>Hình ảnh</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity onPress={pickDocument} style={{ alignItems: "center" }}>
-            <Icon name="document-text" size={28} color="#36f" />
-            <Text style={{ fontSize: 14, color: "#000", paddingTop: 5 }}>Tài liệu</Text>
-          </TouchableOpacity>
-       
-        </View> 
-      </Animated.View>
+            <TouchableOpacity onPress={pickDocument} style={{ alignItems: "center" }}>
+              <Icon name="document-text" size={28} color="#36f" />
+              <Text style={{ fontSize: 14, color: "#000", paddingTop: 5 }}>Tài liệu</Text>
+            </TouchableOpacity>
 
-      {/* Hiển thị thanh trạng thái */}
-    </View>
-      <Loading isLoading={loading} />
+          </View>
+        </Animated.View>
+
+        {/* Hiển thị thanh trạng thái */}
       </View>
+      <Loading isLoading={loading} />
+    </View>
   );
 };
 

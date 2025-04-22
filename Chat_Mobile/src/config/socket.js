@@ -158,3 +158,33 @@ export const disconnectWebSocket = () => {
     subscribers.clear();
   }
 };
+
+//pin message
+export const pinMessageToWebSocket = async (messageData) => {
+  await ensureWebSocketConnected();
+  if (!stompClient || !stompClient.connected) {
+    console.error("WebSocket is not connected");
+    return;
+  }
+  console.log("pinMessageToWebSocket", messageData);
+
+  stompClient.publish({
+    destination: "/app/chat/pin",
+    body: JSON.stringify(messageData),
+  });
+};
+
+//unpin message
+export const unpinMessageToWebSocket = async (messageData) => {
+  await ensureWebSocketConnected();
+  if (!stompClient || !stompClient.connected) {
+    console.error("WebSocket is not connected");
+    return;
+  }
+  console.log("unpinMessageToWebSocket", messageData);
+
+  stompClient.publish({
+    destination: "/app/chat/unpin",
+    body: JSON.stringify(messageData),
+  });
+};
