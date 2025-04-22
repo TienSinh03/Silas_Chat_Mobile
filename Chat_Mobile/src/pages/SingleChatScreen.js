@@ -77,10 +77,12 @@ const SingleChatScreen = ({ navigation, route }) => {
     const dispatch = useDispatch();
     const { messages } = useSelector((state) => state.message);
     const { user } = useSelector((state) => state.user);
-    // State quản lý emoji/gif
-    const [showEmoji, setShowEmoji] = useState(true);
+    // State quản lý emoji/gif/sticker
+    const [contentType, setContentType] = useState("emoji");
     const [gifs, setGifs] = useState([]);
     const [loadingGifs, setLoadingGifs] = useState(false);
+    const [stickers, setStickers] = useState([]);
+    const [loadingStickers, setLoadingStickers] = useState(false);
 
     // Fetch GIFs from Giphy REST API
     useEffect(() => {
@@ -101,10 +103,34 @@ const SingleChatScreen = ({ navigation, route }) => {
         };
 
         // Updated condition to check emojiToolbarVisible
-        if (!showEmoji && emojiToolbarVisible) {
+        if (contentType === "gif" && emojiToolbarVisible) {
             fetchGifs();
         }
-    }, [showEmoji, emojiToolbarVisible]);
+    }, [contentType, emojiToolbarVisible]);
+
+    // Fetch GIFs from Giphy REST API
+    useEffect(() => {
+        const fetchStickers = async () => {
+            setLoadingStickers(true);
+            try {
+                const response = await fetch(
+                    `https://api.giphy.com/v1/stickers/trending?api_key=${GIPHY_API_KEY}&limit=50`
+                );
+                const data = await response.json();
+                setStickers(data.data || []);
+            } catch (error) {
+                console.error("Error fetching Stickers:", error);
+                setStickers([]);
+            } finally {
+                setLoadingStickers(false);
+            }
+        };
+
+        // Updated condition to check emojiToolbarVisible
+        if (contentType === "sticker" && emojiToolbarVisible) {
+            fetchStickers();
+        }
+    }, [contentType, emojiToolbarVisible]);
 
     // Handle emoji selection
     const onEmojiClick = (emojiObject) => {
@@ -135,6 +161,34 @@ const SingleChatScreen = ({ navigation, route }) => {
         setMessages([...messagesLocal, messageData]);
         hideToolbars();
     };
+
+    // Handle sticker selection
+    const handleStickerClick = (sticker) => {
+        const messageData = {
+            senderId: user?.id,
+            conversationId: conversationId,
+            messageType: "STICKER",
+            fileUrl: sticker.images.original.url,
+            replyToMessageId: null,
+        };
+        sendMessageToWebSocket(messageData);
+        setMessages([...messagesLocal, messageData]);
+        hideToolbars();
+    };
+
+    // Render sticker item
+    const renderStickerItem = ({ item }) => (
+        <TouchableOpacity
+            onPress={() => handleStickerClick(item)}
+            style={mediaItemStyles.container}
+        >
+            <Image
+                source={{ uri: item.images.fixed_height.url }}
+                style={mediaItemStyles.image}
+                resizeMode="cover"
+            />
+        </TouchableOpacity>
+    );
 
     // check friend
     const [isFriend, setIsFriend] = useState(false); // Track friend status
@@ -554,17 +608,16 @@ const SingleChatScreen = ({ navigation, route }) => {
             );
         }
     };
+
     // Render GIF item
     const renderGifItem = ({ item }) => (
-        <TouchableOpacity onPress={() => handleGifClick(item)}>
+        <TouchableOpacity
+            onPress={() => handleGifClick(item)}
+            style={mediaItemStyles.container}
+        >
             <Image
                 source={{ uri: item.images.fixed_height.url }}
-                style={{
-                    width: width / 3 - 10,
-                    height: 100,
-                    margin: 5,
-                    borderRadius: 5,
-                }}
+                style={mediaItemStyles.image}
                 resizeMode="cover"
             />
         </TouchableOpacity>
@@ -728,18 +781,26 @@ const SingleChatScreen = ({ navigation, route }) => {
                                                 item?.senderId === user?.id
                                                     ? "flex-end"
                                                     : "flex-start",
-                                            backgroundColor:
-                                                item?.senderId === user?.id
-                                                    ? "#8FC1FF"
-                                                    : "white",
+                                            borderWidth:
+                                                // item?.messageType === "GIF" ||
+                                                item?.messageType === "STICKER"
+                                                    ? 0
+                                                    : 1,
+                                            borderColor: "#52A0FF",
                                             borderRadius: 10,
                                             margin: 5,
-                                            borderWidth: 1,
-                                            borderColor: "#52A0FF",
                                             marginLeft:
                                                 item?.senderId !== user?.id
                                                     ? 25
                                                     : 0,
+                                            backgroundColor:
+                                                // item?.messageType === "GIF" ||
+                                                item?.messageType === "STICKER"
+                                                    ? "transparent"
+                                                    : item?.senderId ===
+                                                      user?.id
+                                                    ? "#8FC1FF"
+                                                    : "white",
                                         }}
                                     >
                                         {item?.messageType === "TEXT" ||
@@ -760,19 +821,25 @@ const SingleChatScreen = ({ navigation, route }) => {
                                             </View>
                                         ) : null}
                                         {item?.messageType === "IMAGE" ||
-                                        item?.messageType === "GIF" ? (
+                                        item?.messageType === "GIF" ||
+                                        item?.messageType === "STICKER" ? (
                                             <Image
                                                 source={{ uri: item?.fileUrl }}
                                                 style={{
                                                     width: 150,
                                                     height: 150,
-                                                    borderRadius: 10,
+                                                    borderRadius:
+                                                        item?.messageType ===
+                                                        "IMAGE"
+                                                            ? 10
+                                                            : 0,
                                                     marginTop: 5,
+                                                    backgroundColor:
+                                                        "transparent",
                                                 }}
                                                 resizeMode="contain"
                                             />
                                         ) : null}
-
                                         {item?.messageType === "FILE" ? (
                                             <Text
                                                 style={{
@@ -1067,6 +1134,7 @@ const SingleChatScreen = ({ navigation, route }) => {
                         borderTopColor: "#ccc",
                     }}
                 >
+                    {/* Tab selection UI */}
                     <View
                         style={{
                             flexDirection: "row",
@@ -1074,20 +1142,41 @@ const SingleChatScreen = ({ navigation, route }) => {
                             padding: 10,
                         }}
                     >
-                        <TouchableOpacity onPress={() => setShowEmoji(true)}>
+                        <TouchableOpacity
+                            onPress={() => setContentType("emoji")}
+                        >
                             <Text
                                 style={{
-                                    color: showEmoji ? "gold" : "gray",
+                                    color:
+                                        contentType === "emoji"
+                                            ? "gold"
+                                            : "gray",
                                     fontSize: 16,
                                 }}
                             >
                                 Emoji
                             </Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setShowEmoji(false)}>
+                        <TouchableOpacity
+                            onPress={() => setContentType("sticker")}
+                        >
                             <Text
                                 style={{
-                                    color: !showEmoji ? "gold" : "gray",
+                                    color:
+                                        contentType === "sticker"
+                                            ? "gold"
+                                            : "gray",
+                                    fontSize: 16,
+                                }}
+                            >
+                                Sticker
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => setContentType("gif")}>
+                            <Text
+                                style={{
+                                    color:
+                                        contentType === "gif" ? "gold" : "gray",
                                     fontSize: 16,
                                 }}
                             >
@@ -1095,8 +1184,50 @@ const SingleChatScreen = ({ navigation, route }) => {
                             </Text>
                         </TouchableOpacity>
                     </View>
-                    <View style={{ flex: 1, padding: 10 }}>
-                        {!showEmoji ? (
+                    {/* Content display area */}
+                    <View
+                        style={{
+                            flex: 1,
+                            padding: 0,
+                            margin: 0,
+                            backgroundColor: "transparent",
+                        }}
+                    >
+                        {contentType === "emoji" ? (
+                            <EmojiSelector
+                                onEmojiSelected={onEmojiClick}
+                                columns={8}
+                                showSearchBar={false}
+                                showTabs={false}
+                                showHistory={false}
+                                showSectionTitles={false}
+                            />
+                        ) : contentType === "sticker" ? (
+                            loadingStickers ? (
+                                <Text
+                                    style={{ textAlign: "center", padding: 20 }}
+                                >
+                                    Đang tải sticker...
+                                </Text>
+                            ) : stickers.length > 0 ? (
+                                <FlatList
+                                    data={stickers}
+                                    renderItem={renderStickerItem}
+                                    keyExtractor={(item) => item.id}
+                                    numColumns={3}
+                                    contentContainerStyle={
+                                        mediaItemStyles.flatListContent
+                                    }
+                                    style={mediaItemStyles.flatList}
+                                />
+                            ) : (
+                                <Text
+                                    style={{ textAlign: "center", padding: 20 }}
+                                >
+                                    Không có sticker nào
+                                </Text>
+                            )
+                        ) : contentType === "gif" ? (
                             loadingGifs ? (
                                 <Text
                                     style={{ textAlign: "center", padding: 20 }}
@@ -1109,9 +1240,10 @@ const SingleChatScreen = ({ navigation, route }) => {
                                     renderItem={renderGifItem}
                                     keyExtractor={(item) => item.id}
                                     numColumns={3}
-                                    contentContainerStyle={{
-                                        paddingBottom: 10,
-                                    }}
+                                    contentContainerStyle={
+                                        mediaItemStyles.flatListContent
+                                    }
+                                    style={mediaItemStyles.flatList}
                                 />
                             ) : (
                                 <Text
@@ -1120,16 +1252,7 @@ const SingleChatScreen = ({ navigation, route }) => {
                                     Không có GIF nào
                                 </Text>
                             )
-                        ) : (
-                            <EmojiSelector
-                                onEmojiSelected={onEmojiClick}
-                                columns={8}
-                                showSearchBar={false}
-                                showTabs={false}
-                                showHistory={false}
-                                showSectionTitles={false}
-                            />
-                        )}
+                        ) : null}
                     </View>
                 </Animated.View>
 
@@ -1193,4 +1316,31 @@ const SingleChatScreen = ({ navigation, route }) => {
     );
 };
 
+const mediaItemStyles = {
+    container: {
+        backgroundColor: "transparent",
+        padding: 0,
+        margin: 0,
+    },
+    image: {
+        width: width / 3,
+        height: width / 3,
+        margin: 0,
+        padding: 0,
+        borderRadius: 0,
+        borderWidth: 0,
+        backgroundColor: "transparent",
+    },
+    flatList: {
+        backgroundColor: "transparent",
+        padding: 0,
+        margin: 0,
+    },
+    flatListContent: {
+        padding: 0,
+        margin: 0,
+        backgroundColor: "transparent",
+        alignItems: "center",
+    },
+};
 export default SingleChatScreen;
