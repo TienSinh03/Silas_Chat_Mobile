@@ -1,7 +1,7 @@
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 
-const HOST_IP = "192.168.236.41"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
+const HOST_IP = "192.168.2.52"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
 
 const WEBSOCKET_URL = `http://${HOST_IP}:8080/ws`;
 
@@ -9,42 +9,41 @@ let stompClient = null;
 const subscribers = new Map();
 
 export const connectWebSocket = (onConnectCallBack) => {
-  if (stompClient && stompClient.connected) {
-    return stompClient;
-  }
-  const socket = new SockJS(WEBSOCKET_URL);
-  stompClient = new Client({
-    webSocketFactory: () => socket,
-    reconnectDelay: 5000,
+    if (stompClient && stompClient.connected) {
+        return stompClient;
+    }
+    const socket = new SockJS(WEBSOCKET_URL);
+    stompClient = new Client({
+        webSocketFactory: () => socket,
+        reconnectDelay: 5000,
 
-    debug: (str) => {
-      console.log(str);
-    },
-    onConnect: () => {
-      console.log("Connected to WebSocket");
-      onConnectCallBack?.();
-    },
-    onStompError: (frame) => {
-      console.error("Broker reported error: " + frame.headers["message"]);
-      console.error("Additional details: " + frame.body);
-    },
-  });
-  stompClient.activate();
+        debug: (str) => {
+            console.log(str);
+        },
+        onConnect: () => {
+            console.log("Connected to WebSocket");
+            onConnectCallBack?.();
+        },
+        onStompError: (frame) => {
+            console.error("Broker reported error: " + frame.headers["message"]);
+            console.error("Additional details: " + frame.body);
+        },
+    });
+    stompClient.activate();
 };
 
 // kiem tra xem websocket da ket noi chua, neu chua thi ket noi lai
 export const ensureWebSocketConnected = () => {
-  return new Promise((resolve, reject) => {
-    if (stompClient && stompClient.connected) {
-      resolve();
-    } else {
-      connectWebSocket(() => {
-        resolve();
-      });
-    }
-  });
+    return new Promise((resolve, reject) => {
+        if (stompClient && stompClient.connected) {
+            resolve();
+        } else {
+            connectWebSocket(() => {
+                resolve();
+            });
+        }
+    });
 };
-
 
 export const subscribeToUserProfile = async (userId, onMessageReceived) => {
     await ensureWebSocketConnected();
@@ -86,28 +85,28 @@ export const subscribeToChat = async (conversationId, onMessageReceived) => {
 };
 
 export const subscribeToConversation = async (userId, onMessageReceived) => {
-  try {
-    await ensureWebSocketConnected();
-    if (!stompClient || !stompClient.connected) {
-      console.error("WebSocket is not connected");
-      return;
-    }
-    console.log("Subscribing to /chat/create/group/" + userId);
-
-    const subscription = stompClient.subscribe(
-      `/chat/create/group/${userId}`,
-      (message) => {
-        console.log("Received WebSocket message:", message.body);
-        if (message.body) {
-          onMessageReceived(JSON.parse(message.body));
+    try {
+        await ensureWebSocketConnected();
+        if (!stompClient || !stompClient.connected) {
+            console.error("WebSocket is not connected");
+            return;
         }
-      }
-    );
+        console.log("Subscribing to /chat/create/group/" + userId);
 
-    subscribers.set(userId, subscription);
-  } catch (error) {
-    console.error("Error subscribing to conversation:", error);
-  }
+        const subscription = stompClient.subscribe(
+            `/chat/create/group/${userId}`,
+            (message) => {
+                console.log("Received WebSocket message:", message.body);
+                if (message.body) {
+                    onMessageReceived(JSON.parse(message.body));
+                }
+            }
+        );
+
+        subscribers.set(userId, subscription);
+    } catch (error) {
+        console.error("Error subscribing to conversation:", error);
+    }
 };
 
 export const sendMessageToWebSocket = async (messageData) => {
@@ -178,17 +177,17 @@ export const forwardMessageToWebSocket = async (messageFormData) => {
 };
 
 export const createGroupToWebSocket = async (request) => {
-  await ensureWebSocketConnected();
-  if (!stompClient || !stompClient.connected) {
-    console.error("WebSocket is not connected");
-    return;
-  }
-  console.log("createGroupToWebSocket", request);
+    await ensureWebSocketConnected();
+    if (!stompClient || !stompClient.connected) {
+        console.error("WebSocket is not connected");
+        return;
+    }
+    console.log("createGroupToWebSocket", request);
 
-  stompClient.publish({
-    destination: "/app/conversation/create-group",
-    body: JSON.stringify(request),
-  });
+    stompClient.publish({
+        destination: "/app/conversation/create-group",
+        body: JSON.stringify(request),
+    });
 };
 
 export const disconnectWebSocket = () => {

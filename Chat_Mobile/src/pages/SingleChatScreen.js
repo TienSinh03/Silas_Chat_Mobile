@@ -317,7 +317,7 @@ const SingleChatScreen = ({ navigation, route }) => {
 
     const fileToolbarHeight = fileAnimation.interpolate({
         inputRange: [0, 1],
-        outputRange: [0, 300], // Smaller height for image/file buttons
+        outputRange: [0, 250], // Smaller height for image/file buttons
     });
 
     const sendMessage = () => {
@@ -467,6 +467,78 @@ const SingleChatScreen = ({ navigation, route }) => {
             }
         } catch (error) {
             Alert.alert("Lỗi", "Không thể mở file: " + error.message);
+        }
+    };
+
+    // Hàm gửi video
+    const handleSendVideo = async (videoUri) => {
+        setLoading(true); // Bật loading
+        try {
+            const request = {
+                senderId: user?.id,
+                conversationId: conversationId,
+                content: "",
+                messageType: "VIDEO",
+            };
+            const formData = new FormData();
+            formData.append(
+                "request",
+                JSON.stringify(request),
+                "application/json"
+            );
+            if (videoUri) {
+                formData.append("anh", videoUri);
+                console.log("videoUri :", videoUri);
+            }
+            const response = await uploadFile(formData);
+            console.log("response uploadFile: ", response);
+            request.fileUrl = response?.response?.fileUrl;
+            sendMessageToWebSocket(request);
+        } catch (error) {
+            console.error("Lỗi khi gửi video: ", error);
+            // Có thể thêm thông báo lỗi cho người dùng
+        } finally {
+            setLoading(false); // Tắt loading
+        }
+    };
+
+    // pick video
+    const pickVideo = async () => {
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+            allowsEditing: true,
+            aspect: [4, 3], // Tỉ lệ khung hình 1:1
+            quality: 1,
+        });
+        console.log("result", result);
+        if (!result.canceled) {
+            const video = result.assets[0];
+            const videoUri = {
+                uri: video.uri,
+                name: video.fileName || `video_${Date.now()}.mp4`,
+                type: "video/mp4",
+            };
+            setImageUri(videoUri);
+            handleSendVideo(videoUri);
+        }
+    };
+
+    // Play video
+    const playVideo = async (url) => {
+        if (!url) {
+            Alert.alert("Lỗi", "Không thể phát video này");
+            return;
+        }
+        try {
+            const supported = await Linking.canOpenURL(url);
+            if (supported) {
+                await Linking.openURL(url);
+            } else {
+                // For more control, you could use a video player component instead
+                Alert.alert("Lỗi", "Không thể phát video");
+            }
+        } catch (error) {
+            Alert.alert("Lỗi", "Không thể phát video: " + error.message);
         }
     };
 
@@ -826,8 +898,20 @@ const SingleChatScreen = ({ navigation, route }) => {
                                             <Image
                                                 source={{ uri: item?.fileUrl }}
                                                 style={{
-                                                    width: 150,
-                                                    height: 150,
+                                                    width:
+                                                        item?.messageType ===
+                                                            "STICKER" ||
+                                                        item?.messageType ===
+                                                            "GIF"
+                                                            ? 100 // Smaller size for stickers and GIFs
+                                                            : 150, // Original size for images
+                                                    height:
+                                                        item?.messageType ===
+                                                            "STICKER" ||
+                                                        item?.messageType ===
+                                                            "GIF"
+                                                            ? 100 // Smaller size for stickers and GIFs
+                                                            : 150, // Original size for images
                                                     borderRadius:
                                                         item?.messageType ===
                                                         "IMAGE"
@@ -903,7 +987,65 @@ const SingleChatScreen = ({ navigation, route }) => {
                                                 ) : null}
                                             </Text>
                                         ) : null}
-
+                                        {item?.messageType === "VIDEO" ? (
+                                            <View>
+                                                <TouchableOpacity
+                                                    onPress={() =>
+                                                        playVideo(item?.fileUrl)
+                                                    }
+                                                >
+                                                    <View
+                                                        style={{
+                                                            position:
+                                                                "relative",
+                                                        }}
+                                                    >
+                                                        <Image
+                                                            source={{
+                                                                uri:
+                                                                    item?.fileUrl ||
+                                                                    "https://via.placeholder.com/150",
+                                                            }}
+                                                            style={{
+                                                                width: 150,
+                                                                height: 150,
+                                                                borderRadius: 10,
+                                                                marginTop: 5,
+                                                            }}
+                                                            resizeMode="cover"
+                                                        />
+                                                        <View
+                                                            style={{
+                                                                position:
+                                                                    "absolute",
+                                                                top: "50%",
+                                                                left: "50%",
+                                                                transform: [
+                                                                    {
+                                                                        translateX:
+                                                                            -15,
+                                                                    },
+                                                                    {
+                                                                        translateY:
+                                                                            -15,
+                                                                    },
+                                                                ],
+                                                                backgroundColor:
+                                                                    "rgba(0,0,0,0.5)",
+                                                                borderRadius: 20,
+                                                                padding: 5,
+                                                            }}
+                                                        >
+                                                            <IconF5
+                                                                name="play"
+                                                                size={20}
+                                                                color="white"
+                                                            />
+                                                        </View>
+                                                    </View>
+                                                </TouchableOpacity>
+                                            </View>
+                                        ) : null}
                                         {item?.messageType === "AUDIO" ? (
                                             <TouchableOpacity
                                                 onPress={() =>
@@ -1304,6 +1446,21 @@ const SingleChatScreen = ({ navigation, route }) => {
                                 }}
                             >
                                 Tài liệu
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={pickVideo}
+                            style={{ alignItems: "center" }}
+                        >
+                            <IconF5 name="file-video" size={28} color="#36f" />
+                            <Text
+                                style={{
+                                    fontSize: 14,
+                                    color: "#000",
+                                    paddingTop: 5,
+                                }}
+                            >
+                                Video
                             </Text>
                         </TouchableOpacity>
                     </View>
