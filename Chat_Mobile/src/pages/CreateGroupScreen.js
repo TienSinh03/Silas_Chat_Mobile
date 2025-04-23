@@ -22,8 +22,9 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import PhoneInput from "react-native-phone-input";
 import { useSelector, useDispatch } from "react-redux";
 import { getMyFriends } from "../store/slice/friendSlice";
-import { createConversationGroup, getAllConversationsByUserId } from "../store/slice/conversationSlice";
+import { createConversationGroup, getAllConversationsByUserId, setConversationsGroup } from "../store/slice/conversationSlice";
 import Icon from "react-native-vector-icons/AntDesign";
+// import { connectWebSocket, disconnectWebSocket } from "../config/socket";
 
 const { width, height } = Dimensions.get("window");
 
@@ -40,6 +41,7 @@ const CreateGroupScreen = ({navigation}) => {
   const [nameGroup, setNameGroup] = useState("");
   const [search, setSearch] = useState("");
   const [selectedContacts, setSelectedContacts] = useState([]);
+  const { user } = useSelector((state) => state.user);
 
   console.log("search ", search);
 
@@ -81,7 +83,7 @@ const CreateGroupScreen = ({navigation}) => {
       };
 
       const response = await dispatch(createConversationGroup(request)).unwrap();
-      console.log("response------", response);
+      
       navigation.navigate("GroupChatScreen", { conversation: response });
 
       console.log("Đã cập nhật danh sách cuộc trò chuyện.");
@@ -95,6 +97,22 @@ const CreateGroupScreen = ({navigation}) => {
 
     
   }
+
+//   React.useEffect(() => {
+//     if(!user?.id) return;
+
+//     console.log("User ID:-------- ", user?.id);
+
+//     connectWebSocket(() => {
+//         subscribeToConversation(user?.id, (message) => {
+//             dispatch(setConversationsGroup(message));
+//         })
+//     });
+
+//     return () => {
+//         disconnectWebSocket();
+//     }
+// }, [user?.id]);
 
   return (
     <SafeAreaView style={styles.container}>

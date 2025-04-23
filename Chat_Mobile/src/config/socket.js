@@ -1,7 +1,7 @@
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 
-const HOST_IP = "192.168.11.162"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
+const HOST_IP = "192.168.236.41"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
 
 const WEBSOCKET_URL = `http://${HOST_IP}:8080/ws`;
 
@@ -16,6 +16,7 @@ export const connectWebSocket = (onConnectCallBack) => {
   stompClient = new Client({
     webSocketFactory: () => socket,
     reconnectDelay: 5000,
+
     debug: (str) => {
       console.log(str);
     },
@@ -32,17 +33,16 @@ export const connectWebSocket = (onConnectCallBack) => {
 };
 
 // kiem tra xem websocket da ket noi chua, neu chua thi ket noi lai
-const ensureWebSocketConnected = async () => {
-  if (!stompClient || !stompClient.connected) {
-    console.log("WebSocket not connected, attempting to reconnect...");
-    await new Promise((resolve) => {
+export const ensureWebSocketConnected = () => {
+  return new Promise((resolve, reject) => {
+    if (stompClient && stompClient.connected) {
+      resolve();
+    } else {
       connectWebSocket(() => {
-        console.log("Reconnected successfully");
         resolve();
       });
-    });
-  }
-  return stompClient;
+    }
+  });
 };
 
 export const subscribeToUserProfile = async(userId, onMessageReceived) => {
@@ -83,6 +83,31 @@ export const subscribeToChat = async (conversationId, onMessageReceived) => {
   );
 
   subscribers.set(conversationId, subscription);
+};
+
+export const subscribeToConversation = async (userId, onMessageReceived) => {
+  try {
+    await ensureWebSocketConnected();
+    if (!stompClient || !stompClient.connected) {
+      console.error("WebSocket is not connected");
+      return;
+    }
+    console.log("Subscribing to /chat/create/group/" + userId);
+
+    const subscription = stompClient.subscribe(
+      `/chat/create/group/${userId}`,
+      (message) => {
+        console.log("Received WebSocket message:", message.body);
+        if (message.body) {
+          onMessageReceived(JSON.parse(message.body));
+        }
+      }
+    );
+
+    subscribers.set(userId, subscription);
+  } catch (error) {
+    console.error("Error subscribing to conversation:", error);
+  }
 };
 
 export const sendMessageToWebSocket = async (messageData) => {
@@ -149,6 +174,20 @@ export const forwardMessageToWebSocket = async (messageFormData) => {
   stompClient.publish({
     destination: "/app/chat/forward",
     body: JSON.stringify(messageFormData),
+  });
+};
+
+export const createGroupToWebSocket = async (request) => {
+  await ensureWebSocketConnected();
+  if (!stompClient || !stompClient.connected) {
+    console.error("WebSocket is not connected");
+    return;
+  }
+  console.log("createGroupToWebSocket", request);
+
+  stompClient.publish({
+    destination: "/app/conversation/create-group",
+    body: JSON.stringify(request),
   });
 };
 

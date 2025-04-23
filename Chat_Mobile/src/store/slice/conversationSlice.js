@@ -36,7 +36,13 @@ const conversationSlice = createSlice({
     reducers: {
         setSelectedConversationId(state, action) {
             state.conversationId = action.payload;
-        }
+        },
+        setConversationsGroup(state, action) {
+            const newConversation = action.payload;
+            if (newConversation && !state.conversations.find((item) => item.id === newConversation.id)) {
+              state.conversations.push(newConversation);
+            }
+          },
     },
     extraReducers: (builder) => {
         builder.addCase(getAllConversationsByUserId.pending, (state) => {
@@ -86,6 +92,6 @@ const conversationSlice = createSlice({
     }
 })
 
-export const {setSelectedConversationId } = conversationSlice.actions;
+export const {setSelectedConversationId, setConversationsGroup } = conversationSlice.actions;
 export { getAllConversationsByUserId, createConversation, createConversationGroup };
 export default conversationSlice.reducer;
