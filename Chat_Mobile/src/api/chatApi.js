@@ -16,6 +16,22 @@ export const createChatSingle = async (request) => {
   }
 };
 
+export const createChatGroup = async (request) => {
+  try {
+    const response = await instance.post(
+      "/api/v1/conversations/createConversationGroup",
+      request
+    );
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error creating conversation:",
+      error.response?.data || error.message
+    );
+    throw new Error(error.response?.data?.message || "Lỗi khi tạo hội thoại");
+  }
+};
+
 export const getAllConversationsByUserIdService = async () => {
   try {
     const response = await instance.get(

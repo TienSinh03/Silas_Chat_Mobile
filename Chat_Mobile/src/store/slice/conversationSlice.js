@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import {getAllConversationsByUserIdService, createChatSingle } from '../../api/chatApi' 
+import {getAllConversationsByUserIdService, createChatSingle, createChatGroup } from '../../api/chatApi' 
 
 const initialState = {
     conversations: [],
@@ -20,13 +20,29 @@ const createConversation = createAsyncThunk('conversation/createConversation', a
     }
 });
 
+const createConversationGroup = createAsyncThunk('conversation/createConversationGroup', async (request, thunkAPI) => {
+    try {
+        const response = await createChatGroup(request);
+        return response;
+    } catch (error) {
+        console.error("Error creating conversation group:", error.response?.data || error.message);
+        return thunkAPI.rejectWithValue(error.response.data?.message || error.message);
+    }
+});
+
 const conversationSlice = createSlice({
     name: "conversation",
     initialState,
     reducers: {
         setSelectedConversationId(state, action) {
             state.conversationId = action.payload;
-        }
+        },
+        setConversationsGroup(state, action) {
+            const newConversation = action.payload;
+            if (newConversation && !state.conversations.find((item) => item.id === newConversation.id)) {
+              state.conversations.push(newConversation);
+            }
+          },
     },
     extraReducers: (builder) => {
         builder.addCase(getAllConversationsByUserId.pending, (state) => {
@@ -56,9 +72,26 @@ const conversationSlice = createSlice({
             state.isLoading = false;
             state.error = action.error.message;
         })
+
+        //createConversationGroup
+        builder.addCase(createConversationGroup.pending, (state) => {
+            state.isLoading = true;
+        })
+        builder.addCase(createConversationGroup.fulfilled, (state, action) => {
+            const newConversation = action.payload;
+            if(newConversation && !state.conversations.find((item) => item.id === newConversation.id)) {
+                state.conversation = newConversation;
+                state.conversations.push(newConversation);
+            }
+            state.isLoading = false;
+        })
+        builder.addCase(createConversationGroup.rejected, (state, action) => {
+            state.isLoading = false;
+            state.error = action.error.message;
+        })
     }
 })
 
-export const {setSelectedConversationId } = conversationSlice.actions;
-export { getAllConversationsByUserId, createConversation };
+export const {setSelectedConversationId, setConversationsGroup } = conversationSlice.actions;
+export { getAllConversationsByUserId, createConversation, createConversationGroup };
 export default conversationSlice.reducer;
