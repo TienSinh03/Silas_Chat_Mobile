@@ -11,20 +11,21 @@ import {
     StatusBar,
 } from "react-native";
 import { Ionicons, Feather } from "@expo/vector-icons";
+import ActionSheet from "react-native-actions-sheet";
+import { useDispatch, useSelector } from "react-redux";
+import { leaveGroupThunk } from "../store/slice/messageSlice";
+
 
 const GroupSettingsScreen = ({navigation, route}) => {
 
     const { conversation } = route.params;
+    
+    const actionSheetRef = React.useRef(null);
+    const dispatch = useDispatch();
 
 
     const [isPinned, setIsPinned] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
-    const leaveGroup = () => {
-        Alert.alert("Xác nhận", "Bạn có chắc muốn rời nhóm?", [
-            { text: "Hủy", style: "cancel" },
-            { text: "Rời nhóm", onPress: () => console.log("Rời nhóm") },
-        ]);
-    };
 
     const clearChatHistory = () => {
         Alert.alert("Xác nhận", "Bạn có chắc muốn xóa lịch sử trò chuyện?", [
@@ -34,6 +35,25 @@ const GroupSettingsScreen = ({navigation, route}) => {
                 onPress: () => console.log("Xóa lịch sử trò chuyện"),
             },
         ]);
+    };
+
+    const handleActionSheet = () => {
+        console.log("ActionSheet opened");
+        actionSheetRef.current?.show();
+    }
+
+    const handleLeaveGroup = () => {
+        try {
+
+
+            dispatch(leaveGroupThunk(conversation.id));
+            console.log("Rời nhóm thành công");
+            navigation.navigate('Conversation');
+            actionSheetRef.current?.hide();
+        } catch (error) {
+            console.error("Error leaving group:", error);
+        }
+        actionSheetRef.current?.hide();
     };
 
     return (
@@ -62,7 +82,7 @@ const GroupSettingsScreen = ({navigation, route}) => {
             <OptionRow color="black" icon="calendar" text="Lịch nhóm" />
             <OptionRow color="black" icon="bookmark" text="Tin nhắn đã ghim" />
             <OptionRow color="black" icon="bar-chart-2" text="Bình chọn" />
-            <OptionRow color="black" icon="users" text={`Xem thành viên (${conversation?.membersGroup.length})`} />
+            <OptionRow color="black" icon="users" text={`Xem thành viên (${conversation?.members.length})`} onPress={() => navigation.navigate('MemberGroupScreen', { members: conversation?.members })} />
             <OptionRow color="black" icon="link" text="Link nhóm" />
 
             {/* Ghim trò chuyện */}
@@ -81,7 +101,7 @@ const GroupSettingsScreen = ({navigation, route}) => {
             <OptionRow
                 icon="log-out"
                 text="Rời nhóm"
-                onPress={leaveGroup}
+                onPress={handleActionSheet}
                 color="red"
             />
             <OptionRow
@@ -90,6 +110,21 @@ const GroupSettingsScreen = ({navigation, route}) => {
                 onPress={clearChatHistory}
                 color="red"
             />
+
+            <ActionSheet ref={actionSheetRef} gestureEnabled={true}>
+            
+                <View style={{ padding: 20 }}>
+                    <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}>Rời nhóm</Text>
+                    <Text style={{ fontSize: 16, marginBottom: 20 }}>Bạn có chắc muốn rời nhóm này?</Text>
+                    <TouchableOpacity
+                        style={{ backgroundColor: "red", padding: 15, borderRadius: 10 }}
+                            
+                        onPress={() => {console.log("Confirmed leaving group"), handleLeaveGroup()}}
+                    >
+                        <Text style={{ color: "white", textAlign: "center" }}>Xác nhận</Text>
+                    </TouchableOpacity>
+                </View>
+            </ActionSheet>    
         </ScrollView>
     );
 };
@@ -102,8 +137,8 @@ const OptionButton = ({ icon, text }) => (
     </TouchableOpacity>
 );
 
-const OptionRow = ({ icon, text, color }) => (
-    <TouchableOpacity style={styles.optionRow}>
+const OptionRow = ({ icon, text, color, onPress }) => (
+    <TouchableOpacity style={styles.optionRow} onPress={onPress}>
         <Feather
             name={icon}
             size={20}

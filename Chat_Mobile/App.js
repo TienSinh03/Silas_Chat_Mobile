@@ -34,6 +34,7 @@ import ResetPasswordScreen from "./src/pages/ResetPasswordScreen";
 import TabTopFriendRequest from "./src/navigation/TabTopFriendRequest";
 
 import MessageForwarding from "./src/pages/MessageForwarding";
+import MemberGroupScreen from "./src/pages/MemberGroupScreen";
 
 import { getToken } from "./src/utils/authHelper";
 import { AuthProvider } from "./src/contexts/AuthContext";
@@ -136,6 +137,12 @@ const AppNavigation =  () => {
                 name="MessageForwarding"
                 component={MessageForwarding}
                 options={{ headerTitle: "Chia sẻ tin nhắn", headerShown: false }}
+              />
+
+              <Stack.Screen
+                name="MemberGroupScreen"
+                component={MemberGroupScreen}
+                options={{ headerShown: false }}
               />
             </>
           ) : (
