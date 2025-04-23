@@ -82,7 +82,7 @@ const GroupSettingsScreen = ({navigation, route}) => {
             <OptionRow color="black" icon="calendar" text="Lịch nhóm" />
             <OptionRow color="black" icon="bookmark" text="Tin nhắn đã ghim" />
             <OptionRow color="black" icon="bar-chart-2" text="Bình chọn" />
-            <OptionRow color="black" icon="users" text={`Xem thành viên (${conversation?.members.length})`} />
+            <OptionRow color="black" icon="users" text={`Xem thành viên (${conversation?.members.length})`} onPress={() => navigation.navigate('MemberGroupScreen', { members: conversation?.members })} />
             <OptionRow color="black" icon="link" text="Link nhóm" />
 
             {/* Ghim trò chuyện */}
