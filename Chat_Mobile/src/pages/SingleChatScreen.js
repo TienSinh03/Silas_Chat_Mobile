@@ -900,16 +900,12 @@ const SingleChatScreen = ({ navigation, route }) => {
                                                 style={{
                                                     width:
                                                         item?.messageType ===
-                                                            "STICKER" ||
-                                                        item?.messageType ===
-                                                            "GIF"
+                                                        "STICKER"
                                                             ? 100 // Smaller size for stickers and GIFs
                                                             : 150, // Original size for images
                                                     height:
                                                         item?.messageType ===
-                                                            "STICKER" ||
-                                                        item?.messageType ===
-                                                            "GIF"
+                                                        "STICKER"
                                                             ? 100 // Smaller size for stickers and GIFs
                                                             : 150, // Original size for images
                                                     borderRadius:
