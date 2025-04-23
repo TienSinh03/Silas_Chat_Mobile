@@ -45,44 +45,44 @@ export const ensureWebSocketConnected = () => {
   });
 };
 
-export const subscribeToUserProfile = async(userId, onMessageReceived) => {
-  await ensureWebSocketConnected();
-  if (!stompClient || !stompClient.connected) {
-    console.error("WebSocket is not connected");
-    return;
-  }
 
-  //
-  const subscription = stompClient.subscribe(
-    `/user/profile/${userId}`,
-    (message) => {
-      if (message.body) {
-        onMessageReceived(JSON.parse(message.body));
-      }
+export const subscribeToUserProfile = async (userId, onMessageReceived) => {
+    await ensureWebSocketConnected();
+    if (!stompClient || !stompClient.connected) {
+        console.error("WebSocket is not connected");
+        return;
     }
-  );
 
-  subscribers.set(userId, subscription);
+    //
+    const subscription = stompClient.subscribe(
+        `/user/profile/${userId}`,
+        (message) => {
+            if (message.body) {
+                onMessageReceived(JSON.parse(message.body));
+            }
+        }
+    );
+
+    subscribers.set(userId, subscription);
 };
 
-
 export const subscribeToChat = async (conversationId, onMessageReceived) => {
-  await ensureWebSocketConnected();
-  if (!stompClient || !stompClient.connected) {
-    console.error("WebSocket is not connected");
-    return;
-  }
-
-  const subscription = stompClient.subscribe(
-    `/chat/message/single/${conversationId}`,
-    (message) => {
-      if (message.body) {
-        onMessageReceived(JSON.parse(message.body));
-      }
+    await ensureWebSocketConnected();
+    if (!stompClient || !stompClient.connected) {
+        console.error("WebSocket is not connected");
+        return;
     }
-  );
 
-  subscribers.set(conversationId, subscription);
+    const subscription = stompClient.subscribe(
+        `/chat/message/single/${conversationId}`,
+        (message) => {
+            if (message.body) {
+                onMessageReceived(JSON.parse(message.body));
+            }
+        }
+    );
+
+    subscribers.set(conversationId, subscription);
 };
 
 export const subscribeToConversation = async (userId, onMessageReceived) => {
@@ -111,70 +111,70 @@ export const subscribeToConversation = async (userId, onMessageReceived) => {
 };
 
 export const sendMessageToWebSocket = async (messageData) => {
-  await ensureWebSocketConnected();
-  if (!stompClient || !stompClient.connected) {
-    console.error("WebSocket is not connected");
-    return;
-  }
+    await ensureWebSocketConnected();
+    if (!stompClient || !stompClient.connected) {
+        console.error("WebSocket is not connected");
+        return;
+    }
 
-  stompClient.publish({
-    destination: "/app/chat/send",
-    body: JSON.stringify(messageData),
-  });
+    stompClient.publish({
+        destination: "/app/chat/send",
+        body: JSON.stringify(messageData),
+    });
 };
 
 export const recallMessageToWebSocket = async (messageData) => {
-  await ensureWebSocketConnected();
-  if (!stompClient || !stompClient.connected) {
-    console.error("WebSocket is not connected");
-    return;
-  }
+    await ensureWebSocketConnected();
+    if (!stompClient || !stompClient.connected) {
+        console.error("WebSocket is not connected");
+        return;
+    }
 
-  stompClient.publish({
-    destination: "/app/chat/recall",
-    body: JSON.stringify(messageData),
-  });
+    stompClient.publish({
+        destination: "/app/chat/recall",
+        body: JSON.stringify(messageData),
+    });
 };
 
 export const deleteMessageToWebSocket = async (messageData) => {
-  await ensureWebSocketConnected();
-  if (!stompClient || !stompClient.connected) {
-    console.error("WebSocket is not connected");
-    return;
-  }
-  console.log("deleteMessageToWebSocket", messageData);
+    await ensureWebSocketConnected();
+    if (!stompClient || !stompClient.connected) {
+        console.error("WebSocket is not connected");
+        return;
+    }
+    console.log("deleteMessageToWebSocket", messageData);
 
-  stompClient.publish({
-    destination: "/app/chat/delete-for-user",
-    body: JSON.stringify(messageData),
-  });
+    stompClient.publish({
+        destination: "/app/chat/delete-for-user",
+        body: JSON.stringify(messageData),
+    });
 };
 export const sendFileToWebSocket = async (messageFormData) => {
-  await ensureWebSocketConnected();
-  if (!stompClient || !stompClient.connected) {
-    console.error("WebSocket is not connected");
-    return;
-  }
-  console.log("sendFileToWebSocket", messageFormData.parts);
+    await ensureWebSocketConnected();
+    if (!stompClient || !stompClient.connected) {
+        console.error("WebSocket is not connected");
+        return;
+    }
+    console.log("sendFileToWebSocket", messageFormData.parts);
 
-  stompClient.publish({
-    destination: "/app/chat/file/upload",
-    body: JSON.stringify(messageFormData),
-  });
+    stompClient.publish({
+        destination: "/app/chat/file/upload",
+        body: JSON.stringify(messageFormData),
+    });
 };
 
 export const forwardMessageToWebSocket = async (messageFormData) => {
-  await ensureWebSocketConnected();
-  if (!stompClient || !stompClient.connected) {
-    console.error("WebSocket is not connected");
-    return;
-  }
-  console.log("forwardMessageToWebSocket", messageFormData.parts);
+    await ensureWebSocketConnected();
+    if (!stompClient || !stompClient.connected) {
+        console.error("WebSocket is not connected");
+        return;
+    }
+    console.log("forwardMessageToWebSocket", messageFormData.parts);
 
-  stompClient.publish({
-    destination: "/app/chat/forward",
-    body: JSON.stringify(messageFormData),
-  });
+    stompClient.publish({
+        destination: "/app/chat/forward",
+        body: JSON.stringify(messageFormData),
+    });
 };
 
 export const createGroupToWebSocket = async (request) => {
@@ -192,8 +192,8 @@ export const createGroupToWebSocket = async (request) => {
 };
 
 export const disconnectWebSocket = () => {
-  if (stompClient && stompClient.connected) {
-    stompClient.deactivate();
-    subscribers.clear();
-  }
+    if (stompClient && stompClient.connected) {
+        stompClient.deactivate();
+        subscribers.clear();
+    }
 };
