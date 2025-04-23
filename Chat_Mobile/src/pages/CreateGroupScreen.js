@@ -43,7 +43,7 @@ const CreateGroupScreen = ({navigation}) => {
   const [selectedContacts, setSelectedContacts] = useState([]);
   const { user } = useSelector((state) => state.user);
 
-  console.log("search ", search);
+  // console.log("search ", search);
 
   console.log("selectedContacts", selectedContacts);
   

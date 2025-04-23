@@ -4,6 +4,7 @@ import {
   getMessagesByConversationIdService,
   sendMessageService,
   uploadFile,
+  leaveGroup
 } from "../../api/chatApi";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -47,6 +48,16 @@ const deleteMessageForUserThunk = createAsyncThunk(
   "message/deleteForUser",
   deleteMessageForUserService
 );
+
+const leaveGroupThunk = createAsyncThunk("message/leaveGroup", async (conversationId, thunkAPI) => {
+    try {
+        const response = await leaveGroup(conversationId);
+        return response;
+    } catch (error) {
+        console.error("Error leaving conversation group:", error.response?.data || error.message);
+        return thunkAPI.rejectWithValue(error.response.data?.message || error.message);
+    }
+});
 
 const messageSlice = createSlice({
   name: "message",
@@ -150,6 +161,19 @@ const messageSlice = createSlice({
       state.isLoading = false;
       state.error = action.error.message;
     });
+
+    //leaveGroup
+    builder.addCase(leaveGroupThunk.pending, (state) => {
+      state.isLoading = true;
+    });
+    builder.addCase(leaveGroupThunk.fulfilled, (state, action) => {
+      state.isLoading = false;
+      state.messages.push(action.payload.response);
+    })
+    builder.addCase(leaveGroupThunk.rejected, (state, action) => {
+      state.isLoading = false;
+      state.error = action.error.message;
+    });
   },
 });
 
@@ -164,6 +188,7 @@ export {
   getAllMessagesByConversationId,
   sendMessageToUser,
   deleteMessageForUserThunk,
+  leaveGroupThunk,
 };
 export default messageSlice.reducer;
 
