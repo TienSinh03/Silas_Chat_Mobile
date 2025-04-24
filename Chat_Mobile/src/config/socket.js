@@ -1,7 +1,7 @@
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 
-const HOST_IP = "192.168.2.52"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
+const HOST_IP = "192.168.1.67"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
 
 const WEBSOCKET_URL = `http://${HOST_IP}:8080/ws`;
 
