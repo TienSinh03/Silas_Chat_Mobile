@@ -218,6 +218,7 @@ const GroupChatScreen = ({ navigation, route }) => {
       sendMessageToWebSocket(messageData);
 
       // dispatch(sendMessageToUser(messageData)); // Gọi hàm gửi tin nhắn từ slice
+      messageData.id = Date.now().toString(); // Tạo ID cho tin nhắn mới
       setMessages([...messages, messageData]);
       setInputText("");
       setImageUri(null);

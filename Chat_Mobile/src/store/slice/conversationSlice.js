@@ -4,6 +4,7 @@ import {getAllConversationsByUserIdService, createChatSingle, createChatGroup } 
 const initialState = {
     conversations: [],
     conversation: null,
+    membersGroup: [],
     conversationId: null,
     error: null,
     isLoading: true,
@@ -53,15 +54,17 @@ const conversationSlice = createSlice({
               state.conversations.push(newConversation);
             }
         },
-        
+
         updateGroupMembers(state, action) {
             const { conversationId, members } = action.payload;
             const conversationIndex = state.conversations.findIndex(
                 (conversation) => conversation.id === conversationId
             );
             if (conversationIndex !== -1) {
-                state.conversations[conversationIndex].members = members;
+                state.conversations[conversationIndex].members = members; 
+                state.membersGroup = members;
             }
+
         },
 
         updateConversationName(state, action) {

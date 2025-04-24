@@ -15,21 +15,28 @@ import IconA from "react-native-vector-icons/AntDesign";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useDispatch, useSelector } from "react-redux";
-import ActionSheet from "react-native-actions-sheet";
 import { Alert } from "react-native";
 
 const { width } = Dimensions.get("window"); // Lấy kích thước màn hình
 
-const ItemMember = ({item, isFriend, isSuccessSent, sendRequest, userId, actionSheetRef}) => {
+const ItemMember = ({item, isFriend, isSuccessSent, sendRequest, userId, navigation, setSelectedMember, actionSheetRef}) => {
 
     const handleSelectMember = () => {
-        actionSheetRef.current?.show();
+        console.log("item", item);
+        if(userId !== item?.id) {
+            setSelectedMember(item);
+            actionSheetRef?.current?.show();
+        }
+         else {
+            console.log("Chọn chính mình");
+            navigation.navigate("Profile");
+        }
     }
     console.log("isFriend", isFriend);
     return (
-        <View style={{flex: 1}}>
+        <View style={{flex: 1}} key={item?.id} >
 
-            <TouchableOpacity key={item?.id} 
+            <TouchableOpacity 
                 style={{cursor: 'pointer', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, paddingVertical: 8, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: '#E0E0E0'}}
                 onPress={handleSelectMember}
             >
@@ -47,57 +54,6 @@ const ItemMember = ({item, isFriend, isSuccessSent, sendRequest, userId, actionS
                 ): (<View></View>)}
                 
             </TouchableOpacity>
-
-            {/* display box */}
-            <ActionSheet ref={actionSheetRef} containerStyle={{backgroundColor: 'white', borderTopLeftRadius: 20, borderTopRightRadius: 20}}>
-                <View style={{ backgroundColor: 'white', borderTopLeftRadius: 20, borderTopRightRadius: 20}}>
-                    
-                    <View style={{flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#E0E0E0', paddingVertical: 15}}>
-                        <Text style={{fontSize: 18, fontWeight: 'bold', textAlign:'center', width: '90%'}}>Thông tin thành viên</Text>
-                        <IconA name="close" size={24} color="#000" style={{width: '10%'}} onPress={() => {actionSheetRef.current?.hide();}}/>
-                    </View>
-
-                    <View style={{padding: 10,flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
-                        <View style={{flexDirection: 'row', alignItems: 'center', gap: 10}}>
-                            <Image source={{ uri: item?.avatar }} style={styles.contactImage} />
-                            <Text style={{fontSize: 18, fontWeight: 'bold'}}>{item?.display_name}</Text>
-                        </View>
-                        <View style={{flexDirection: 'row', alignItems: 'center', gap: 10}}>
-
-                            <TouchableOpacity style={{padding: 10, backgroundColor: '#D6E9FF', borderRadius: 24}} 
-                                onPress={() => {()=>{console.log("Call")}}}
-                            >
-                                <Icon name="call-outline" size={20} color="#000" />
-                            </TouchableOpacity>
-
-                            <TouchableOpacity style={{padding: 10, backgroundColor: '#D6E9FF', borderRadius: 24}} 
-                                onPress={() => {()=>{console.log("Chat")}}}
-                            >
-                                <Icon name="chatbubble-ellipses-outline" size={20} color="#000" />
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-
-                    <View style={{padding: 20}}>
-
-                        <TouchableOpacity style={{paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 10}} onPress={() => {actionSheetRef.current?.hide();}}>
-                            <IconA name="user" size={24} color="#000" />
-                            <Text style={{fontSize: 15}}>Xem thông tin</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity style={{paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 10}} onPress={() => {actionSheetRef.current?.hide();}}>
-                            <Icon name="shield-outline" size={24} color="#000" />
-                            <Text style={{fontSize: 15}}>Bổ nhiệm</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity style={{paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 10}} onPress={() => {actionSheetRef.current?.hide();}}>
-                            <IconA name="deleteusergroup" size={24} color="red" />
-                            <Text style={{fontSize: 15, color:'red'}}>Xóa khỏi nhóm</Text>
-                        </TouchableOpacity>
-
-                    </View>
-                </View>
-            </ActionSheet>
 
         </View>
     )
