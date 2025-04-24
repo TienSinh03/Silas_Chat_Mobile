@@ -81,7 +81,9 @@ const GroupSettingsScreen = ({navigation, route}) => {
             {/* Các tùy chọn chính */}
             <View style={styles.optionsRow}>
                 <OptionButton color="black" icon="search" text="Tìm tin nhắn" />
-                <OptionButton color="black" icon="user-plus" text="Thêm thành viên" />
+                <OptionButton color="black" icon="user-plus" text="Thêm thành viên" 
+                    onPress={() => navigation.navigate('CreateGroupScreen', { nextScreen: 'DetailGroupChatScreen', conversation: conversation })}
+                />
                 <OptionButton color="black" icon="image" text="Đổi hình nền" />
                 <OptionButton color="black" icon="bell-off" text="Tắt thông báo" />
             </View>
@@ -139,8 +141,8 @@ const GroupSettingsScreen = ({navigation, route}) => {
 };
 
 // Component hiển thị tùy chọn
-const OptionButton = ({ icon, text }) => (
-    <TouchableOpacity style={styles.optionButton}>
+const OptionButton = ({ icon, text, onPress }) => (
+    <TouchableOpacity style={styles.optionButton} onPress={onPress}>
         <Feather name={icon} size={22} color="black" />
         <Text style={styles.optionText}>{text}</Text>
     </TouchableOpacity>

@@ -27,7 +27,7 @@ import ProfileMainScreen from "./src/pages/ProfileMainSrceen";
 import CallScreen from "./src/pages/CallScreen";
 
 import AddFriendScreen from "./src/pages/AddFriendScreen";
-import CreateGroupScreen from "./src/pages/CreateGroupScreen";
+import FitlerMemberScreen from "./src/pages/FitlerMemberScreen";
 import AccountSecurityScreen from "./src/pages/AccountSecurityScreen";
 import ChangePasswordScreen from "./src/pages/ChangePasswordScreen";
 import ResetPasswordScreen from "./src/pages/ResetPasswordScreen";
@@ -115,8 +115,8 @@ const AppNavigation =  () => {
               />
               <Stack.Screen
                 name="CreateGroupScreen"
-                component={CreateGroupScreen}
-                options={{ headerTitle: "Nhóm mới" }}
+                component={FitlerMemberScreen}
+                options={{ headerTitle: "Thành viên" }}
               />
               <Stack.Screen
                 name="AccountSecurity"
