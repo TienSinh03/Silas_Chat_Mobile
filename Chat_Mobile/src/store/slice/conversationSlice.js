@@ -39,10 +39,40 @@ const conversationSlice = createSlice({
         },
         setConversationsGroup(state, action) {
             const newConversation = action.payload;
+
+            // Cập nhật lại conversation khi thành viên rời khỏi nhóm
+            const indexConversation = state.conversations.findIndex((item) => item.id === newConversation?.id);
+
+            // Nếu tìm thấy conversation trong danh sách, cập nhật lại thông tin
+            if(indexConversation !== -1) {
+                state.conversations[indexConversation].members = newConversation.members;
+            }
+
+            // Nếu tìm thấy conversation trong danh sách, cập nhật lại thông tin
             if (newConversation && !state.conversations.find((item) => item.id === newConversation.id)) {
               state.conversations.push(newConversation);
             }
-          },
+        },
+        
+        updateGroupMembers(state, action) {
+            const { conversationId, members } = action.payload;
+            const conversationIndex = state.conversations.findIndex(
+                (conversation) => conversation.id === conversationId
+            );
+            if (conversationIndex !== -1) {
+                state.conversations[conversationIndex].members = members;
+            }
+        },
+
+        updateConversationName(state, action) {
+            const { conversationId, name } = action.payload;
+            const conversationIndex = state.conversations.findIndex(
+                (conversation) => conversation.id === conversationId
+            );
+            if (conversationIndex !== -1) {
+                state.conversations[conversationIndex].name = name;
+            }
+        },
     },
     extraReducers: (builder) => {
         builder.addCase(getAllConversationsByUserId.pending, (state) => {
@@ -92,6 +122,6 @@ const conversationSlice = createSlice({
     }
 })
 
-export const {setSelectedConversationId, setConversationsGroup } = conversationSlice.actions;
+export const {setSelectedConversationId, setConversationsGroup, updateGroupMembers } = conversationSlice.actions;
 export { getAllConversationsByUserId, createConversation, createConversationGroup };
 export default conversationSlice.reducer;

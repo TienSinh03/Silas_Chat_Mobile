@@ -10,7 +10,7 @@ import {
 
 import { useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
-import { getAllConversationsByUserId, setConversationsGroup } from "../store/slice/conversationSlice";
+import { getAllConversationsByUserId, setConversationsGroup, updateGroupMembers } from "../store/slice/conversationSlice";
 import { getProfile } from "../store/slice/userSlice";
 import { updateUserProfileSuccess } from '../store/slice/userSlice';
 import { setSelectedConversationId } from "../store/slice/conversationSlice";
@@ -103,7 +103,7 @@ const ConservationList = ({ category}) => {
       
         const setupWebSocket = async () => {
           await connectWebSocket(() => {
-            subscribeToConversation(user.id, (newMessage) => {
+            subscribeToConversation(user?.id, (newMessage) => {
               console.log("Received new group conversation:", newMessage);
               dispatch(setConversationsGroup(newMessage));
             });
@@ -115,7 +115,7 @@ const ConservationList = ({ category}) => {
         return () => {
           disconnectWebSocket(); // Ngắt kết nối khi component unmount
         };
-      }, [user?.id, dispatch]);
+    }, [user?.id, dispatch]);
 
     React.useEffect(() => {
         const fetchConversations = async () => {
