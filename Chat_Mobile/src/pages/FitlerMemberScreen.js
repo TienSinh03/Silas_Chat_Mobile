@@ -28,15 +28,21 @@ import Icon from "react-native-vector-icons/AntDesign";
 
 const { width, height } = Dimensions.get("window");
 
-const CreateGroupScreen = ({navigation}) => {
+const CreateGroupScreen = ({navigation, route}) => {
   const dispatch = useDispatch();
+
+  const nextScreen  = route.params?.nextScreen;
+
+  const conversation = route.params?.conversation || null;
+
+  console.log("nextScreen", nextScreen);
+
   const { friends, isLoading } = useSelector((state) => state.friend);
   const friendMemo = useMemo(() => {
     if(!friends) return [];
     return friends;
   },[friends]);
 
-  console.log("friends", friendMemo);
   const [phone, setPhone] = useState("");
   const [nameGroup, setNameGroup] = useState("");
   const [search, setSearch] = useState("");
@@ -63,11 +69,12 @@ const CreateGroupScreen = ({navigation}) => {
   };
 
   const filteredContacts = friendMemo?.filter((contact) =>
-    contact?.displayName?.includes(search)
+      contact?.displayName?.includes(search)
   );
 
   console.log("filteredContacts", filteredContacts);
 
+  // Đối với feature tạo nhóm
   const handleCreateGroup = async () => {
     const memberIds = selectedContacts.map((contact) => contact.userId);
     if(memberIds.length <= 1 ) {
@@ -84,7 +91,7 @@ const CreateGroupScreen = ({navigation}) => {
 
       const response = await dispatch(createConversationGroup(request)).unwrap();
       
-      navigation.navigate("GroupChatScreen", { conversation: response });
+      navigation.replace("GroupChatScreen", { conversation: response });
 
       console.log("Đã cập nhật danh sách cuộc trò chuyện.");
       setSelectedContacts([]);
@@ -96,6 +103,13 @@ const CreateGroupScreen = ({navigation}) => {
     }
 
     
+  }
+
+  // Đối với feature add thêm thành viên vào nhóm
+  const checkExistMember = (memberId) => {
+    if(!conversation) return;
+    const member = conversation?.members?.find((member) => member?.id === memberId);
+    return member ? true : false;
   }
 
 //   React.useEffect(() => {
@@ -119,26 +133,32 @@ const CreateGroupScreen = ({navigation}) => {
 
 
       <View style={{ backgroundColor: "white"}}>
-        <View style={{ flexDirection: "row", justifyContent: "flex-start", alignItems: "center", padding: 15, gap: 10}}>
+        {/* Khu vực đặt tên nhóm đối với feature tạo nhóm */}
+        {nextScreen === "ConversationList" && (
 
-            <TouchableOpacity style={{paddingHorizontal: 10}}>
-                <IconA name="camera" size={30} color="black" />
-            </TouchableOpacity>
+          <View style={{ flexDirection: "row", justifyContent: "flex-start", alignItems: "center", padding: 15, gap: 10}}>
 
-            <View style={{ flexDirection: "row", alignItems: "center", gap:15}}>
-                <TextInput
-                    style={styles.nameGrInput}
-                    placeholder="Đặt tên nhóm"
-                    value={nameGroup}
-                    onChangeText={(text) => setNameGroup(text)}
+              <TouchableOpacity style={{paddingHorizontal: 10}}>
+                  <IconA name="camera" size={30} color="black" />
+              </TouchableOpacity>
 
-                />
-                <TouchableOpacity>
-                    <IconA name="close" size={24} color="black" />
-                </TouchableOpacity>
-            </View>
-        </View>
+              <View style={{ flexDirection: "row", alignItems: "center", gap:15}}>
+                  <TextInput
+                      style={styles.nameGrInput}
+                      placeholder="Đặt tên nhóm"
+                      value={nameGroup}
+                      onChangeText={(text) => setNameGroup(text)}
 
+                  />
+                  
+                  <TouchableOpacity>
+                      <IconA name="close" size={24} color="black" onPress={() => setNameGroup("")}/>
+                  </TouchableOpacity>
+              </View>
+          </View>
+        )}
+
+        {/* Khu vực tìm kiếm */}
         <View style={{ padding: 15}}>
             <View style={{ backgroundColor:'#E9EBED',flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 10, padding:3, borderRadius:8}}>
                <View style={{flexDirection: "row", justifyContent: "flex-start", alignItems: "center", gap: 10}}>
@@ -160,20 +180,33 @@ const CreateGroupScreen = ({navigation}) => {
             </View>
         </View>
       </View>
+
       <View style={{ flex: 1, backgroundColor: "white"}}>
-        <Text style={{padding: 15, color: "gray"}}>Gần đây</Text>
+        <Text style={{paddingVertical: 10, paddingLeft: 20, color: "gray"}}>Đã chọn ({selectedContacts.length})</Text>
+        {/* Hiển thị danh sách bạn bè */}
         <FlatList
             data={filteredContacts}
             keyExtractor={(item) => item?.userId||Math.random().toString()}
             renderItem={({ item }) => (
 
-              <TouchableOpacity key={item?.userId} style={styles.contactItem} onPress={() => toggleSelect(item)}>
+              <TouchableOpacity key={item?.userId} style={styles.contactItem} 
+                onPress={() => toggleSelect(item)} 
+                disabled={nextScreen === "DetailGroupChatScreen" && checkExistMember(item?.userId)}
+              >
                   <Image source={{ uri: item?.avatar }} style={styles.avatar} />
                   <View style={styles.contactInfo}>
                       <Text style={styles.contactName}>{item?.displayName}</Text>
                       {/* <Text style={styles.lastSeen}>{item?.lastSeen || ""}</Text> */}
                   </View>
-                  <View style={selectedContacts.includes(item) ? styles.selectedCircle : styles.unselectedCircle} />
+
+                  {/* Nếu là add tv thì check thành viên */}
+                  {nextScreen === "DetailGroupChatScreen" && checkExistMember(item?.userId) ? (
+
+                    <Text style={styles.lastSeen}>Đã tham gia</Text>
+
+                  ): (
+                    <View style={selectedContacts.includes(item) ? styles.selectedCircle : styles.unselectedCircle} />
+                  )}
               </TouchableOpacity>
 
             )}
@@ -199,7 +232,17 @@ const CreateGroupScreen = ({navigation}) => {
               horizontal={true}
               showsHorizontalScrollIndicator={false}
             />
-            <IconA name="play" size={40} color="#006AF5" style={{padding: 10}} onPress={handleCreateGroup}/>
+
+            <IconA name="play" size={40} color="#006AF5" style={{padding: 10}} 
+              onPress={() => {
+                // Nếu là tạo nhóm thì gọi hàm tạo nhóm
+                nextScreen === "ConversationList" ? handleCreateGroup() : 
+
+                console.log("Xu ly add member")
+                
+              }}
+            />
+
           </View>
         )}
         </View>
