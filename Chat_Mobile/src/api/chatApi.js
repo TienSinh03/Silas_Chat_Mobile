@@ -149,3 +149,17 @@ export const leaveGroup = async (conversationId) => {
     throw new Error(error.response?.data?.message || "Lỗi khi rời nhóm");
   }
 }
+export const removeMemberGroup = async (conversationId, memberId) => {
+  try {
+    const response = await instance.delete(
+      `/api/v1/conversations/leave/${conversationId}/member/${memberId}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error leaving group:",
+      error.response?.data || error.message
+    );
+    throw new Error(error.response?.data?.message || "Lỗi khi rời nhóm");
+  }
+}

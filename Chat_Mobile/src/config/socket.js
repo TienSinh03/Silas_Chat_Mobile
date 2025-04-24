@@ -1,5 +1,6 @@
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
+import React from "react";
 import { updateGroupMembers, getAllConversationsByUserId } from "../store/slice/conversationSlice";
 
 const HOST_IP = "192.168.236.41"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
@@ -11,8 +12,16 @@ const subscribers = new Map();
 
 export const connectWebSocket = (onConnectCallBack) => {
     if (stompClient && stompClient.connected) {
+        console.log("WebSocket already connected, reusing existing client");
+        onConnectCallBack?.();
         return stompClient;
     }
+
+    if(stompClient) {
+        stompClient.deactivate(); // Ngắt kết nối nếu đã có client cũ
+        console.log("Disconnected existing WebSocket client");
+    }
+    
     const socket = new SockJS(WEBSOCKET_URL);
     stompClient = new Client({
         webSocketFactory: () => socket,
@@ -31,7 +40,9 @@ export const connectWebSocket = (onConnectCallBack) => {
         },
     });
     stompClient.activate();
+    return stompClient;
 };
+
 
 // kiem tra xem websocket da ket noi chua, neu chua thi ket noi lai
 export const ensureWebSocketConnected = () => {
