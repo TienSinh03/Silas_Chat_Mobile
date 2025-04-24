@@ -14,11 +14,13 @@ import { Ionicons, Feather } from "@expo/vector-icons";
 import ActionSheet from "react-native-actions-sheet";
 import { useDispatch, useSelector } from "react-redux";
 import { leaveGroupThunk } from "../store/slice/messageSlice";
+import { updateGroupMembers } from "../store/slice/conversationSlice";
 
 
 const GroupSettingsScreen = ({navigation, route}) => {
 
     const { conversation } = route.params;
+    const { user } = useSelector((state) => state.user);
     
     const actionSheetRef = React.useRef(null);
     const dispatch = useDispatch();
@@ -46,9 +48,15 @@ const GroupSettingsScreen = ({navigation, route}) => {
         try {
 
 
-            dispatch(leaveGroupThunk(conversation.id));
+            dispatch(leaveGroupThunk(conversation?.id));
+
+            dispatch(updateGroupMembers({ 
+                conversationId: conversation?.id, 
+                members: conversation?.members?.filter(member => member?.id !== user?.id) 
+            }));
+
             console.log("Rời nhóm thành công");
-            navigation.navigate('Conversation');
+            navigation.replace('Main');
             actionSheetRef.current?.hide();
         } catch (error) {
             console.error("Error leaving group:", error);

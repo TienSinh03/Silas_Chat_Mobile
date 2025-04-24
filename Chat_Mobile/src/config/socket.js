@@ -1,7 +1,8 @@
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
+import { updateGroupMembers, getAllConversationsByUserId } from "../store/slice/conversationSlice";
 
-const HOST_IP = "192.168.11.154"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
+const HOST_IP = "192.168.236.41"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
 
 const WEBSOCKET_URL = `http://${HOST_IP}:8080/ws`;
 
@@ -96,10 +97,37 @@ export const subscribeToConversation = async (userId, onMessageReceived) => {
         const subscription = stompClient.subscribe(
             `/chat/create/group/${userId}`,
             (message) => {
-                console.log("Received WebSocket message:", message.body);
+
                 if (message.body) {
                     onMessageReceived(JSON.parse(message.body));
                 }
+                
+            }
+        );
+
+        subscribers.set(userId, subscription);
+    } catch (error) {
+        console.error("Error subscribing to conversation:", error);
+    }
+};
+
+export const subscribeToLeaveConversation = async (userId, onMessageReceived) => {
+    try {
+        await ensureWebSocketConnected();
+        if (!stompClient || !stompClient.connected) {
+            console.error("WebSocket is not connected");
+            return;
+        }
+        console.log("Subscribing to /chat/create/group/" + userId);
+
+        const subscription = stompClient.subscribe(
+            `/chat/leave/group/${userId}`,
+            (message) => {
+
+                if (message.body) {
+                    onMessageReceived(JSON.parse(message.body));
+                }
+
             }
         );
 
