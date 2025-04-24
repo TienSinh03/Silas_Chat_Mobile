@@ -11,7 +11,7 @@ import { logout } from '../api/authApi';
 import { Alert } from 'react-native';
 import { updateUserProfileSuccess } from '../store/slice/userSlice';
 
-import { connectWebSocket, disconnectWebSocket } from "../config/socket";
+import { connectWebSocket, disconnectWebSocket, subscribeToUserProfile } from "../config/socket";
 
 
 const ProfileMainScreen = ({ navigation }) => {
@@ -38,11 +38,13 @@ const ProfileMainScreen = ({ navigation }) => {
                 dispatch(updateUserProfileSuccess(updatedProfile));
             };
     
-            const client = connectWebSocket(user?.id, handleMessageReceived);
+              connectWebSocket(() => {
+                subscribeToUserProfile(user?.id, handleMessageReceived);
+            });
     
                 
             return () => {
-                disconnectWebSocket(client); // Ngắt kết nối khi component unmount
+                disconnectWebSocket(); // Ngắt kết nối khi component unmount
             }
     },[user?.id, dispatch]);
 

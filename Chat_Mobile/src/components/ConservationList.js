@@ -10,12 +10,12 @@ import {
 
 import { useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
-import { getAllConversationsByUserId } from "../store/slice/conversationSlice";
+import { getAllConversationsByUserId, setConversationsGroup, updateGroupMembers } from "../store/slice/conversationSlice";
 import { getProfile } from "../store/slice/userSlice";
 import { updateUserProfileSuccess } from '../store/slice/userSlice';
 import { setSelectedConversationId } from "../store/slice/conversationSlice";
 
-import { connectWebSocket, disconnectWebSocket } from "../config/socket";
+import { connectWebSocket, disconnectWebSocket, subscribeToConversation } from "../config/socket";
 
 
 const ConservationItem = ({ item , user, dispatch}) => {
@@ -85,11 +85,37 @@ const ConservationList = ({ category}) => {
     // console.log("User: ", user);
 
 
-    const conversationsMemo = useMemo(() => {
-        if(!conversations) return [];
-        return conversations;
+    // const conversationsMemo = useMemo(() => {
+    //     if(!conversations) return [];
+    //     return conversations;
+    // }, [conversations]);
+    const [conversationsMemo, setConversationsMemo] = React.useState([]);
+    // console.log("Conversations: ", conversationsMemo);
+
+    React.useEffect(() => {
+        if(!conversations) return;
+        setConversationsMemo(conversations);
     }, [conversations]);
 
+   
+    React.useEffect(() => {
+        if (!user?.id) return;
+      
+        const setupWebSocket = async () => {
+          await connectWebSocket(() => {
+            subscribeToConversation(user?.id, (newMessage) => {
+              console.log("Received new group conversation:", newMessage);
+              dispatch(setConversationsGroup(newMessage));
+            });
+          });
+        };
+      
+        setupWebSocket();
+      
+        return () => {
+          disconnectWebSocket(); // Ngắt kết nối khi component unmount
+        };
+    }, [user?.id, dispatch]);
 
     React.useEffect(() => {
         const fetchConversations = async () => {
@@ -102,6 +128,7 @@ const ConservationList = ({ category}) => {
         };
         fetchConversations();
     }, [dispatch]);
+    
 
 
     //  React.useEffect(() => {

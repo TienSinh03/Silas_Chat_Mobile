@@ -16,6 +16,22 @@ export const createChatSingle = async (request) => {
   }
 };
 
+export const createChatGroup = async (request) => {
+  try {
+    const response = await instance.post(
+      "/api/v1/conversations/createConversationGroup",
+      request
+    );
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error creating conversation:",
+      error.response?.data || error.message
+    );
+    throw new Error(error.response?.data?.message || "Lỗi khi tạo hội thoại");
+  }
+};
+
 export const getAllConversationsByUserIdService = async () => {
   try {
     const response = await instance.get(
@@ -118,3 +134,32 @@ export const forwardMessage = async ({ messageId, senderId, receiverId, content,
     throw new Error(error.response?.data?.message || "Lỗi khi chuyển tiếp tin nhắn");
   }
 };
+
+export const leaveGroup = async (conversationId) => {
+  try {
+    const response = await instance.delete(
+      `/api/v1/conversations/leave/${conversationId}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error leaving group:",
+      error.response?.data || error.message
+    );
+    throw new Error(error.response?.data?.message || "Lỗi khi rời nhóm");
+  }
+}
+export const removeMemberGroup = async (conversationId, memberId) => {
+  try {
+    const response = await instance.delete(
+      `/api/v1/conversations/leave/${conversationId}/member/${memberId}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error leaving group:",
+      error.response?.data || error.message
+    );
+    throw new Error(error.response?.data?.message || "Lỗi khi rời nhóm");
+  }
+}
