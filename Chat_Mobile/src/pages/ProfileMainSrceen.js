@@ -34,7 +34,6 @@ const ProfileMainScreen = ({ navigation }) => {
             // function để xử lý khi nhận được tin nhắn từ WebSocket
             const handleMessageReceived = (updatedProfile) => {
                 console.log("Message received:", updatedProfile);
-                
                 // Xử lý thông điệp nhận được từ WebSocket
                 dispatch(updateUserProfileSuccess(updatedProfile));
             };

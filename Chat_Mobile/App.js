@@ -34,7 +34,10 @@ import ResetPasswordScreen from "./src/pages/ResetPasswordScreen";
 import TabTopFriendRequest from "./src/navigation/TabTopFriendRequest";
 
 import MessageForwarding from "./src/pages/MessageForwarding";
+import QRScannerScreen from "./src/components/QRScannerScreen";
+
 import MemberGroupScreen from "./src/pages/MemberGroupScreen";
+
 
 import { getToken } from "./src/utils/authHelper";
 import { AuthProvider } from "./src/contexts/AuthContext";
@@ -140,8 +143,13 @@ const AppNavigation =  () => {
               />
 
               <Stack.Screen
+
+                name="QRScannerScreen"
+                component={QRScannerScreen}
+
                 name="MemberGroupScreen"
                 component={MemberGroupScreen}
+
                 options={{ headerShown: false }}
               />
             </>
@@ -188,6 +196,7 @@ const AppNavigation =  () => {
                 component={ResetPasswordScreen}
                 options={{ headerTitle: "Tạo mật khẩu mới", headerShown: false }}
               />
+              
               
             </>
           )}
