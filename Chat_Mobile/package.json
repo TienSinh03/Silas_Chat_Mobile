@@ -30,6 +30,7 @@
     "emoji-picker-react": "^4.12.2",
     "expo": "~52.0.38",
     "expo-barcode-scanner": "^13.0.1",
+    "expo-camera": "~16.0.18",
     "expo-checkbox": "^4.0.1",
     "expo-document-picker": "^13.0.3",
     "expo-image-picker": "^16.0.6",
@@ -59,8 +60,7 @@
     "react-redux": "^9.2.0",
     "sockjs-client": "^1.6.1",
     "vision-camera-code-scanner": "^0.2.0",
-    "yet": "^0.1.0",
-    "expo-camera": "~16.0.18"
+    "yet": "^0.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"

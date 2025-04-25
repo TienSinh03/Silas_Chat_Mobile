@@ -101,11 +101,15 @@ export const deleteMessageForUserService = async (messageId, userId) => {
 
 export const uploadFile = async (formData) => {
   try {
-    const response = await instance.post("/api/v1/messages/upload-img", formData, {
-      headers: {
-          'Content-Type': 'multipart/form-data'
+    const response = await instance.post(
+      "/api/v1/messages/upload-img",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       }
-  });
+    );
     return response.data;
   } catch (error) {
     console.error(
@@ -117,21 +121,34 @@ export const uploadFile = async (formData) => {
 };
 
 // Function to forward a message
-export const forwardMessage = async ({ messageId, senderId, receiverId, content, messageType, fileUrl, additionalMessage }) => {
+export const forwardMessage = async ({
+  messageId,
+  senderId,
+  receiverId,
+  content,
+  messageType,
+  fileUrl,
+  additionalMessage,
+}) => {
   try {
-    const response = await instance.post('/api/v1/messages/forward', {
+    const response = await instance.post("/api/v1/messages/forward", {
       messageId,
       senderId,
       receiverId,
-      content: content || '', 
-      messageType: messageType || 'TEXT',
-      fileUrl: fileUrl || null, 
-      additionalMessage: additionalMessage || null, 
+      content: content || "",
+      messageType: messageType || "TEXT",
+      fileUrl: fileUrl || null,
+      additionalMessage: additionalMessage || null,
     });
     return response.data;
   } catch (error) {
-    console.error('Error forwarding message:', error.response?.data || error.message);
-    throw new Error(error.response?.data?.message || "Lỗi khi chuyển tiếp tin nhắn");
+    console.error(
+      "Error forwarding message:",
+      error.response?.data || error.message
+    );
+    throw new Error(
+      error.response?.data?.message || "Lỗi khi chuyển tiếp tin nhắn"
+    );
   }
 };
 
@@ -148,7 +165,7 @@ export const leaveGroup = async (conversationId) => {
     );
     throw new Error(error.response?.data?.message || "Lỗi khi rời nhóm");
   }
-}
+};
 export const removeMemberGroup = async (conversationId, memberId) => {
   try {
     const response = await instance.delete(
@@ -162,7 +179,7 @@ export const removeMemberGroup = async (conversationId, memberId) => {
     );
     throw new Error(error.response?.data?.message || "Lỗi khi rời nhóm");
   }
-}
+};
 
 export const addMemberGroup = async (conversationId, memberId) => {
   try {
@@ -175,6 +192,40 @@ export const addMemberGroup = async (conversationId, memberId) => {
       "Error adding member to group:",
       error.response?.data || error.message
     );
-    throw new Error(error.response?.data?.message || "Lỗi khi thêm thành viên vào nhóm");
+    throw new Error(
+      error.response?.data?.message || "Lỗi khi thêm thành viên vào nhóm"
+    );
   }
-}
+};
+
+export const dissolveConversation = async (conversationId) => {
+  try {
+    const response = await instance.delete(
+      `/api/v1/conversations/dissolve/${conversationId}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error dissolving conversation:",
+      error.response?.data || error.message
+    );
+    throw new Error(error.response?.data?.message || "Lỗi khi xóa hội thoại");
+  }
+};
+
+export const deleteConversationForUser = async (conversationId) => {
+  try {
+    const response = await instance.post(
+      `/api/v1/conversations/delete-for-user/${conversationId}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error deleting conversation for user:",
+      error.response?.data || error.message
+    );
+    throw new Error(
+      error.response?.data?.message || "Lỗi khi xóa hội thoại cho người dùng"
+    );
+  }
+};
