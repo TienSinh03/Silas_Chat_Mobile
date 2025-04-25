@@ -15,6 +15,7 @@ import ActionSheet from "react-native-actions-sheet";
 import { useDispatch, useSelector } from "react-redux";
 import { leaveGroupThunk } from "../store/slice/messageSlice";
 import { updateGroupMembers } from "../store/slice/conversationSlice";
+import Loading from "../components/Loading";
 
 
 const GroupSettingsScreen = ({navigation, route}) => {
@@ -25,6 +26,8 @@ const GroupSettingsScreen = ({navigation, route}) => {
     
     const actionSheetRef = React.useRef(null);
     const dispatch = useDispatch();
+
+    const [isLoading, setIsLoading] = useState(false);
 
 
     const [isPinned, setIsPinned] = useState(false);
@@ -46,6 +49,7 @@ const GroupSettingsScreen = ({navigation, route}) => {
     }
 
     const handleLeaveGroup = () => {
+        setIsLoading(true);
         try {
 
 
@@ -61,81 +65,88 @@ const GroupSettingsScreen = ({navigation, route}) => {
             actionSheetRef.current?.hide();
         } catch (error) {
             console.error("Error leaving group:", error);
+        } finally {
+            setIsLoading(false);
         }
         actionSheetRef.current?.hide();
     };
 
     return (
-        <ScrollView style={styles.container}>
-            {/* Ảnh đại diện + Tên nhóm */}
-            <View style={styles.profileHeader}>
-            <Image
-                    source={{
-                        uri: "https://avatars.githubusercontent.com/u/100653357?v=4",
-                    }}
-                    style={styles.avatarContainer}
-            />
-                <Text style={styles.name}>{conversation?.name}</Text>
-            </View>
+        <ScrollView style={{flex:1}} >
+            <View style={styles.container}>
 
-            {/* Các tùy chọn chính */}
-            <View style={styles.optionsRow}>
-                <OptionButton color="black" icon="search" text="Tìm tin nhắn" />
-                <OptionButton color="black" icon="user-plus" text="Thêm thành viên" 
-                    onPress={() => navigation.navigate('CreateGroupScreen', { nextScreen: 'DetailGroupChatScreen', conversation: conversation })}
-                />
-                <OptionButton color="black" icon="image" text="Đổi hình nền" />
-                <OptionButton color="black" icon="bell-off" text="Tắt thông báo" />
-            </View>
-
-            {/* Danh sách tùy chọn */}
-            <OptionRow color="black" icon="folder" text="Ảnh, file, link" />
-            <OptionRow color="black" icon="calendar" text="Lịch nhóm" />
-            <OptionRow color="black" icon="bookmark" text="Tin nhắn đã ghim" />
-            <OptionRow color="black" icon="bar-chart-2" text="Bình chọn" />
-            <OptionRow color="black" icon="users" text={`Xem thành viên (${conversation?.members.length})`} onPress={() => navigation.navigate('MemberGroupScreen', { members: conversation?.members, conversationId: conversation?.id })} />
-            <OptionRow color="black" icon="link" text="Link nhóm" />
-
-            {/* Ghim trò chuyện */}
-            {/* <SettingToggle
-                label="Ghim trò chuyện"
-                value={isPinned}
-                onChange={setIsPinned}
-            /> */}
-            {/* Ẩn trò chuyện */}
-            {/* <SettingToggle
-                label="Ẩn trò chuyện"
-                value={isMuted}
-                onChange={setIsMuted}
-            /> */}
-            {/* Rời nhóm & Xóa lịch sử trò chuyện */}
-            <OptionRow
-                icon="log-out"
-                text="Rời nhóm"
-                onPress={handleActionSheet}
-                color="red"
-            />
-            <OptionRow
-                icon="trash-2"
-                text="Xóa lịch sử trò chuyện"
-                onPress={clearChatHistory}
-                color="red"
-            />
-
-            <ActionSheet ref={actionSheetRef} gestureEnabled={true}>
-            
-                <View style={{ padding: 20 }}>
-                    <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}>Rời nhóm</Text>
-                    <Text style={{ fontSize: 16, marginBottom: 20 }}>Bạn có chắc muốn rời nhóm này?</Text>
-                    <TouchableOpacity
-                        style={{ backgroundColor: "red", padding: 15, borderRadius: 10 }}
-                            
-                        onPress={() => {console.log("Confirmed leaving group"), handleLeaveGroup()}}
-                    >
-                        <Text style={{ color: "white", textAlign: "center" }}>Xác nhận</Text>
-                    </TouchableOpacity>
+                {/* Ảnh đại diện + Tên nhóm */}
+                <View style={styles.profileHeader}>
+                    <Image
+                            source={{
+                                uri: "https://avatars.githubusercontent.com/u/100653357?v=4",
+                            }}
+                            style={styles.avatarContainer}
+                    />
+                    <Text style={styles.name}>{conversation?.name}</Text>
                 </View>
-            </ActionSheet>    
+
+                {/* Các tùy chọn chính */}
+                <View style={styles.optionsRow}>
+                    <OptionButton color="black" icon="search" text="Tìm tin nhắn" />
+                    <OptionButton color="black" icon="user-plus" text="Thêm thành viên" 
+                        onPress={() => navigation.navigate('CreateGroupScreen', { nextScreen: 'DetailGroupChatScreen', conversation: conversation })}
+                    />
+                    <OptionButton color="black" icon="image" text="Đổi hình nền" />
+                    <OptionButton color="black" icon="bell-off" text="Tắt thông báo" />
+                </View>
+
+                {/* Danh sách tùy chọn */}
+                <OptionRow color="black" icon="folder" text="Ảnh, file, link" />
+                <OptionRow color="black" icon="calendar" text="Lịch nhóm" />
+                <OptionRow color="black" icon="bookmark" text="Tin nhắn đã ghim" />
+                <OptionRow color="black" icon="bar-chart-2" text="Bình chọn" />
+                <OptionRow color="black" icon="users" text={`Xem thành viên (${conversation?.members.length})`} onPress={() => navigation.navigate('MemberGroupScreen', { members: conversation?.members, conversationId: conversation?.id })} />
+                <OptionRow color="black" icon="link" text="Link nhóm" />
+
+                {/* Ghim trò chuyện */}
+                {/* <SettingToggle
+                    label="Ghim trò chuyện"
+                    value={isPinned}
+                    onChange={setIsPinned}
+                /> */}
+                {/* Ẩn trò chuyện */}
+                {/* <SettingToggle
+                    label="Ẩn trò chuyện"
+                    value={isMuted}
+                    onChange={setIsMuted}
+                /> */}
+                {/* Rời nhóm & Xóa lịch sử trò chuyện */}
+                <OptionRow
+                    icon="log-out"
+                    text="Rời nhóm"
+                    onPress={handleActionSheet}
+                    color="red"
+                />
+                <OptionRow
+                    icon="trash-2"
+                    text="Xóa lịch sử trò chuyện"
+                    onPress={clearChatHistory}
+                    color="red"
+                />
+
+                <ActionSheet ref={actionSheetRef} gestureEnabled={true}>
+                
+                    <View style={{ padding: 20 }}>
+                        <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}>Rời nhóm</Text>
+                        <Text style={{ fontSize: 16, marginBottom: 20 }}>Bạn có chắc muốn rời nhóm này?</Text>
+                        <TouchableOpacity
+                            style={{ backgroundColor: "red", padding: 15, borderRadius: 10 }}
+                                
+                            onPress={() => {console.log("Confirmed leaving group"), handleLeaveGroup()}}
+                        >
+                            <Text style={{ color: "white", textAlign: "center" }}>Xác nhận</Text>
+                        </TouchableOpacity>
+                    </View>
+                </ActionSheet>    
+            </View>
+            
+            <Loading isLoading={isLoading} />
         </ScrollView>
     );
 };
@@ -171,7 +182,7 @@ const SettingToggle = ({ label, value, onChange }) => (
 // 🌟 Style CSS
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
+        flex: 2,
         backgroundColor: "#ffff",
     },
     profileHeader: {

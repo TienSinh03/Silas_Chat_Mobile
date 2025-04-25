@@ -180,6 +180,7 @@ const GroupChatScreen = ({ navigation, route }) => {
     connectWebSocket(() => {
       subscribeToChat(conversationId, (newMessage) => {
         console.log("Received message:", newMessage);
+        if(!newMessage?.id) return;
         dispatch(addMessage(newMessage));
       });
     });

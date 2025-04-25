@@ -32,7 +32,6 @@ const ItemMember = ({item, isFriend, isSuccessSent, sendRequest, userId, navigat
             navigation.navigate("Profile");
         }
     }
-    console.log("isFriend", isFriend);
     return (
         <View style={{flex: 1}} key={item?.id} >
 
