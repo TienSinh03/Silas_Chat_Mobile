@@ -111,6 +111,7 @@ export const subscribeToConversation = async (userId, onMessageReceived) => {
       `/chat/create/group/${userId}`,
       (message) => {
         if (message.body) {
+          console.log("Received new group conversation:", message.body);
           onMessageReceived(JSON.parse(message.body));
         }
       }
@@ -244,6 +245,7 @@ export const subscribeToDissolveGroup = async (userId, onGroupDissolved) => {
       `/chat/dissolve/group/${userId}`,
       (message) => {
         if (message.body) {
+          console.log("Group dissolved:", message.body);
           onGroupDissolved(JSON.parse(message.body));
         }
       }
@@ -252,6 +254,35 @@ export const subscribeToDissolveGroup = async (userId, onGroupDissolved) => {
     subscribers.set(`dissolve_${userId}`, subscription);
   } catch (error) {
     console.error("Error subscribing to group dissolution:", error);
+  }
+};
+
+// Thêm hàm subscribeToDeleteConversation
+export const subscribeToDeleteConversation = async (
+  userId,
+  onConversationDeleted
+) => {
+  try {
+    await ensureWebSocketConnected();
+    if (!stompClient || !stompClient.connected) {
+      console.error("WebSocket is not connected");
+      return;
+    }
+    console.log("Subscribing to /chat/delete/" + userId);
+
+    const subscription = stompClient.subscribe(
+      `/chat/delete/${userId}`,
+      (message) => {
+        if (message.body) {
+          console.log("Conversation deleted:", message.body);
+          onConversationDeleted(JSON.parse(message.body));
+        }
+      }
+    );
+
+    subscribers.set(userId, subscription);
+  } catch (error) {
+    console.error("Error subscribing to conversation deletion:", error);
   }
 };
 

@@ -4,7 +4,8 @@ import {
   createChatSingle,
   createChatGroup,
   dissolveConversation,
-  transferLeader
+  deleteConversationForUser,
+  transferLeader,
 } from "../../api/chatApi";
 
 const initialState = {
@@ -74,10 +75,32 @@ const dissolveGroup = createAsyncThunk(
   }
 );
 
-const transferLeaderThunk = createAsyncThunk("message/transferLeader", async ({conversationId, memberId, requestingUserId}, thunkAPI) => {
-  
+const deleteConversation = createAsyncThunk(
+  "conversation/deleteConversation",
+  async (conversationId, thunkAPI) => {
     try {
-      const response = await transferLeader(conversationId, memberId, requestingUserId);
+      const response = await deleteConversationForUser(conversationId);
+      return response;
+    } catch (error) {
+      console.error(
+        "Error deleting conversation for user:",
+        error.response?.data || error.message
+      );
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || error.message
+      );
+    }
+  }
+);
+const transferLeaderThunk = createAsyncThunk(
+  "message/transferLeader",
+  async ({ conversationId, memberId, requestingUserId }, thunkAPI) => {
+    try {
+      const response = await transferLeader(
+        conversationId,
+        memberId,
+        requestingUserId
+      );
       return response;
     } catch (error) {
       console.error(
@@ -88,8 +111,8 @@ const transferLeaderThunk = createAsyncThunk("message/transferLeader", async ({c
         error.response.data?.message || error.message
       );
     }
-
-})
+  }
+);
 
 const conversationSlice = createSlice({
   name: "conversation",
@@ -209,7 +232,17 @@ const conversationSlice = createSlice({
       state.error = action.error.message;
     });
 
-
+    //deleteConversation
+    builder.addCase(deleteConversation.pending, (state) => {
+      state.isLoading = true;
+    });
+    builder.addCase(deleteConversation.fulfilled, (state, action) => {
+      state.isLoading = false;
+    });
+    builder.addCase(deleteConversation.rejected, (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    });
     builder.addCase(transferLeaderThunk.pending, (state) => {
       state.isLoading = true;
     });
@@ -234,6 +267,7 @@ export {
   createConversation,
   createConversationGroup,
   dissolveGroup,
+  deleteConversation,
   transferLeaderThunk,
 };
 export default conversationSlice.reducer;
