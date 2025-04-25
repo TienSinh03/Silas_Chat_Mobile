@@ -1,18 +1,25 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ActivityIndicator, Alert} from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert
+} from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useNavigation, navigation } from '@react-navigation/native'; // Import useNavigation
+import { useNavigation } from '@react-navigation/native';
 import { saveQaCode } from '../api/qaCode';
 
-export default function QRScannerScreen({ route}) {
+export default function QRScannerScreen({ route }) {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
   const [scannedData, setScannedData] = useState(null);
-  const navigation = useNavigation(); // Hook for navigation
+  const navigation = useNavigation();
 
-  const {userId} = route.params; // Lấy userId từ params nếu cần
-  console.log("userId", userId); // Kiểm tra userId đã được truyền đúng chưa
+  const { userId } = route.params;
+  console.log("userId", userId);
 
   const handleBarCodeScanned = async ({ data }) => {
     if (scanned || loading) return;
@@ -21,20 +28,24 @@ export default function QRScannerScreen({ route}) {
     setScannedData(data);
     setLoading(true);
 
-    // Giả sử sessionId đã quét được, bạn có thể sửa lại saveQaCode nếu cần thêm các tham số
-    const success = await saveQaCode(data, userId); // truyền cả sessionId và userId
+    const success = await saveQaCode(data, userId);
 
     setLoading(false);
 
     if (success) {
       Alert.alert("Thành công", "Session ID đã được lưu vào hệ thống.", [
-     
+        {
+          text: "OK",
+          onPress: () => {
+            navigation.goBack(); // ➡️ Quay về màn hình trước
+          }
+        }
       ]);
     } else {
       Alert.alert("Lỗi", "Không gửi được session ID.");
     }
 
-    // Cho phép quét lại sau 5 giây
+    // Cho phép quét lại sau 5 giây (nếu cần giữ màn hình ở lại)
     setTimeout(() => {
       setScanned(false);
       setScannedData(null);
@@ -64,10 +75,8 @@ export default function QRScannerScreen({ route}) {
           <ActivityIndicator size="large" color="#fff" />
         ) : (
           <Text style={styles.resultText}>
-            {/* {scannedData ? `Session ID: ${scannedData}`  : 'Quét mã QR để gửi session ID:' ` ${userId} `} */}
             {scannedData ? `Session ID: ${scannedData}` : 'Quét mã QR để gửi session ID:'}
             {userId ? ` ${userId}` : ''}
-            
           </Text>
         )}
       </View>
@@ -88,7 +97,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
   },
-  resultText: { color: '#fff', fontSize: 16, textAlign: 'center' },
+  resultText: {
+    color: '#fff',
+    fontSize: 16,
+    textAlign: 'center',
+  },
   centered: {
     flex: 1,
     justifyContent: 'center',
@@ -100,5 +113,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     borderRadius: 5,
   },
-  buttonText: { color: '#fff' },
+  buttonText: {
+    color: '#fff',
+  },
 });
