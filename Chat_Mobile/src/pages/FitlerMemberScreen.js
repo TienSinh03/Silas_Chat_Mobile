@@ -22,8 +22,10 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import PhoneInput from "react-native-phone-input";
 import { useSelector, useDispatch } from "react-redux";
 import { getMyFriends } from "../store/slice/friendSlice";
-import { createConversationGroup, getAllConversationsByUserId, setConversationsGroup } from "../store/slice/conversationSlice";
+import { createConversationGroup, getAllConversationsByUserId, setConversationsGroup, updateGroupMembers } from "../store/slice/conversationSlice";
+import { addMemberGroupThunk } from "../store/slice/messageSlice";
 import Icon from "react-native-vector-icons/AntDesign";
+import Loading from "../components/Loading";
 // import { connectWebSocket, disconnectWebSocket } from "../config/socket";
 
 const { width, height } = Dimensions.get("window");
@@ -37,7 +39,7 @@ const CreateGroupScreen = ({navigation, route}) => {
 
   console.log("nextScreen", nextScreen);
 
-  const { friends, isLoading } = useSelector((state) => state.friend);
+  const { friends } = useSelector((state) => state.friend);
   const friendMemo = useMemo(() => {
     if(!friends) return [];
     return friends;
@@ -48,6 +50,9 @@ const CreateGroupScreen = ({navigation, route}) => {
   const [search, setSearch] = useState("");
   const [selectedContacts, setSelectedContacts] = useState([]);
   const { user } = useSelector((state) => state.user);
+
+  //loading
+  const [isLoading, setIsLoading] = useState(false);
 
   // console.log("search ", search);
 
@@ -82,6 +87,7 @@ const CreateGroupScreen = ({navigation, route}) => {
       Alert.alert("Lỗi", "Vui lòng chọn ít nhất 2 thành viên để tạo nhóm.", [{ text: "OK" }]);
       return;
     }
+    setIsLoading(true);
     
     try {
       const request = {
@@ -100,6 +106,8 @@ const CreateGroupScreen = ({navigation, route}) => {
     } catch (error) {
       console.error("Error creating group:", error);
       Alert.alert("Lỗi", "Không thể tạo cuộc trò chuyện. Vui lòng thử lại.", [{ text: "OK" }]);
+    } finally {
+      setIsLoading(false);
     }
 
     
@@ -110,6 +118,34 @@ const CreateGroupScreen = ({navigation, route}) => {
     if(!conversation) return;
     const member = conversation?.members?.find((member) => member?.id === memberId);
     return member ? true : false;
+  }
+
+  const handleAddMember = async () => {
+    if(!conversation) return;
+    const memberId = selectedContacts.map((contact) => contact.userId);
+    if(memberId.length <= 0) {
+      Alert.alert("Lỗi", "Vui lòng chọn ít nhất 1 thành viên để thêm vào nhóm.", [{ text: "OK" }]);
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      await dispatch(addMemberGroupThunk({conversationId: conversation?.id, memberId})).unwrap();
+    
+      dispatch(updateGroupMembers({
+        conversationId: conversation?.id,
+        members: selectedContacts
+      }))
+
+      navigation.replace('Main');
+    } catch (error) {
+      
+      console.error("Error adding members:", error);
+      Alert.alert("Lỗi", "Không thể thêm thành viên vào nhóm. Vui lòng thử lại.", [{ text: "OK" }]);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
 //   React.useEffect(() => {
@@ -129,132 +165,135 @@ const CreateGroupScreen = ({navigation, route}) => {
 // }, [user?.id]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={{flex:1}}>
 
+      <View style={styles.container}>
 
-      <View style={{ backgroundColor: "white"}}>
-        {/* Khu vực đặt tên nhóm đối với feature tạo nhóm */}
-        {nextScreen === "ConversationList" && (
+        <View style={{ backgroundColor: "white"}}>
+          {/* Khu vực đặt tên nhóm đối với feature tạo nhóm */}
+          {nextScreen === "ConversationList" && (
 
-          <View style={{ flexDirection: "row", justifyContent: "flex-start", alignItems: "center", padding: 15, gap: 10}}>
+            <View style={{ flexDirection: "row", justifyContent: "flex-start", alignItems: "center", padding: 15, gap: 10}}>
 
-              <TouchableOpacity style={{paddingHorizontal: 10}}>
-                  <IconA name="camera" size={30} color="black" />
-              </TouchableOpacity>
+                <TouchableOpacity style={{paddingHorizontal: 10}}>
+                    <IconA name="camera" size={30} color="black" />
+                </TouchableOpacity>
 
-              <View style={{ flexDirection: "row", alignItems: "center", gap:15}}>
-                  <TextInput
-                      style={styles.nameGrInput}
-                      placeholder="Đặt tên nhóm"
-                      value={nameGroup}
-                      onChangeText={(text) => setNameGroup(text)}
+                <View style={{ flexDirection: "row", alignItems: "center", gap:15}}>
+                    <TextInput
+                        style={styles.nameGrInput}
+                        placeholder="Đặt tên nhóm"
+                        value={nameGroup}
+                        onChangeText={(text) => setNameGroup(text)}
 
-                  />
-                  
-                  <TouchableOpacity>
-                      <IconA name="close" size={24} color="black" onPress={() => setNameGroup("")}/>
+                    />
+                    
+                    <TouchableOpacity>
+                        <IconA name="close" size={24} color="black" onPress={() => setNameGroup("")}/>
+                    </TouchableOpacity>
+                </View>
+            </View>
+          )}
+
+          {/* Khu vực tìm kiếm */}
+          <View style={{ padding: 15}}>
+              <View style={{ backgroundColor:'#E9EBED',flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 10, padding:3, borderRadius:8}}>
+                <View style={{flexDirection: "row", justifyContent: "flex-start", alignItems: "center", gap: 10}}>
+
+                  <IconA name="search1" size={24} color="#767A7F"  style={{paddingHorizontal: 10}}/>
+                      <TextInput
+                          placeholder="Tìm tên hoặc số điện thoại"
+                          placeholderTextColor={"#767A7F"}
+                          style={styles.search}
+                          value={search}
+                          onChangeText={setSearch}
+                      />
+                </View>
+                {isButtonEnabled && (
+                  <TouchableOpacity style={{paddingHorizontal: 10}} onPress={() => setSearch("")}>
+                      <IconA name="close" size={24} color="black" />
                   </TouchableOpacity>
+                )}
               </View>
           </View>
-        )}
-
-        {/* Khu vực tìm kiếm */}
-        <View style={{ padding: 15}}>
-            <View style={{ backgroundColor:'#E9EBED',flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 10, padding:3, borderRadius:8}}>
-               <View style={{flexDirection: "row", justifyContent: "flex-start", alignItems: "center", gap: 10}}>
-
-                <IconA name="search1" size={24} color="#767A7F"  style={{paddingHorizontal: 10}}/>
-                    <TextInput
-                        placeholder="Tìm tên hoặc số điện thoại"
-                        placeholderTextColor={"#767A7F"}
-                        style={styles.search}
-                        value={search}
-                        onChangeText={setSearch}
-                    />
-               </View>
-              {isButtonEnabled && (
-                <TouchableOpacity style={{paddingHorizontal: 10}} onPress={() => setSearch("")}>
-                    <IconA name="close" size={24} color="black" />
-                </TouchableOpacity>
-              )}
-            </View>
         </View>
-      </View>
 
-      <View style={{ flex: 1, backgroundColor: "white"}}>
-        <Text style={{paddingVertical: 10, paddingLeft: 20, color: "gray"}}>Đã chọn ({selectedContacts.length})</Text>
-        {/* Hiển thị danh sách bạn bè */}
-        <FlatList
-            data={filteredContacts}
-            keyExtractor={(item) => item?.userId||Math.random().toString()}
-            renderItem={({ item }) => (
+        <View style={{ flex: 1, backgroundColor: "white"}}>
+          <Text style={{paddingVertical: 10, paddingLeft: 20, color: "gray"}}>Đã chọn ({selectedContacts.length})</Text>
+          {/* Hiển thị danh sách bạn bè */}
+          <FlatList
+              data={filteredContacts}
+              keyExtractor={(item) => item?.userId||Math.random().toString()}
+              renderItem={({ item }) => (
 
-              <TouchableOpacity key={item?.userId} style={styles.contactItem} 
-                onPress={() => toggleSelect(item)} 
-                disabled={nextScreen === "DetailGroupChatScreen" && checkExistMember(item?.userId)}
-              >
-                  <Image source={{ uri: item?.avatar }} style={styles.avatar} />
-                  <View style={styles.contactInfo}>
-                      <Text style={styles.contactName}>{item?.displayName}</Text>
-                      {/* <Text style={styles.lastSeen}>{item?.lastSeen || ""}</Text> */}
-                  </View>
-
-                  {/* Nếu là add tv thì check thành viên */}
-                  {nextScreen === "DetailGroupChatScreen" && checkExistMember(item?.userId) ? (
-
-                    <Text style={styles.lastSeen}>Đã tham gia</Text>
-
-                  ): (
-                    <View style={selectedContacts.includes(item) ? styles.selectedCircle : styles.unselectedCircle} />
-                  )}
-              </TouchableOpacity>
-
-            )}
-        />
-
-        {/* Button add */}
-        {selectedContacts.length > 0 && (
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 15, paddingVertical:5, backgroundColor: "white", borderTopWidth: 1, borderTopColor: "#E9EBED"}}>
-            <FlatList
-              data={selectedContacts}
-              keyExtractor={(item)=> item?.userId}
-              renderItem={({item}) => (
-
-                <TouchableOpacity key={item?.userId} style={{}} 
-                  onPress={()=> {setSelectedContacts(selectedContacts.filter((contact) => contact.userId !== item.userId))}}
+                <TouchableOpacity key={item?.userId} style={styles.contactItem} 
+                  onPress={() => toggleSelect(item)} 
+                  disabled={nextScreen === "DetailGroupChatScreen" && checkExistMember(item?.userId)}
                 >
                     <Image source={{ uri: item?.avatar }} style={styles.avatar} />
-                    <IconA name="close" size={14} color="black" style={{position:'absolute', right:11, padding:2,borderWidth:2, borderRadius:16,borderColor:'white', backgroundColor:'gray'}}/>
+                    <View style={styles.contactInfo}>
+                        <Text style={styles.contactName}>{item?.displayName}</Text>
+                        {/* <Text style={styles.lastSeen}>{item?.lastSeen || ""}</Text> */}
+                    </View>
 
+                    {/* Nếu là add tv thì check thành viên */}
+                    {nextScreen === "DetailGroupChatScreen" && checkExistMember(item?.userId) ? (
+
+                      <Text style={styles.lastSeen}>Đã tham gia</Text>
+
+                    ): (
+                      <View style={selectedContacts.includes(item) ? styles.selectedCircle : styles.unselectedCircle} />
+                    )}
                 </TouchableOpacity>
 
               )}
-              horizontal={true}
-              showsHorizontalScrollIndicator={false}
-            />
+          />
 
-            <IconA name="play" size={40} color="#006AF5" style={{padding: 10}} 
-              onPress={() => {
-                // Nếu là tạo nhóm thì gọi hàm tạo nhóm
-                nextScreen === "ConversationList" ? handleCreateGroup() : 
+          {/* Button add */}
+          {selectedContacts.length > 0 && (
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 15, paddingVertical:5, backgroundColor: "white", borderTopWidth: 1, borderTopColor: "#E9EBED"}}>
+              <FlatList
+                data={selectedContacts}
+                keyExtractor={(item)=> item?.userId}
+                renderItem={({item}) => (
 
-                console.log("Xu ly add member")
-                
-              }}
-            />
+                  <TouchableOpacity key={item?.userId} style={{}} 
+                    onPress={()=> {setSelectedContacts(selectedContacts.filter((contact) => contact.userId !== item.userId))}}
+                  >
+                      <Image source={{ uri: item?.avatar }} style={styles.avatar} />
+                      <IconA name="close" size={14} color="black" style={{position:'absolute', right:11, padding:2,borderWidth:2, borderRadius:16,borderColor:'white', backgroundColor:'gray'}}/>
 
+                  </TouchableOpacity>
+
+                )}
+                horizontal={true}
+                showsHorizontalScrollIndicator={false}
+              />
+
+              <IconA name="play" size={40} color="#006AF5" style={{padding: 10}} 
+                onPress={() => {
+                  // Nếu là tạo nhóm thì gọi hàm tạo nhóm
+                  nextScreen === "ConversationList" ? handleCreateGroup() : 
+
+                  handleAddMember()
+                  
+                }}
+              />
+
+            </View>
+          )}
           </View>
-        )}
-        </View>
-
+      </View>
+      
+      <Loading isLoading={isLoading} />
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: "#F4F5F6",
+    flex:2
   },
   menuItem: {
     flexDirection: "row",

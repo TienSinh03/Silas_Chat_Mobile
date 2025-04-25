@@ -5,7 +5,8 @@ import {
   sendMessageService,
   uploadFile,
   leaveGroup,
-  removeMemberGroup
+  removeMemberGroup,
+  addMemberGroup
 } from "../../api/chatApi";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -68,6 +69,16 @@ const removeMemberGroupThunk = createAsyncThunk("message/removeMemberGroup", asy
         return thunkAPI.rejectWithValue(error.response.data?.message || error.message);
     }
 });
+
+const addMemberGroupThunk = createAsyncThunk("message/addMemberGroup", async ({conversationId, memberId}, thunkAPI) => {
+    try {
+      const response = await addMemberGroup(conversationId, memberId);
+      return response;
+    } catch (error) {
+        console.error("Error adding member to conversation group:", error.response?.data || error.message);
+        return thunkAPI.rejectWithValue(error.response.data?.message || error.message);
+    }
+})
 
 const messageSlice = createSlice({
   name: "message",
@@ -197,6 +208,19 @@ const messageSlice = createSlice({
       state.isLoading = false;
       state.error = action.error.message;
     });
+
+    //addMemberGroupThunk
+    builder.addCase(addMemberGroupThunk.pending, (state) => {
+      state.isLoading = true;
+    });
+    builder.addCase(addMemberGroupThunk.fulfilled, (state, action) => {
+      state.isLoading = false;
+      state.messages.push(action.payload.response);
+    })
+    builder.addCase(addMemberGroupThunk.rejected, (state, action) => {
+      state.isLoading = false;
+      state.error = action.error.message;
+    });
   },
 });
 
@@ -213,6 +237,7 @@ export {
   deleteMessageForUserThunk,
   leaveGroupThunk,
   removeMemberGroupThunk,
+  addMemberGroupThunk
 };
 export default messageSlice.reducer;
 

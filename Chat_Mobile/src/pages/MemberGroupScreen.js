@@ -21,6 +21,7 @@ import { removeMemberGroupThunk } from "../store/slice/messageSlice";
 import { updateGroupMembers } from "../store/slice/conversationSlice";
 import ItemMember from "../components/ItemMember";
 import ActionSheet from "react-native-actions-sheet";
+import Loading from "../components/Loading";
 
 const { width } = Dimensions.get("window");
 
@@ -31,7 +32,6 @@ const MemberGroupScreen = ({ navigation, route }) => {
   const { user } = useSelector((state) => state.user);
   const { isSuccess, error } = useSelector((state) => state.friend);
   const { membersGroup } = useSelector((state) => state.conversation);
-  console.log("membersGroup", membersGroup);
 
   const { members: initialMembers, conversationId } = route.params;
 
@@ -41,6 +41,10 @@ const MemberGroupScreen = ({ navigation, route }) => {
   const [friendStatus, setFriendStatus] = useState({});
   const [showSearch, setShowSearch] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
+
+  // loading
+  const [loading, setLoading] = useState(false);
+  
 
   // Đồng bộ members khi route.params.members thay đổi
   useEffect(() => {
@@ -82,6 +86,7 @@ const MemberGroupScreen = ({ navigation, route }) => {
 
   // Handle gửi lời mời kết bạn
   const handleSendRequest = async (friendId) => {
+    setLoading(true);
     try {
         const response = await dispatch(sendReq(friendId)).unwrap();
         if (response.status === "SUCCESS") {
@@ -100,12 +105,14 @@ const MemberGroupScreen = ({ navigation, route }) => {
             [{ text: "OK" }],
             { cancelable: false }
         );
+    } finally {
+        setLoading(false);
     }
   };
 
   // Handle xóa thành viên ra khỏi nhóm
   const handleRemoveMember = (memberId) => {
-    try {
+
       Alert.alert(
         "Xác nhận",
         "Bạn có chắc chắn muốn xóa thành viên này khỏi nhóm không?",
@@ -118,6 +125,7 @@ const MemberGroupScreen = ({ navigation, route }) => {
           {
             text: "Xóa",
             onPress: async () => {
+              setLoading(true);
               try {
                 // Gọi API để xóa thành viên
                 await dispatch(removeMemberGroupThunk({ conversationId, memberId })).unwrap();
@@ -150,158 +158,156 @@ const MemberGroupScreen = ({ navigation, route }) => {
                   [{ text: "OK" }],
                   { cancelable: false }
                 );
+              } finally {
+                setLoading(false);
               }
             },
             style: "default",
           },
         ]
       );
-    } catch (error) {
-      console.error("Error removing member:", error);
-      Alert.alert(
-        "Thông báo",
-        error.message || "Không thể xóa thành viên khỏi nhóm.",
-        [{ text: "OK" }],
-        { cancelable: false }
-      );
-    }
+    
     actionSheetRef.current?.hide();
   };
 
   return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={["#006AF5", "#5FCBF2"]}
-        locations={[0.5, 1]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.headerContainer}
-      >
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-back-outline" size={24} color="#ffffff" />
-        </TouchableOpacity>
-        {showSearch && (
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: 'space-between', marginLeft: 10 }}>
-            <TouchableOpacity style={styles.searchBox}>
-              <IconA name="search1" size={24} color="#fff" />
-              <TextInput
-                placeholder="Tìm kiếm"
-                placeholderTextColor={"#B8D9FF"}
-                style={styles.searchInput}
-                value={searchText}
-                onChangeText={setSearchText}
-              />
-            </TouchableOpacity>
-            {searchText.trim() && (
-              <IconA name="close" size={24} color="#fff" onPress={() => { setShowSearch(false); setSearchText(""); }} />
-            )}
-          </View>
-        )}
-        {!showSearch && (
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: 'space-between', marginLeft: 10, width: '90%' }}>
-            <Text style={{ color: "#fff", fontSize: 18, fontWeight: "bold" }}>
-              Thành viên
-            </Text>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 25 }}>
-              <IconA
-                name="addusergroup"
-                size={24}
-                color="#fff"
-                onPress={() => { console.log("Xử lý thêm thành viên"); }}
-              />
-              <IconA
-                name="search1"
-                size={24}
-                color="#fff"
-                onPress={() => setShowSearch(true)}
-              />
+    <View style={{ flex: 1 }}>
+      <View style={styles.container}>
+        
+        <LinearGradient
+          colors={["#006AF5", "#5FCBF2"]}
+          locations={[0.5, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.headerContainer}
+        >
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Icon name="arrow-back-outline" size={24} color="#ffffff" />
+          </TouchableOpacity>
+          {showSearch && (
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: 'space-between', marginLeft: 10 }}>
+              <TouchableOpacity style={styles.searchBox}>
+                <IconA name="search1" size={24} color="#fff" />
+                <TextInput
+                  placeholder="Tìm kiếm"
+                  placeholderTextColor={"#B8D9FF"}
+                  style={styles.searchInput}
+                  value={searchText}
+                  onChangeText={setSearchText}
+                />
+              </TouchableOpacity>
+              {searchText.trim() && (
+                <IconA name="close" size={24} color="#fff" onPress={() => { setShowSearch(false); setSearchText(""); }} />
+              )}
             </View>
-          </View>
-        )}
-      </LinearGradient>
-
-      <View>
-        <Text style={styles.sectionTitle}>
-          Thành viên ({members.length})
-        </Text>
-        <FlatList
-          data={members}
-          keyExtractor={(item) => item?.id}
-          renderItem={({ item }) =>
-            ItemMember({
-              item,
-              sendRequest: (id) => handleSendRequest(id),
-              isSuccessSent: isSuccess,
-              isFriend: friendStatus[item?.id],
-              userId: user?.id,
-              navigation: navigation,
-              setSelectedMember: setSelectedMember,
-              actionSheetRef: actionSheetRef,
-            })
-          }
-        />
-        {selectedMember && (
-          <ActionSheet ref={actionSheetRef} containerStyle={{ backgroundColor: 'white', borderTopLeftRadius: 20, borderTopRightRadius: 20 }}>
-            <View style={{ backgroundColor: 'white', borderTopLeftRadius: 20, borderTopRightRadius: 20 }} key={selectedMember?.id}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#E0E0E0', paddingVertical: 15 }}>
-                <Text style={{ fontSize: 18, fontWeight: 'bold', textAlign: 'center', width: '90%' }}>Thông tin thành viên</Text>
-                <IconA name="close" size={24} color="#000" style={{ width: '10%' }} onPress={() => { actionSheetRef.current?.hide(); }} />
+          )}
+          {!showSearch && (
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: 'space-between', marginLeft: 10, width: '90%' }}>
+              <Text style={{ color: "#fff", fontSize: 18, fontWeight: "bold" }}>
+                Thành viên
+              </Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 25 }}>
+                <IconA
+                  name="addusergroup"
+                  size={24}
+                  color="#fff"
+                  onPress={() => { console.log("Xử lý thêm thành viên"); }}
+                />
+                <IconA
+                  name="search1"
+                  size={24}
+                  color="#fff"
+                  onPress={() => setShowSearch(true)}
+                />
               </View>
+            </View>
+          )}
+        </LinearGradient>
 
-              <View style={{ padding: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                  <Image source={{ uri: selectedMember?.avatar }} style={styles.contactImage} />
-                  <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{selectedMember?.display_name}</Text>
+        <View>
+          <Text style={styles.sectionTitle}>
+            Thành viên ({members.length})
+          </Text>
+          <FlatList
+            data={members}
+            keyExtractor={(item) => item?.id}
+            renderItem={({ item }) =>
+              ItemMember({
+                item,
+                sendRequest: (id) => handleSendRequest(id),
+                isSuccessSent: isSuccess,
+                isFriend: friendStatus[item?.id],
+                userId: user?.id,
+                navigation: navigation,
+                setSelectedMember: setSelectedMember,
+                actionSheetRef: actionSheetRef,
+              })
+            }
+          />
+          {selectedMember && (
+            <ActionSheet ref={actionSheetRef} containerStyle={{ backgroundColor: 'white', borderTopLeftRadius: 20, borderTopRightRadius: 20 }}>
+              <View style={{ backgroundColor: 'white', borderTopLeftRadius: 20, borderTopRightRadius: 20 }} key={selectedMember?.id}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#E0E0E0', paddingVertical: 15 }}>
+                  <Text style={{ fontSize: 18, fontWeight: 'bold', textAlign: 'center', width: '90%' }}>Thông tin thành viên</Text>
+                  <IconA name="close" size={24} color="#000" style={{ width: '10%' }} onPress={() => { actionSheetRef.current?.hide(); }} />
                 </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                  <TouchableOpacity
-                    style={{ padding: 10, backgroundColor: '#D6E9FF', borderRadius: 24 }}
-                    onPress={() => { console.log("Call", selectedMember?.id); }}
-                  >
-                    <Icon name="call-outline" size={20} color="#000" />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={{ padding: 10, backgroundColor: '#D6E9FF', borderRadius: 24 }}
-                    onPress={() => { console.log("Chat"); }}
-                  >
-                    <Icon name="chatbubble-ellipses-outline" size={20} color="#000" />
-                  </TouchableOpacity>
-                </View>
-              </View>
 
-              <View style={{ padding: 20 }}>
-                <TouchableOpacity
-                  style={{ paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 10 }}
-                  onPress={() => { actionSheetRef.current?.hide(); }}
-                >
-                  <IconA name="user" size={24} color="#000" />
-                  <Text style={{ fontSize: 15 }}>Xem thông tin</Text>
-                </TouchableOpacity>
-
-                {selectedMember?.role === "MEMBER" && (
-                  <View>
+                <View style={{ padding: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <Image source={{ uri: selectedMember?.avatar }} style={styles.contactImage} />
+                    <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{selectedMember?.display_name}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                     <TouchableOpacity
-                      style={{ paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 10 }}
-                      onPress={() => { actionSheetRef.current?.hide(); }}
+                      style={{ padding: 10, backgroundColor: '#D6E9FF', borderRadius: 24 }}
+                      onPress={() => { console.log("Call", selectedMember?.id); }}
                     >
-                      <Icon name="shield-outline" size={24} color="#000" />
-                      <Text style={{ fontSize: 15 }}>Bổ nhiệm</Text>
+                      <Icon name="call-outline" size={20} color="#000" />
                     </TouchableOpacity>
-
                     <TouchableOpacity
-                      style={{ paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 10 }}
-                      onPress={() => { handleRemoveMember(selectedMember?.id); }}
+                      style={{ padding: 10, backgroundColor: '#D6E9FF', borderRadius: 24 }}
+                      onPress={() => { console.log("Chat"); }}
                     >
-                      <IconA name="deleteusergroup" size={24} color="red" />
-                      <Text style={{ fontSize: 15, color: 'red' }}>Xóa khỏi nhóm</Text>
+                      <Icon name="chatbubble-ellipses-outline" size={20} color="#000" />
                     </TouchableOpacity>
                   </View>
-                )}
+                </View>
+
+                <View style={{ padding: 20 }}>
+                  <TouchableOpacity
+                    style={{ paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 10 }}
+                    onPress={() => { actionSheetRef.current?.hide(); }}
+                  >
+                    <IconA name="user" size={24} color="#000" />
+                    <Text style={{ fontSize: 15 }}>Xem thông tin</Text>
+                  </TouchableOpacity>
+
+                  {selectedMember?.role === "MEMBER" && (
+                    <View>
+                      <TouchableOpacity
+                        style={{ paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 10 }}
+                        onPress={() => { actionSheetRef.current?.hide(); }}
+                      >
+                        <Icon name="shield-outline" size={24} color="#000" />
+                        <Text style={{ fontSize: 15 }}>Bổ nhiệm</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={{ paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 10 }}
+                        onPress={() => { handleRemoveMember(selectedMember?.id); }}
+                      >
+                        <IconA name="deleteusergroup" size={24} color="red" />
+                        <Text style={{ fontSize: 15, color: 'red' }}>Xóa khỏi nhóm</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
               </View>
-            </View>
-          </ActionSheet>
-        )}
+            </ActionSheet>
+          )}
+        </View>
       </View>
+      <Loading isLoading={loading} />
     </View>
   );
 };
@@ -309,7 +315,7 @@ const MemberGroupScreen = ({ navigation, route }) => {
 // Styles không thay đổi, giữ nguyên
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flex: 2,
     backgroundColor: "#fff",
   },
   headerContainer: {
@@ -325,10 +331,9 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.2)",
     borderRadius: 20,
     paddingHorizontal: 10,
-    flex: 1,
+    width: "90%",
   },
   searchInput: {
-    flex: 1,
     color: "#fff",
     paddingVertical: 5,
     fontSize: 16,
