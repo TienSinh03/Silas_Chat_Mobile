@@ -6,7 +6,7 @@ import {
   getAllConversationsByUserId,
 } from "../store/slice/conversationSlice";
 
-const HOST_IP = "192.168.11.46"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
+const HOST_IP = "192.168.10.36"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
 
 const WEBSOCKET_URL = `http://${HOST_IP}:8080/ws`;
 

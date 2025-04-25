@@ -172,6 +172,30 @@ const GroupSettingsScreen = ({ navigation, route }) => {
                     onChange={setIsMuted}
                 /> */}
         {/* Rời nhóm & Xóa lịch sử trò chuyện */}
+        {isAdmin && (
+          <OptionRow
+            icon="user-check"
+            text="Chuyển quyền trưởng nhóm"
+            onPress={() => {
+              Alert.alert("Chuyển quyền nhóm trưởng", "Bạn có chắc chuyển quyền không? Khi chuyển bạn sẽ mất các quyền quản lý.", [
+                {
+                  text: "Hủy",
+                  onPress: () => {
+                  },
+                  style:'cancel'
+                },
+                {
+                  text: "Xác nhận",
+                  onPress: () => {
+                    navigation.navigate('ChooseLeaderScreen', {conversationId: conversation?.id, members: conversation?.members.filter((member) => member.role === "MEMBER")})
+                  },
+                  style:'default'
+                }
+              ])
+            }}
+            color="black"
+          />
+        )}
         <OptionRow
           icon="log-out"
           text="Rời nhóm"
