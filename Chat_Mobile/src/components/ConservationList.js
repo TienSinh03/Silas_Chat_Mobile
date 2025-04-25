@@ -6,11 +6,13 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
+  Alert,
 } from "react-native";
 
 import { useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  deleteConversation,
   getAllConversationsByUserId,
   removeConversation,
   setConversationsGroup,
@@ -19,11 +21,13 @@ import {
 import { getProfile } from "../store/slice/userSlice";
 import { updateUserProfileSuccess } from "../store/slice/userSlice";
 import { setSelectedConversationId } from "../store/slice/conversationSlice";
-
+import { ObjectId } from "bson";
 import {
   connectWebSocket,
   disconnectWebSocket,
   subscribeToConversation,
+  subscribeToDeleteConversation,
+  subscribeToDissolveGroup,
 } from "../config/socket";
 
 const ConservationItem = ({ item, user, dispatch }) => {
@@ -95,6 +99,7 @@ const ConservationList = ({ category }) => {
   const dispatch = useDispatch();
   const { conversations } = useSelector((state) => state.conversation);
   const [isLoading, setIsLoading] = useState(true);
+  const navigation = useNavigation();
 
   React.useEffect(() => {
     dispatch(getProfile());
@@ -122,24 +127,24 @@ const ConservationList = ({ category }) => {
     setConversationsMemo(conversations);
   }, [conversations]);
 
-  React.useEffect(() => {
-    if (!user?.id) return;
+  //   React.useEffect(() => {
+  //     if (!user?.id) return;
 
-    const setupWebSocket = async () => {
-      await connectWebSocket(() => {
-        subscribeToConversation(user?.id, (newMessage) => {
-          console.log("Received new group conversation:", newMessage);
-          dispatch(setConversationsGroup(newMessage));
-        });
-      });
-    };
+  //     const setupWebSocket = async () => {
+  //       await connectWebSocket(() => {
+  //         subscribeToConversation(user?.id, (newMessage) => {
+  //           console.log("Received new group conversation:", newMessage);
+  //           dispatch(setConversationsGroup(newMessage));
+  //         });
+  //       });
+  //     };
 
-    setupWebSocket();
+  //     setupWebSocket();
 
-    return () => {
-      disconnectWebSocket(); // Ngắt kết nối khi component unmount
-    };
-  }, [user?.id, dispatch]);
+  //     return () => {
+  //       disconnectWebSocket(); // Ngắt kết nối khi component unmount
+  //     };
+  //   }, [user?.id, dispatch]);
 
   React.useEffect(() => {
     const fetchConversations = async () => {
@@ -158,16 +163,49 @@ const ConservationList = ({ category }) => {
 
     const setupWebSocket = async () => {
       await connectWebSocket(() => {
+        subscribeToConversation(user?.id, (newMessage) => {
+          //   console.log("Received new group conversation:", newMessage);
+          dispatch(setConversationsGroup(newMessage));
+        });
+
         // Thêm subscription cho sự kiện giải tán nhóm
         subscribeToDissolveGroup(user?.id, (data) => {
-          // Khi nhận được thông báo nhóm bị giải tán
-          dispatch(removeConversation(data.conversationId));
+          console.log("Dâta", data);
+          console.log("ConversationId", data.id);
 
-          // Tùy chọn: Hiển thị thông báo
           Alert.alert(
             "Thông báo",
-            `Nhóm "${data.conversationName}" đã bị giải tán bởi quản trị viên.`
+            `Nhóm "${data.name}" đã bị giải tán bởi quản trị viên.`,
+            [
+              {
+                text: "OK",
+                onPress: async () => {
+                  try {
+                    // Làm mới danh sách hội thoại từ server
+                    await dispatch(getAllConversationsByUserId()).unwrap();
+                    navigation.replace("Main");
+                    console.log("Đã làm mới danh sách hội thoại");
+                  } catch (error) {
+                    console.error(
+                      "Lỗi khi làm mới danh sách hội thoại:",
+                      error
+                    );
+                  }
+                },
+              },
+            ]
           );
+        });
+
+        console.log("user?.id", user?.id);
+
+        // Thêm subscription cho sự kiện xóa hội thoại
+        subscribeToDeleteConversation(user?.id, (deletedConversation) => {
+          console.log("Hội thoại đã bị xóa:", deletedConversation);
+
+          // Xóa conversation khỏi Redux store
+          dispatch(deleteConversation(deletedConversation.id));
+          navigation.goBack();
         });
       });
     };

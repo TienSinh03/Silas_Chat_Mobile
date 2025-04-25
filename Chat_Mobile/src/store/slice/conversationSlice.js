@@ -4,6 +4,7 @@ import {
   createChatSingle,
   createChatGroup,
   dissolveConversation,
+  deleteConversationForUser,
 } from "../../api/chatApi";
 
 const initialState = {
@@ -68,6 +69,24 @@ const dissolveGroup = createAsyncThunk(
       );
       return thunkAPI.rejectWithValue(
         error.response.data?.message || error.message
+      );
+    }
+  }
+);
+
+const deleteConversation = createAsyncThunk(
+  "conversation/deleteConversation",
+  async (conversationId, thunkAPI) => {
+    try {
+      const response = await deleteConversationForUser(conversationId);
+      return response;
+    } catch (error) {
+      console.error(
+        "Error deleting conversation for user:",
+        error.response?.data || error.message
+      );
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || error.message
       );
     }
   }
@@ -190,6 +209,18 @@ const conversationSlice = createSlice({
       state.isLoading = false;
       state.error = action.error.message;
     });
+
+    //deleteConversation
+    builder.addCase(deleteConversation.pending, (state) => {
+      state.isLoading = true;
+    });
+    builder.addCase(deleteConversation.fulfilled, (state, action) => {
+      state.isLoading = false;
+    });
+    builder.addCase(deleteConversation.rejected, (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    });
   },
 });
 
@@ -204,5 +235,6 @@ export {
   createConversation,
   createConversationGroup,
   dissolveGroup,
+  deleteConversation,
 };
 export default conversationSlice.reducer;

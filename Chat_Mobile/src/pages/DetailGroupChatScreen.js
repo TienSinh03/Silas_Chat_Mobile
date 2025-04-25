@@ -90,9 +90,6 @@ const GroupSettingsScreen = ({ navigation, route }) => {
           try {
             dispatch(dissolveGroup(conversation?.id));
 
-            // Xóa conversation khỏi danh sách trong Redux store
-            dispatch(removeConversation(conversation?.id));
-
             console.log("Giải tán nhóm thành công");
             navigation.replace("Main");
           } catch (error) {
