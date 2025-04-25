@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ActivityIndicator, Alert} from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useNavigation } from '@react-navigation/native'; // Import useNavigation
+import { useNavigation, navigation } from '@react-navigation/native'; // Import useNavigation
 import { saveQaCode } from '../api/qaCode';
 
 export default function QRScannerScreen({ route}) {
@@ -67,6 +67,7 @@ export default function QRScannerScreen({ route}) {
             {/* {scannedData ? `Session ID: ${scannedData}`  : 'Quét mã QR để gửi session ID:' ` ${userId} `} */}
             {scannedData ? `Session ID: ${scannedData}` : 'Quét mã QR để gửi session ID:'}
             {userId ? ` ${userId}` : ''}
+            
           </Text>
         )}
       </View>

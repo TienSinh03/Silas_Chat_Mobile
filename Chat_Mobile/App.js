@@ -146,7 +146,9 @@ const AppNavigation =  () => {
 
                 name="QRScannerScreen"
                 component={QRScannerScreen}
-
+              />
+              
+              <Stack.Screen
                 name="MemberGroupScreen"
                 component={MemberGroupScreen}
 
