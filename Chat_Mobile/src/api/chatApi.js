@@ -163,3 +163,18 @@ export const removeMemberGroup = async (conversationId, memberId) => {
     throw new Error(error.response?.data?.message || "Lỗi khi rời nhóm");
   }
 }
+
+export const addMemberGroup = async (conversationId, memberId) => {
+  try {
+    const response = await instance.post(
+      `/api/v1/conversations/add-member/${conversationId}?id=${memberId}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error adding member to group:",
+      error.response?.data || error.message
+    );
+    throw new Error(error.response?.data?.message || "Lỗi khi thêm thành viên vào nhóm");
+  }
+}

@@ -81,7 +81,7 @@ const AppNavigation =  () => {
               <Stack.Screen
                 name="DetailGroupChatScreen"
                 component={DetailGroupChatScreen}
-                options={{ headerShown: false }}
+                options={{ headerTitle: "Tùy chọn" }}
               />
               <Stack.Screen
                 name="Profile"

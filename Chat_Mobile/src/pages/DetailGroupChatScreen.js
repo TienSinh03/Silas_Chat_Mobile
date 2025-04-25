@@ -173,7 +173,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#ffff",
-        marginTop: StatusBar.currentHeight || 0,
     },
     profileHeader: {
         alignItems: "center",
