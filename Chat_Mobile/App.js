@@ -37,6 +37,7 @@ import MessageForwarding from "./src/pages/MessageForwarding";
 import QRScannerScreen from "./src/components/QRScannerScreen";
 
 import MemberGroupScreen from "./src/pages/MemberGroupScreen";
+import ChooseLeaderScreen from "./src/pages/ChooseLeaderScreen";
 
 
 import { getToken } from "./src/utils/authHelper";
@@ -151,6 +152,12 @@ const AppNavigation =  () => {
               <Stack.Screen
                 name="MemberGroupScreen"
                 component={MemberGroupScreen}
+
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="ChooseLeaderScreen"
+                component={ChooseLeaderScreen}
 
                 options={{ headerShown: false }}
               />
