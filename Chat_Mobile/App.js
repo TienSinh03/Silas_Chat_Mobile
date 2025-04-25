@@ -37,6 +37,7 @@ import MessageForwarding from "./src/pages/MessageForwarding";
 import QRScannerScreen from "./src/components/QRScannerScreen";
 
 import MemberGroupScreen from "./src/pages/MemberGroupScreen";
+import ChooseLeaderScreen from "./src/pages/ChooseLeaderScreen";
 
 import { getToken } from "./src/utils/authHelper";
 import { AuthProvider } from "./src/contexts/AuthContext";

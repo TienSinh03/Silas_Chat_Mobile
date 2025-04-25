@@ -5,6 +5,7 @@ import {
   createChatGroup,
   dissolveConversation,
   deleteConversationForUser,
+  transferLeader,
 } from "../../api/chatApi";
 
 const initialState = {
@@ -87,6 +88,27 @@ const deleteConversation = createAsyncThunk(
       );
       return thunkAPI.rejectWithValue(
         error.response?.data?.message || error.message
+      );
+    }
+  }
+);
+const transferLeaderThunk = createAsyncThunk(
+  "message/transferLeader",
+  async ({ conversationId, memberId, requestingUserId }, thunkAPI) => {
+    try {
+      const response = await transferLeader(
+        conversationId,
+        memberId,
+        requestingUserId
+      );
+      return response;
+    } catch (error) {
+      console.error(
+        "Error transferring leader:",
+        error.response?.data || error.message
+      );
+      return thunkAPI.rejectWithValue(
+        error.response.data?.message || error.message
       );
     }
   }
@@ -221,6 +243,16 @@ const conversationSlice = createSlice({
       state.isLoading = false;
       state.error = action.payload;
     });
+    builder.addCase(transferLeaderThunk.pending, (state) => {
+      state.isLoading = true;
+    });
+    builder.addCase(transferLeaderThunk.fulfilled, (state, action) => {
+      state.isLoading = false;
+    });
+    builder.addCase(transferLeaderThunk.rejected, (state, action) => {
+      state.isLoading = false;
+      state.error = action.error.message;
+    });
   },
 });
 
@@ -236,5 +268,6 @@ export {
   createConversationGroup,
   dissolveGroup,
   deleteConversation,
+  transferLeaderThunk,
 };
 export default conversationSlice.reducer;
