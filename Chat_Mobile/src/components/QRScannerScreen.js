@@ -83,7 +83,7 @@ export default function QRScannerScreen({ route }) {
           <ActivityIndicator size="large" color="#fff" />
         ) : (
           <Text style={styles.resultText}>
-            {scannedData ? `Session ID: ${scannedData}` : 'Quét mã QR để gửi session ID:'}
+            {scannedData ? `Session ID: ${scannedData}` : '------------------------------------:'}
             {userId ? ` ${userId}` : ''}
           </Text>
         )}
