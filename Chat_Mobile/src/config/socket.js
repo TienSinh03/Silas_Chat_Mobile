@@ -1,12 +1,10 @@
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import React from "react";
-import {
-  updateGroupMembers,
-  getAllConversationsByUserId,
-} from "../store/slice/conversationSlice";
+import { updateGroupMembers, getAllConversationsByUserId } from "../store/slice/conversationSlice";
 
-const HOST_IP = "192.168.10.36"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
+const HOST_IP = "192.168.101.88"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
+
 
 const WEBSOCKET_URL = `http://${HOST_IP}:8080/ws`;
 
