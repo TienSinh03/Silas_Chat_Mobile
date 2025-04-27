@@ -44,6 +44,9 @@ import { AuthProvider } from "./src/contexts/AuthContext";
 import { useAuth } from "./src/contexts/AuthContext";
 import { Provider } from "react-redux";
 import store from "./src/store/store";
+
+
+import JoinGroupQR from "./src/pages/JoinGroupQR";
 const Stack = createStackNavigator();
 
 const AppNavigation = () => {
@@ -153,6 +156,11 @@ const AppNavigation = () => {
               name="MemberGroupScreen"
               component={MemberGroupScreen}
               options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="JoinGroupQR"
+              component={JoinGroupQR}
+              options={{ headerTitle: "Tham gia nhóm" }}
             />
           </>
         ) : (
