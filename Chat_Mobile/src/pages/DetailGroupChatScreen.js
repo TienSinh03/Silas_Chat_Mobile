@@ -154,7 +154,14 @@ const GroupSettingsScreen = ({ navigation, route }) => {
             })
           }
         />
-        <OptionRow color="black" icon="link" text="Link nhóm" />
+        <OptionRow color="black" icon="link" text="Link nhóm" 
+          onPress={() =>
+            navigation.navigate("JoinGroupQR", {
+              nextScreen: "JoinGroupQR",
+              conversation: conversation,
+            })
+          }
+        />
 
         {/* Ghim trò chuyện */}
         {/* <SettingToggle
