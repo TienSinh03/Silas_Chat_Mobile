@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet, Text, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
@@ -42,15 +42,41 @@ import ChooseLeaderScreen from "./src/pages/ChooseLeaderScreen";
 import { getToken } from "./src/utils/authHelper";
 import { AuthProvider } from "./src/contexts/AuthContext";
 import { useAuth } from "./src/contexts/AuthContext";
-import { Provider } from "react-redux";
+import { connect, Provider, useSelector } from "react-redux";
 import store from "./src/store/store";
+import { ToastProvider } from "react-native-toast-notifications";
 
+import { subscribeToSendFriendRequest, connectWebSocket, disconnectWebSocket } from "./src/config/socket";
+import { useToast } from 'react-native-toast-notifications';
 
 import JoinGroupQR from "./src/pages/JoinGroupQR";
+import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
+import { showFriendRequestToast } from "./src/utils/toast";
 const Stack = createStackNavigator();
 
 const AppNavigation = () => {
   const { isLoggedIn, isLoading } = useAuth();
+  const toast = useToast();
+
+  
+  const user = useSelector(state => state.user?.user);
+  useEffect(() => {
+    console.log("user----", user);
+    if(user?.id) {
+      connectWebSocket(() => {
+        
+        subscribeToSendFriendRequest(user?.id, (response) => {
+          console.log("Received friend request:", response);
+
+          showFriendRequestToast({ response, toast });
+        });
+      });
+
+      return () => {
+        disconnectWebSocket();
+      };
+    }
+  }, [user?.id, connectWebSocket]);
 
   if (isLoading) return null;
   return (
@@ -215,10 +241,19 @@ const AppNavigation = () => {
 export default function App() {
   return (
     <Provider store={store}>
-      <AuthProvider>
-        <StatusBar style="auto" />
-        <AppNavigation />
-      </AuthProvider>
+      <ToastProvider
+        placement="top"
+        duration={3000}
+        offset={30}
+        animationType="slide-in"
+        successColor="#4CAF50"
+        errorColor="#F44336"
+      >
+        <AuthProvider>
+          <StatusBar style="auto" />
+          <AppNavigation />
+        </AuthProvider>
+      </ToastProvider>
     </Provider>
   );
 }

@@ -20,6 +20,7 @@ import { sendReq, checkFriendStatus } from "../store/slice/friendSlice";
 import { createConversation, getAllConversationsByUserId } from "../store/slice/conversationSlice"
 import { checkFriend } from "../api/friendApi";
 import { Alert } from "react-native";
+import { sendRequestToWebSocket } from "../config/socket";
 
 const { width } = Dimensions.get("window"); // Lấy kích thước màn hình
 
@@ -145,19 +146,20 @@ const FindInfo = () => {
   const handleSendRequest = async (friendId) => {
 
     try {
-      const response = await dispatch(sendReq(friendId)).unwrap();
-      console.log("response", response);
-      if (response.status === "SUCCESS") {
-        console.log("Lời mời kết bạn đã được gửi thành công.");
+      // const response = await dispatch(sendReq(friendId)).unwrap();
+      sendRequestToWebSocket({ receiverId: friendId });
+      // console.log("response", response);
+      // if (response.status === "SUCCESS") {
+      //   console.log("Lời mời kết bạn đã được gửi thành công.");
         Alert.alert(
           "Thông báo",
           "Lời mời kết bạn đã được gửi thành công.",
           [{ text: "OK" }],
           { cancelable: false }
         );
-      } else {
-        console.log("Không thể gửi lời mời kết bạn.");
-      }
+      // } else {
+      //   console.log("Không thể gửi lời mời kết bạn.");
+      // }
     } catch (error) {
       console.log("Lỗi khi gửi lời mời kết bạn:", error);
       Alert.alert(
