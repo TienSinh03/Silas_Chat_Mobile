@@ -4,7 +4,7 @@ import React from "react";
 import { updateGroupMembers, getAllConversationsByUserId } from "../store/slice/conversationSlice";
 import { getToken } from "../utils/authHelper";
 
-const HOST_IP = "192.168.1.6"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
+const HOST_IP = "192.168.1.9"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
 
 
 const WEBSOCKET_URL = `http://${HOST_IP}:8080/ws`;
@@ -297,6 +297,29 @@ export const subscribeToSendFriendRequest = async (userId, onMessageReceived) =>
 
     const subscription = stompClient.subscribe(
       `/friend/notification/${userId}`,
+      (message) => {
+        if (message.body) {
+          onMessageReceived(JSON.parse(message.body));
+        }
+      }
+    );
+   subscribers.set(userId, subscription);
+  } catch (error) {
+    console.error("Error subscribing to conversation:", error);
+  }
+}
+
+export const subscribeFriendsToAcceptFriendRequest = async (userId, onMessageReceived) => {
+  try {
+    await ensureWebSocketConnected();
+    if (!stompClient || !stompClient.connected) {
+      console.error("WebSocket is not connected");
+      return;
+    }
+    console.log("Subscribing to /friend/accept/" + userId);
+
+    const subscription = stompClient.subscribe(
+      `/friend/accept/${userId}`,
       (message) => {
         if (message.body) {
           onMessageReceived(JSON.parse(message.body));

@@ -10,23 +10,23 @@ const renderItem = ({ item, accept, reject }) => {
    return (
 
         <View style={styles.requestItem}>
-            <Image source={{ uri: item.avatar }} style={styles.avatar} />
+            <Image source={{ uri: item?.avatar }} style={styles.avatar} />
             <View style={{ flexDirection: "column" }}>
     
-                <Text style={styles.displayName}>{item.displayName}</Text>  
+                <Text style={styles.displayName}>{item?.displayName}</Text>  
                 <Text style={styles.muttedText}>Muốn kết bạn</Text>  
     
                 <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 10, gap: 10 }}>
                     <TouchableOpacity style={{ backgroundColor: "#D6E9FF", paddingVertical: 10, paddingHorizontal: width*0.1 ,borderRadius: 5 }} 
                         onPress={() => {
-                            accept(item.requestId);
-                         }}
+                            accept(item?.requestId);
+                        }}
                     >
                         <Text style={{color: "#006AF5"}}>Xác nhận</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={{ backgroundColor: "#FED8D7", paddingVertical: 10, borderRadius: 5, paddingHorizontal: width*0.1 }} 
                         onPress={() => {
-                           reject(item.requestId);
+                           reject(item?.requestId);
                         }}
                     >
                         <Text style={{color: "#DC1F18"}}>Từ chối</Text>
