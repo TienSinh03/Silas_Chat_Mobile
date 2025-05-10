@@ -33,7 +33,7 @@ const createConversation = createAsyncThunk(
         error.response?.data || error.message
       );
       return thunkAPI.rejectWithValue(
-        error.response.data?.message || error.message
+        error.response?.data?.message || error.message
       );
     }
   }
