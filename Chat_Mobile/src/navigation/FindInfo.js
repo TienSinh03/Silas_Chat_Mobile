@@ -50,7 +50,7 @@ const { width } = Dimensions.get("window"); // Lấy kích thước màn hình
   // Lịch sử tìm kiếm
   const searchHistory = ["ch", "0869188794", "thái", "mẹ", "sinh"];
 
-const ItemSerch = ({item, isFriend, isSuccessSent, sendRequest, getChat}) => {
+const ItemSerch = ({item, isFriend, isSuccessSent, sendRequest, getChat, isSentReq, isReceivedReq}) => {
 
   console.log("isFriend", isFriend);
   return (
@@ -65,8 +65,16 @@ const ItemSerch = ({item, isFriend, isSuccessSent, sendRequest, getChat}) => {
           {/* Kiem tra xem co phai ban khong */}
           {!isFriend ? (
 
-                  <TouchableOpacity  style={{fontSize: '12px', padding: '4px 8px', backgroundColor: '#D6E9FF', paddingHorizontal: 15, paddingVertical: 5, borderRadius: 10}} onPress={() => {sendRequest(item?.id)}}>
-                      <Text style={{color: "#006AF5"}}>Kết bạn</Text>
+                  <TouchableOpacity  style={{fontSize: '12px', padding: '4px 8px', backgroundColor: (isSentReq || isReceivedReq) ? "#E9EBED" : '#D6E9FF', paddingHorizontal: 15, paddingVertical: 5, borderRadius: 10}} onPress={() => {sendRequest(item?.id)}} disabled={isSentReq || isReceivedReq }>
+                      
+                      {isSentReq ? (
+                        <Text style={{ color: "#141415" }}>Đã gửi lời mời</Text>
+                      ) : isReceivedReq ? (
+                        <Text style={{ color: "#141415" }}>Phản hồi</Text>
+                      ) : (
+                        <Text style={{ color: "#006AF5" }}>Kết bạn</Text>
+                      )}
+                      
                   </TouchableOpacity>
               
           ): (<View></View>)}
@@ -79,23 +87,37 @@ const FindInfo = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const { searchResults, user } = useSelector((state) => state.user);
-  const { isSuccess, error } = useSelector((state) => state.friend);
+  const { isSuccess, error, receivedFriendRequests, sentRequests } = useSelector((state) => state.friend);
 
   const { conversation, conversations } = useSelector((state) => state.conversation);
   console.log("isSuccess", isSuccess);
   console.log("error", error);
   // console.log("conversation", conversation);
 
+  const requestsReceived = useMemo(() => {
+    if(receivedFriendRequests === null) return [];
+    return receivedFriendRequests;
+  }, [receivedFriendRequests]);
+
+  const requestsSent = useMemo(() => {
+    if(sentRequests === null) return [];
+    return sentRequests;
+  }, [sentRequests]);
 
   const [searchText, setSearchText] = useState("");
-  const [friendStatus, setFriendStatus] = useState({}); 
+  const [friendStatus, setFriendStatus] = useState({});
 
-  console.log("searchText", searchText);
+  const [isLoading, setIsLoading] = useState(false);
 
+  const [isSentReq, setIsSentReq] = useState({});
+  const [isReceivedReq, setIsReceivedReq] = useState({});
+
+  console.log("search ", searchText)
+  console.log("search res ", searchResults)
   const result = useMemo(() => {
-    if (searchResults === null || searchText.trim() === "") return [];
+    if (!Array.isArray(searchResults) || searchText.trim() === "") {return []};
     return searchResults?.filter((item) => item?.id !== user?.id); // Loại bỏ người dùng hiện tại khỏi danh sách kết quả
-  }, [searchResults]);
+  }, [searchResults, searchText, user?.id]);
 
   console.log("result", result);
 
@@ -107,12 +129,30 @@ const FindInfo = () => {
       const statusUpdates = {};
       for (const item of result) {
         try {
+          // kiểm tra là bạn bè hay chưa
           const response = await dispatch(checkFriendStatus(item?.id)).unwrap();
-          statusUpdates[item?.id] = response; 
+          statusUpdates[item?.id] = response;
+
         } catch (error) {
           console.log(`Lỗi khi kiểm tra trạng thái bạn bè cho ${item?.id}:`, error);
           statusUpdates[item?.id] = false; 
         }
+
+        //kiểm tra đã gửi lời mời hay chưa
+          const isSent = requestsSent.find((req) => req?.userId === item?.id);
+          if (isSent) {
+            setIsSentReq((prev) => ({...prev, [item?.id] : true}))
+          } else {
+            setIsSentReq((prev) => ({...prev, [item?.id] : false}))
+          }
+
+          //kiểm tra đã nhận lời mời hay chưa
+          const isReceived = requestsReceived.find((req) => req?.userId === item?.id);
+          if(isReceived) {
+            setIsReceivedReq((prev) => ({...prev, [item?.id]: true}));
+          } else {
+            setIsReceivedReq((prev) => ({...prev, [item?.id]: false}));
+          }
       }
       setFriendStatus((prev) => ({ ...prev, ...statusUpdates }));
     };
@@ -123,7 +163,9 @@ const FindInfo = () => {
 
   // Xu lý tìm kiếm
   const handleSearch = async (keyword) => {
-    if (keyword.trim() === "") return; // Nếu không có từ khóa thì không làm gì cả
+    if (keyword.trim() === "") {
+
+    }; // Nếu không có từ khóa thì không làm gì cả
     try {
       const response = await dispatch(search(keyword)).unwrap();
       if (response?.status === "SUCCESS") {
@@ -148,6 +190,7 @@ const FindInfo = () => {
     try {
       // const response = await dispatch(sendReq(friendId)).unwrap();
       sendRequestToWebSocket({ receiverId: friendId });
+      setIsSentReq((prev) => ({ ...prev, [friendId]: true }));
       // console.log("response", response);
       // if (response.status === "SUCCESS") {
       //   console.log("Lời mời kết bạn đã được gửi thành công.");
@@ -262,38 +305,7 @@ const FindInfo = () => {
 
       {result.length === 0 ? (
         <View>
-          <Text style={styles.sectionTitle}>Liên hệ đã tìm</Text>
-          <FlatList
-            horizontal
-            data={recentContacts}
-            keyExtractor={(item) => item.id}
-            renderItem={renderContact}
-          />
-
-          <Text style={styles.sectionTitle}>Truy cập nhanh</Text>
-          <View style={styles.quickAccessContainer}>
-            {quickAccess.map((item) => (
-              <TouchableOpacity key={item.id} style={styles.quickAccessItem}>
-                <Icon name={item.icon} size={40} color="#007AFF" />
-                <Text style={styles.quickAccessText}>{item.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <Text style={styles.sectionTitle}>Từ khóa đã tìm</Text>
-          <FlatList
-            data={searchHistory}
-            keyExtractor={(item, index) => index.toString()}
-            renderItem={renderHistory}
-            keyboardShouldPersistTaps="handled"
-            ListFooterComponent={<View style={{ height: 80 }} />} // Chừa vùng trống
-          />
-
-          <TouchableOpacity>
-            <Text style={styles.editHistoryText}>
-              Chỉnh sửa lịch sử tìm kiếm &gt;
-            </Text>
-          </TouchableOpacity>
+          <Text style={styles.sectionTitle}>Không có kết quả nào được tìm thấy</Text>
         </View>
       ) : (
         <View>
@@ -303,11 +315,14 @@ const FindInfo = () => {
           <FlatList
             data={result}
             keyExtractor={(item) => item?.id}
-            renderItem={({ item }) => 
-              ItemSerch({item, 
-                sendRequest: (id) => handleSendRequest(id), 
-                isSuccessSent: isSuccess, 
+            renderItem={({ item }) =>
+              ItemSerch({
+                item,
+                sendRequest: (id) => handleSendRequest(id),
+                isSuccessSent: isSuccess,
                 isFriend: friendStatus[item?.id],
+                isSentReq: isSentReq[item?.id],
+                isReceivedReq: isReceivedReq[item?.id],
                 getChat: (item) => handleCreateConversation(item)
               })}
           />

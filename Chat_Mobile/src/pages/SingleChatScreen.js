@@ -77,6 +77,9 @@ const SingleChatScreen = ({ navigation, route }) => {
     const dispatch = useDispatch();
     const { messages } = useSelector((state) => state.message);
     const { user } = useSelector((state) => state.user);
+    const { receivedFriendRequests, sentRequests } = useSelector((state) => state.friend);
+
+
     // State quản lý emoji/gif/sticker
     const [contentType, setContentType] = useState("emoji");
     const [gifs, setGifs] = useState([]);
@@ -193,6 +196,21 @@ const SingleChatScreen = ({ navigation, route }) => {
     // check friend
     const [isFriend, setIsFriend] = useState(false); // Track friend status
 
+    // check trang thai ket ban va phan hoi
+    const [isSentReq, setIsSentReq] = useState(false);
+    const [isReceivedReq, setIsReceivedReq] = useState(false);
+
+    const requestsReceived = useMemo(() => {
+        if(receivedFriendRequests === null) return [];
+        return receivedFriendRequests;
+    }, [receivedFriendRequests]);
+
+    const requestsSent = useMemo(() => {
+        if(sentRequests === null) return [];
+        return sentRequests;
+    }, [sentRequests]);
+
+    //load message
     const messageMemo = useMemo(() => {
         if (!messages) return [];
         return messages;
@@ -650,6 +668,20 @@ const SingleChatScreen = ({ navigation, route }) => {
 
         if (userReceived?.id) {
             checkIsFriend();
+            const isSent = requestsSent.find((req) => req?.userId === userReceived?.id);
+            if (isSent) {
+                setIsSentReq(true)
+            } else {
+                setIsSentReq(false)
+            }
+
+            //kiểm tra đã nhận lời mời hay chưa
+            const isReceived = requestsReceived.find((req) => req?.userId === userReceived?.id);
+            if(isReceived) {
+                setIsReceivedReq(true);
+            } else {
+                setIsReceivedReq(false);
+            }
         }
     }, [userReceived?.id, dispatch]);
 
@@ -805,17 +837,42 @@ const SingleChatScreen = ({ navigation, route }) => {
                         onPress={() => {
                             handleSendRequest(userReceived?.id);
                         }}
+                        disabled = {isReceivedReq || isSentReq}
                     >
-                        <Text
-                            style={{
-                                color: "#000",
-                                textAlign: "center",
-                                fontSize: 18,
-                            }}
-                        >
-                            {" "}
-                            <IconA size={24} name="adduser"></IconA> Kết bạn
-                        </Text>
+                        {
+                            isSentReq ? (
+
+                                <Text
+                                    style={{
+                                        color: "#000",
+                                        textAlign: "center",
+                                        fontSize: 18,
+                                    }}
+                                >
+                                    <IconA size={24} name="adduser"></IconA> Đã gửi lời mời
+                                </Text>
+                            ) : isReceivedReq ? (
+                                <Text
+                                    style={{
+                                        color: "#000",
+                                        textAlign: "center",
+                                        fontSize: 18,
+                                    }}
+                                >
+                                    <IconA size={24} name="adduser"></IconA> Phản hồi
+                                </Text>
+                            ) : (
+                                <Text
+                                    style={{
+                                        color: "#000",
+                                        textAlign: "center",
+                                        fontSize: 18,
+                                    }}
+                                >
+                                    <IconA size={24} name="adduser"></IconA> Kết bạn
+                                </Text>
+                            )
+                        }
                     </TouchableOpacity>
                 ) : (
                     <View></View>
