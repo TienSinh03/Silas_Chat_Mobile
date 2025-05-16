@@ -41,7 +41,17 @@ const friendSlice = createSlice({
     initialState,
     reducers: {
         setFriends(state, action) {
-            state.friends.push(action.payload);
+            const newFriend = action.payload;
+            if(state.friends.some(friend => friend.userId === newFriend.userId)) {
+                state.friends = state.friends.map(friend => {
+                    if(friend.userId === newFriend.userId) {
+                        return newFriend;
+                    }
+                    return friend;
+                });
+            } else {
+                state.friends.push(newFriend);
+            }
         },
         setFriend(state, action) {
             state.friend = action.payload;

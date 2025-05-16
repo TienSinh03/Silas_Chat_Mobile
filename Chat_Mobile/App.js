@@ -61,7 +61,7 @@ const AppNavigation = () => {
   
   const user = useSelector(state => state.user?.user);
   useEffect(() => {
-    console.log("user----", user);
+    // console.log("user----", user);
     if(user?.id) {
       connectWebSocket(() => {
         
