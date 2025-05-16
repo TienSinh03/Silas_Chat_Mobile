@@ -48,9 +48,10 @@ import {
     deleteMessageToWebSocket,
     sendFileToWebSocket,
     sendRequestToWebSocket,
+    subscribeFriendsToAcceptFriendRequest,
 } from "../config/socket";
 
-import { sendReq, checkFriendStatus, getReqsReceived, getReqsSent } from "../store/slice/friendSlice";
+import { sendReq, checkFriendStatus, getReqsReceived, getReqsSent, setFriends } from "../store/slice/friendSlice";
 
 import { uploadFile } from "../api/chatApi";
 import Loading from "../components/Loading";
@@ -693,6 +694,22 @@ const SingleChatScreen = ({ navigation, route }) => {
             }
         }
     }, [userReceived?.id, dispatch]);
+
+    useEffect(() => {
+        connectWebSocket(() => {
+            subscribeFriendsToAcceptFriendRequest(user?.id, (message) => {
+                console.log("Nhận được tin nhắn từ WebSocket:", message);
+                dispatch(setFriends(message));  
+                const response = dispatch(
+                    checkFriendStatus(message?.userId)
+                );
+                setIsFriend(response);
+            });
+        });
+        return () => {
+            disconnectWebSocket();
+        };
+    }, [user?.id, dispatch]);
 
     // Gửi lời mời kết bạn
     const handleSendRequest = async (friendId) => {

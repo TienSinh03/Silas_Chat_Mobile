@@ -3,7 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet, Dimensions }
 import { useSelector, useDispatch } from "react-redux";
 import { getReqsReceived, acceptReq, rejectReq, addReceivedRequest } from "../../store/slice/friendSlice";
 import Loading from "../Loading";
-import { connectWebSocket, subscribeFriendRequestReceiver } from "../../config/socket";
+import { connectWebSocket, subscribeFriendRequestReceiver, subscribeToSendFriendRequest } from "../../config/socket";
 
 
 const {width, height} = Dimensions.get("window");
@@ -78,7 +78,7 @@ const RequestReceived = ({ navigation }) => {
 
     React.useEffect(() => {
         connectWebSocket(() => {
-            subscribeFriendRequestReceiver(user?.id, (message) => {
+            subscribeToSendFriendRequest(user?.id, (message) => {
                 console.log("Nhận được tin nhắn từ WebSocket:", message);
                 dispatch(addReceivedRequest(message));
             });

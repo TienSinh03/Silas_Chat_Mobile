@@ -293,10 +293,10 @@ export const subscribeToSendFriendRequest = async (userId, onMessageReceived) =>
       console.error("WebSocket is not connected");
       return;
     }
-    console.log("Subscribing to /friend/notification/" + userId);
+    console.log("Subscribing to /friend/request/" + userId);
 
     const subscription = stompClient.subscribe(
-      `/friend/notification/${userId}`,
+      `/friend/request/${userId}`,
       (message) => {
         if (message.body) {
           onMessageReceived(JSON.parse(message.body));
@@ -354,28 +354,28 @@ export const sendRequestToWebSocket = async (receiverId) => {
   });
 };
 
-export const subscribeFriendRequestReceiver = async (userId, onMessageReceived) => {
-  try {
-    await ensureWebSocketConnected();
-    if (!stompClient || !stompClient.connected) {
-      console.error("WebSocket is not connected");
-      return;
-    }
-    console.log("Subscribing to /friend/request/" + userId);
+// export const subscribeFriendRequestReceiver = async (userId, onMessageReceived) => {
+//   try {
+//     await ensureWebSocketConnected();
+//     if (!stompClient || !stompClient.connected) {
+//       console.error("WebSocket is not connected");
+//       return;
+//     }
+//     console.log("Subscribing to /friend/request/" + userId);
 
-    const subscription = stompClient.subscribe(
-      `/friend/request/${userId}`,
-      (message) => {
-        if (message.body) {
-          onMessageReceived(JSON.parse(message.body));
-        }
-      }
-    );
-   subscribers.set(userId, subscription);
-  } catch (error) {
-    console.error("Error subscribing to conversation:", error);
-  }
-}
+//     const subscription = stompClient.subscribe(
+//       `/friend/request/${userId}`,
+//       (message) => {
+//         if (message.body) {
+//           onMessageReceived(JSON.parse(message.body));
+//         }
+//       }
+//     );
+//    subscribers.set(userId, subscription);
+//   } catch (error) {
+//     console.error("Error subscribing to conversation:", error);
+//   }
+// }
 
 export const disconnectWebSocket = () => {
   if (stompClient && stompClient.connected) {
