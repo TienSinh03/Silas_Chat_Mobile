@@ -42,9 +42,9 @@ const friendSlice = createSlice({
     reducers: {
         setFriends(state, action) {
             const newFriend = action.payload;
-            if(state.friends.some(friend => friend.id === newFriend.id)) {
+            if(state.friends.some(friend => friend.userId === newFriend.userId)) {
                 state.friends = state.friends.map(friend => {
-                    if(friend.id === newFriend.id) {
+                    if(friend.userId === newFriend.userId) {
                         return newFriend;
                     }
                     return friend;

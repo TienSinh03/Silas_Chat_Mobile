@@ -704,6 +704,8 @@ const SingleChatScreen = ({ navigation, route }) => {
                     checkFriendStatus(message?.userId)
                 );
                 setIsFriend(response);
+                dispatch(getReqsReceived());
+                dispatch(getReqsSent());
             });
         });
         return () => {
