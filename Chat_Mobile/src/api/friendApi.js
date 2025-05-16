@@ -31,6 +31,7 @@ export const getFriendReqSent = async () => {
     }
 }
 export const sendFriendReq = async (receiverId) => {
+    console.log("receiverId", receiverId);
     try {
         const response = await instance.post("/api/v1/friend/send-request", { receiverId });
         return response.data;

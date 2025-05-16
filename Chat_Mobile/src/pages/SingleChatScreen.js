@@ -47,9 +47,10 @@ import {
     recallMessageToWebSocket,
     deleteMessageToWebSocket,
     sendFileToWebSocket,
+    sendRequestToWebSocket,
 } from "../config/socket";
 
-import { sendReq, checkFriendStatus } from "../store/slice/friendSlice";
+import { sendReq, checkFriendStatus, getReqsReceived, getReqsSent } from "../store/slice/friendSlice";
 
 import { uploadFile } from "../api/chatApi";
 import Loading from "../components/Loading";
@@ -229,6 +230,14 @@ const SingleChatScreen = ({ navigation, route }) => {
     const audioPath = useRef(null);
 
     const [selectedMessage, setSelectedMessage] = useState(null);
+
+    useEffect(() => {
+        dispatch(getReqsReceived());
+    }, []);
+
+    useEffect(() => {
+        dispatch(getReqsSent());
+    }, []);
 
     // Gọi hàm lấy tin nhắn từ slice khi component được mount
     useEffect(() => {
@@ -688,20 +697,9 @@ const SingleChatScreen = ({ navigation, route }) => {
     // Gửi lời mời kết bạn
     const handleSendRequest = async (friendId) => {
         try {
-            const response = await dispatch(sendReq(friendId)).unwrap();
-            console.log("response", response);
-            if (response.status === "SUCCESS") {
-                console.log("Lời mời kết bạn đã được gửi thành công.");
-
-                Alert.alert(
-                    "Thông báo",
-                    "Lời mời kết bạn đã được gửi thành công.",
-                    [{ text: "OK" }],
-                    { cancelable: false }
-                );
-            } else {
-                console.log("Không thể gửi lời mời kết bạn.");
-            }
+            sendRequestToWebSocket({ receiverId: friendId });
+            setIsSentReq(true);
+            dispatch(getReqsSent());
         } catch (error) {
             console.log("Lỗi khi gửi lời mời kết bạn:", error);
             Alert.alert(

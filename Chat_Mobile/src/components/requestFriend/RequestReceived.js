@@ -1,8 +1,9 @@
 import React, { useMemo, useCallback } from "react";
 import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet, Dimensions } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
-import { getReqsReceived, acceptReq, rejectReq } from "../../store/slice/friendSlice";
+import { getReqsReceived, acceptReq, rejectReq, addReceivedRequest } from "../../store/slice/friendSlice";
 import Loading from "../Loading";
+import { connectWebSocket, subscribeFriendRequestReceiver } from "../../config/socket";
 
 
 const {width, height} = Dimensions.get("window");
@@ -40,7 +41,9 @@ const renderItem = ({ item, accept, reject }) => {
 const RequestReceived = ({ navigation }) => {
     const dispatch = useDispatch();
     const { receivedFriendRequests, isLoading } = useSelector(state => state.friend);
-    const  requests = useMemo(() => {
+    const { user } = useSelector((state) => state.user);
+
+    const requests = useMemo(() => {
         if(receivedFriendRequests === null) return [];
         return receivedFriendRequests;
     }, [receivedFriendRequests]);
@@ -72,6 +75,15 @@ const RequestReceived = ({ navigation }) => {
     React.useEffect(() => {
         dispatch(getReqsReceived());
     }, [dispatch]);
+
+    React.useEffect(() => {
+        connectWebSocket(() => {
+            subscribeFriendRequestReceiver(user?.id, (message) => {
+                console.log("Nhận được tin nhắn từ WebSocket:", message);
+                dispatch(addReceivedRequest(message));
+            });
+        });
+    }, [user?.id, dispatch]);
     
     return (
         <View style={styles.container}>

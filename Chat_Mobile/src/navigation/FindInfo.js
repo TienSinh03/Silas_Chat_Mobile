@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Dimensions,
   StatusBar,
+  Alert
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import IconA from "react-native-vector-icons/AntDesign";
@@ -16,39 +17,12 @@ import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useDispatch, useSelector } from "react-redux";
 import { search } from "../store/slice/userSlice";
-import { sendReq, checkFriendStatus } from "../store/slice/friendSlice";
+import { sendReq, checkFriendStatus, getReqsReceived, getReqsSent } from "../store/slice/friendSlice";
 import { createConversation, getAllConversationsByUserId } from "../store/slice/conversationSlice"
 import { checkFriend } from "../api/friendApi";
-import { Alert } from "react-native";
 import { sendRequestToWebSocket } from "../config/socket";
 
 const { width } = Dimensions.get("window"); // Lấy kích thước màn hình
-
-  // Danh sách liên hệ gần đây
-  const recentContacts = [
-    {
-      id: "1",
-      name: "Chim rừng kêu trong m...",
-      image: "https://i.pravatar.cc/300?img=3",
-    },
-    { id: "2", name: "Mc", image: "https://i.pravatar.cc/300?img=4" },
-    {
-      id: "3",
-      name: "Đào Văn Thái Kiệt",
-      image: "https://i.pravatar.cc/300?img=5",
-    },
-    { id: "4", name: "MỆIU", image: "https://i.pravatar.cc/300?img=6" },
-  ];
-
-  // Các mục truy cập nhanh
-  const quickAccess = [
-    { id: "1", name: "Ví QR", icon: "qr-code" },
-    { id: "2", name: "Zalo Video", icon: "videocam" },
-    { id: "3", name: "Thêm", icon: "add-circle" },
-  ];
-
-  // Lịch sử tìm kiếm
-  const searchHistory = ["ch", "0869188794", "thái", "mẹ", "sinh"];
 
 const ItemSerch = ({item, isFriend, isSuccessSent, sendRequest, getChat, isSentReq, isReceivedReq}) => {
 
@@ -112,14 +86,22 @@ const FindInfo = () => {
   const [isSentReq, setIsSentReq] = useState({});
   const [isReceivedReq, setIsReceivedReq] = useState({});
 
-  console.log("search ", searchText)
-  console.log("search res ", searchResults)
+  // console.log("search ", searchText)
+  // console.log("search res ", searchResults)
   const result = useMemo(() => {
     if (!Array.isArray(searchResults) || searchText.trim() === "") {return []};
     return searchResults?.filter((item) => item?.id !== user?.id); // Loại bỏ người dùng hiện tại khỏi danh sách kết quả
   }, [searchResults, searchText, user?.id]);
 
-  console.log("result", result);
+  // console.log("result", result);
+
+  useEffect(() => {
+        dispatch(getReqsReceived());
+  }, []);
+
+  useEffect(() => {
+        dispatch(getReqsSent());
+  }, []);
 
   // Kiểm tra trạng thái bạn bè
   useEffect(() => {
@@ -186,32 +168,8 @@ const FindInfo = () => {
 
   // handle gửi lời mời kết bạn
   const handleSendRequest = async (friendId) => {
-
-    try {
-      // const response = await dispatch(sendReq(friendId)).unwrap();
       sendRequestToWebSocket({ receiverId: friendId });
       setIsSentReq((prev) => ({ ...prev, [friendId]: true }));
-      // console.log("response", response);
-      // if (response.status === "SUCCESS") {
-      //   console.log("Lời mời kết bạn đã được gửi thành công.");
-        Alert.alert(
-          "Thông báo",
-          "Lời mời kết bạn đã được gửi thành công.",
-          [{ text: "OK" }],
-          { cancelable: false }
-        );
-      // } else {
-      //   console.log("Không thể gửi lời mời kết bạn.");
-      // }
-    } catch (error) {
-      console.log("Lỗi khi gửi lời mời kết bạn:", error);
-      Alert.alert(
-        "Thông báo",
-        error || "Không thể gửi lời mời kết bạn.",
-        [{ text: "OK" }],
-        { cancelable: false }
-      );
-    }
   }
 
 
