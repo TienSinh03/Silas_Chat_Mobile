@@ -5,7 +5,6 @@ import { getRefreshToken, storeToken } from "../utils/authHelper";
 
 const HOST_IP = "192.168.214.41"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
 
-
 const chatEndpoint = `http://${HOST_IP}:8080`;
 
 const instance = axios.create({
