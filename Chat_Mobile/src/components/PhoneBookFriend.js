@@ -8,15 +8,20 @@ import {
   TextInput,
   Image,
   TouchableOpacity,
+  Modal,
+  Dimensions,
+  Alert,
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
+import IconF6 from "react-native-vector-icons/FontAwesome6";
 import { useDispatch, useSelector } from "react-redux";
-import { getMyFriends, setFriends } from "../store/slice/friendSlice";
+import { getMyFriends, setFriends, unfriend, setFriends_Unfriend } from "../store/slice/friendSlice";
 import { createConversation, getAllConversationsByUserId } from "../store/slice/conversationSlice"
-import { subscribeFriendsToAcceptFriendRequest, connectWebSocket, disconnectWebSocket } from "../config/socket";
+import { subscribeFriendsToAcceptFriendRequest, connectWebSocket, disconnectWebSocket, subscribeFriendsToUnfriend } from "../config/socket";
 
 import Loading from "./Loading";
 
+const { width, height } = Dimensions.get("window");
 
 const PhoneBookFriend = ({navigation}) => {
   const dispatch = useDispatch();
@@ -29,6 +34,8 @@ const PhoneBookFriend = ({navigation}) => {
   console.log("isLoading", isLoading);
 
   const [searchText, setSearchText] = useState("");
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [selectedFriend, setSelectedFriend] = useState(null);
 
   // const filteredContacts = friends.filter((contact) =>
   //   contact.displayName.toLowerCase().includes(searchText.toLowerCase())
@@ -37,9 +44,17 @@ const PhoneBookFriend = ({navigation}) => {
   React.useEffect(() => {
 
     connectWebSocket(() => {
+
+      // accept friend request
       subscribeFriendsToAcceptFriendRequest(user?.id, (message) => {
         console.log("Nhận được tin nhắn từ WebSocket:", message);
         dispatch(setFriends(message));
+      });
+
+      // unfriend
+      subscribeFriendsToUnfriend(user?.id, (message) => {
+        console.log("Nhận được tin nhắn từ WebSocket unfriend:", message);
+        dispatch(setFriends_Unfriend(message));
       });
     });
 
@@ -93,60 +108,143 @@ const PhoneBookFriend = ({navigation}) => {
     }
   };
 
+  const handleUnfriend = async (friendId) => {
+    try {
+      Alert.alert(`Xóa bạn với ${selectedFriend?.displayName}?`, `Bạn có chắc chắn muốn xóa ${selectedFriend?.displayName} không?`, [
+        {
+          text: "Hủy",
+          onPress: () => console.log("Hủy"),
+          style: "cancel",
+        },
+        {
+          text: "Xóa",
+          onPress: async () => {
+            await dispatch(unfriend(friendId)).unwrap();
+            console.log("Đã xóa bạn thành công");
+            setModalVisible(false);
+          },
+          style: "default",
+        }
+      ])
+    } catch (error) {
+      console.log("Lỗi khi xóa bạn:", error);
+    }
+  }
+
   return (
-    <View style={styles.container}>
+    <>
+      <View style={styles.container}>
 
 
-      {/* Danh mục */}
-      <View style={styles.menuContainer}>
-      <TouchableOpacity style={styles.menuItem} onPress={() => {navigation.navigate("TabTopFriendRequest")}}>
-        <View style={styles.iconContainer}>
-          <Icon name="user-plus" size={20} color="#007AFF" style={styles.icons}/>
-        </View>
-        <Text style={styles.menuText}>Lời mời kết bạn</Text>
-      </TouchableOpacity>
+        {/* Danh mục */}
+        <View style={styles.menuContainer}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => {navigation.navigate("TabTopFriendRequest")}}>
+          <View style={styles.iconContainer}>
+            <Icon name="user-plus" size={20} color="#007AFF" style={styles.icons}/>
+          </View>
+          <Text style={styles.menuText}>Lời mời kết bạn</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.menuItem}>
-        <View style={styles.iconContainer}>
-          <Icon name="address-book" size={20} color="#34C759" style={styles.icons}/>
-        </View>
-        <View>
-          <Text style={styles.menuText}>Danh bạ máy</Text>
-          <Text style={styles.subText}>Các liên hệ có dùng Zalo</Text>
-        </View>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.menuItem}>
+          <View style={styles.iconContainer}>
+            <Icon name="address-book" size={20} color="#34C759" style={styles.icons}/>
+          </View>
+          <View>
+            <Text style={styles.menuText}>Danh bạ máy</Text>
+            <Text style={styles.subText}>Các liên hệ có dùng Zalo</Text>
+          </View>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.menuItem}>
-        <View style={styles.iconContainer}>
-          <Icon name="gift" size={20} color="#FF9500" style={styles.icons}/>
-        </View>
-        <Text style={styles.menuText}>Sinh nhật</Text>
-      </TouchableOpacity>
-    </View>
-      {/* Thanh phân cách */}
-      <View style={styles.separator} />
+        <TouchableOpacity style={styles.menuItem}>
+          <View style={styles.iconContainer}>
+            <Icon name="gift" size={20} color="#FF9500" style={styles.icons}/>
+          </View>
+          <Text style={styles.menuText}>Sinh nhật</Text>
+        </TouchableOpacity>
+      </View>
+        {/* Thanh phân cách */}
+        <View style={styles.separator} />
 
-      {/* Danh sách bạn bè */}
-      <FlatList
-        data={friends.filter((friends) =>  friends !== null)}
-        keyExtractor={(item) => item?.userId}
-        renderItem={({ item }) => (
-          <TouchableOpacity key={item?.userId} style={styles.contactItem} onPress={() => handleCreateConversation(item)}>
-            <Image source={{uri:item?.avatar}} style={styles.avatar} />
-            <Text style={styles.contactName}>{item?.displayName}</Text>
-            <View style={styles.iconContainer}>
-              <TouchableOpacity>
-                <Icon name="phone" size={20} color="#34C759" />
+        {/* Danh sách bạn bè */}
+        <FlatList
+          data={friends.filter((friends) =>  friends !== null)}
+          keyExtractor={(item) => item?.userId}
+          renderItem={({ item }) => (
+            <TouchableOpacity key={item?.userId} style={styles.contactItem} 
+              onPress={() => handleCreateConversation(item)}
+              onLongPress={() => {
+                console.log("Long Pressed:", item);
+                setSelectedFriend(item);
+                setModalVisible(true);
+              }}
+            >
+              <Image source={{uri:item?.avatar}} style={styles.avatar} />
+              <Text style={styles.contactName}>{item?.displayName}</Text>
+              <View style={styles.iconContainer}>
+                <TouchableOpacity>
+                  <Icon name="phone" size={20} color="#34C759" />
+                </TouchableOpacity>
+                <TouchableOpacity>
+                  <Icon name="video-camera" size={20} color="#007AFF" />
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          )}
+        />
+        <Loading isLoading={isLoading} />
+      </View>
+
+      {/* Modal chi tiết bạn bè */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isModalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={{display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20}}>
+              <Image
+                source={{ uri: selectedFriend?.avatar }}
+                style={{ width: 80, height: 80, borderRadius: 50, borderWidth: 3, borderColor: "#fff" }}
+              />
+               <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}>
+                {selectedFriend?.displayName}
+              </Text>
+            </View>
+
+            {/* Thông tin chi tiết */}
+            <View style={{display: "flex", flexDirection:'row',alignItems: "center", justifyContent: "space-between", marginBottom: 20, gap: 20}}>
+              <TouchableOpacity style={{backgroundColor: "#F4F5F6", padding: 10, borderRadius: 5, alignItems: "center", gap: 5, width: width*0.35, borderRadius: 12}}
+                onPress={() => navigation.navigate('Profile', {userReceived: selectedFriend})}
+              >
+                <Icon name="user-circle-o" size={20} color="#007AFF" />
+                <Text style={{color: "#000", fontSize: 12}}>Xem trang cá nhân</Text>
               </TouchableOpacity>
-              <TouchableOpacity>
-                <Icon name="video-camera" size={20} color="#007AFF" />
+              <TouchableOpacity style={{backgroundColor: "#F4F5F6", padding: 10, borderRadius: 5, alignItems: "center", gap: 5, width: width*0.35, borderRadius: 12}}>
+                <IconF6 name="user-lock" size={20} color="#007AFF" />
+                <Text style={{color: "#000", fontSize: 12}}>Chặn</Text>
               </TouchableOpacity>
             </View>
-          </TouchableOpacity>
-        )}
-      />
-      <Loading isLoading={isLoading} />
-    </View>
+
+            {/* Thao tác với bạn bè */}            
+            <View style={{display: "flex", flexDirection:'row',alignItems: "center", justifyContent: "space-between", marginBottom: 20, gap: 20}}>
+
+              <TouchableOpacity style={{backgroundColor: "#F4F5F6", paddingVertical: 5, borderRadius: 5, alignItems: "center", gap: 5, width: width*0.35, borderRadius: 12}}
+                onPress={() => handleUnfriend(selectedFriend?.userId)}
+              >
+                <Text style={{color: "#000", fontWeight: 'bold'}}>Xóa bạn</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={{backgroundColor: "#007AFF", paddingVertical: 5, borderRadius: 5, alignItems: "center", gap: 5, width: width*0.35, borderRadius: 12}}
+                 onPress={() => handleCreateConversation(item)}
+              >
+                <Text style={{color: "#fff", fontWeight: 'bold'}}>Nhắn tin</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 };
 
@@ -229,6 +327,19 @@ separator: {
     flexDirection: "row",
     gap: 15,
   },
+
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 20,
+    overflow: "hidden"
+  }
 });
 
 export default PhoneBookFriend;

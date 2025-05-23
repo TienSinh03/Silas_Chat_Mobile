@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import {  acceptFriendReq, getFriendReqReceived, getFriendReqSent, recallFriendReq, rejectFriendReq, sendFriendReq, checkFriend } from "../../api/friendApi";
+import {  acceptFriendReq, getFriendReqReceived, getFriendReqSent, recallFriendReq, rejectFriendReq, sendFriendReq, checkFriend, unfriendFriend } from "../../api/friendApi";
 import { getFriendList } from "../../api/userApi";
 const initialState = {
     friends: [],
@@ -19,6 +19,7 @@ const recallReq = createAsyncThunk('friend/recallReq', recallFriendReq);
 const acceptReq = createAsyncThunk('friend/acceptReq', acceptFriendReq);
 const rejectReq = createAsyncThunk('friend/rejectReq', rejectFriendReq);
 const checkFriendStatus = createAsyncThunk('friend/checkStatus', checkFriend);
+const unfriend = createAsyncThunk('friend/unfriend', unfriendFriend);
 
 const sendReq = createAsyncThunk('friend/sendReq', async (friendId, thunkAPI) => {
     console.log("friendId", friendId);
@@ -53,8 +54,8 @@ const friendSlice = createSlice({
                 state.friends.push(newFriend);
             }
         },
-        setFriend(state, action) {
-            state.friend = action.payload;
+        setFriends_Unfriend(state, action) {
+            state.friends = state.friends.filter(friend => friend?.userId !== action.payload?.userId);
         },
         setSentRequests(state, action) {
             state.sentRequests = action.payload;
@@ -172,9 +173,22 @@ const friendSlice = createSlice({
             state.isLoading = false;
             state.error = action.error.message;
         });
+
+        //unfriend
+        builder.addCase(unfriend.pending, (state) => {
+            state.isLoading = true;
+        })
+        builder.addCase(unfriend.fulfilled, (state, action) => {
+            state.isLoading = false;
+            state.friends = state.friends.filter(item => item.userId !== action.payload);
+        })
+        builder.addCase(unfriend.rejected, (state, action) => {
+            state.isLoading = false;
+            state.error = action.error.message;
+        })
     }
 })
 
-export const { setFriends, setFriend, setSentRequests, setReceivedFriendRequests, setFriendStatus, addReceivedRequest } = friendSlice.actions;
-export { getMyFriends, getReqsReceived, getReqsSent, rejectReq, recallReq, acceptReq, sendReq, checkFriendStatus };
+export const { setFriends, setFriend, setSentRequests, setReceivedFriendRequests, setFriendStatus, addReceivedRequest, setFriends_Unfriend } = friendSlice.actions;
+export { getMyFriends, getReqsReceived, getReqsSent, rejectReq, recallReq, acceptReq, sendReq, checkFriendStatus , unfriend};
 export default friendSlice.reducer;
