@@ -170,20 +170,20 @@ const GroupSettingsScreen = ({ navigation, route }) => {
             })
           }
         />
-<OptionRow
-  color="black"
-  icon="link"
-  text="Link nhóm"
-  onPress={async () => {
-    try {
-      const linkGroup = await getLinkGroup(conversation?.id);
-      console.log("Link nhóm:", linkGroup);
-      navigation.navigate("JoinGroupQR", { linkGroup, idconversation: conversation?.id });  
-    } catch (error) {
-      console.error("Lỗi lấy link nhóm:", error);
-    }
-  }}
-/>
+        <OptionRow
+          color="black"
+          icon="link"
+          text="Link nhóm"
+          onPress={async () => {
+            try {
+              const linkGroup = await getLinkGroup(conversation?.id);
+              console.log("Link nhóm:", linkGroup);
+              navigation.navigate("JoinGroupQR", { linkGroup, idconversation: conversation?.id });  
+            } catch (error) {
+              console.error("Lỗi lấy link nhóm:", error);
+            }
+          }}
+        />
 
 
         {/* in ra conversation?.linkGroup */}
