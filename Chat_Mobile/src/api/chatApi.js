@@ -39,7 +39,7 @@ export const getAllConversationsByUserIdService = async () => {
     );
     return response.data;
   } catch (error) {
-    console.error(
+    console.log(
       "Error fetching conversations:",
       error.response?.data || error.message
     );

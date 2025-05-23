@@ -11,8 +11,9 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { useDispatch, useSelector } from "react-redux";
-import { getMyFriends } from "../store/slice/friendSlice";
+import { getMyFriends, setFriends } from "../store/slice/friendSlice";
 import { createConversation, getAllConversationsByUserId } from "../store/slice/conversationSlice"
+import { subscribeFriendsToAcceptFriendRequest, connectWebSocket, disconnectWebSocket } from "../config/socket";
 
 import Loading from "./Loading";
 
@@ -20,7 +21,8 @@ import Loading from "./Loading";
 const PhoneBookFriend = ({navigation}) => {
   const dispatch = useDispatch();
   const  { friends, isLoading }  = useSelector((state) => state.friend);
-    const { conversations } = useSelector((state) => state.conversation);
+  const { conversations } = useSelector((state) => state.conversation);
+  const { user } = useSelector((state) => state.user);
   
 
   console.log("friends", friends);
@@ -31,6 +33,20 @@ const PhoneBookFriend = ({navigation}) => {
   // const filteredContacts = friends.filter((contact) =>
   //   contact.displayName.toLowerCase().includes(searchText.toLowerCase())
   // );
+
+  React.useEffect(() => {
+
+    connectWebSocket(() => {
+      subscribeFriendsToAcceptFriendRequest(user?.id, (message) => {
+        console.log("Nhận được tin nhắn từ WebSocket:", message);
+        dispatch(setFriends(message));
+      });
+    });
+
+    return () => {
+      disconnectWebSocket();
+    };
+  },[user?.id]);
 
   React.useEffect(() => {
     dispatch(getMyFriends());
@@ -112,8 +128,8 @@ const PhoneBookFriend = ({navigation}) => {
 
       {/* Danh sách bạn bè */}
       <FlatList
-        data={friends}
-        keyExtractor={(item) => item.userId}
+        data={friends.filter((friends) =>  friends !== null)}
+        keyExtractor={(item) => item?.userId}
         renderItem={({ item }) => (
           <TouchableOpacity key={item?.userId} style={styles.contactItem} onPress={() => handleCreateConversation(item)}>
             <Image source={{uri:item?.avatar}} style={styles.avatar} />

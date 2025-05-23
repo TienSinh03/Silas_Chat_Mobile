@@ -2,8 +2,10 @@ import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import React from "react";
 import { updateGroupMembers, getAllConversationsByUserId } from "../store/slice/conversationSlice";
+import { getToken } from "../utils/authHelper";
 
 const HOST_IP = "192.168.1.67"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
+
 
 
 const WEBSOCKET_URL = `http://${HOST_IP}:8080/ws`;
@@ -284,9 +286,103 @@ export const subscribeToDeleteConversation = async (
   }
 };
 
+//Friend
+export const subscribeToSendFriendRequest = async (userId, onMessageReceived) => {
+  try {
+    await ensureWebSocketConnected();
+    if (!stompClient || !stompClient.connected) {
+      console.error("WebSocket is not connected");
+      return;
+    }
+    console.log("Subscribing to /friend/request/" + userId);
+
+    const subscription = stompClient.subscribe(
+      `/friend/request/${userId}`,
+      (message) => {
+        if (message.body) {
+          onMessageReceived(JSON.parse(message.body));
+        }
+      }
+    );
+   subscribers.set(userId, subscription);
+  } catch (error) {
+    console.error("Error subscribing to conversation:", error);
+  }
+}
+
+export const subscribeFriendsToAcceptFriendRequest = async (userId, onMessageReceived) => {
+  try {
+    await ensureWebSocketConnected();
+    if (!stompClient || !stompClient.connected) {
+      console.error("WebSocket is not connected");
+      return;
+    }
+    console.log("Subscribing to /friend/accept/" + userId);
+
+    const subscription = stompClient.subscribe(
+      `/friend/accept/${userId}`,
+      (message) => {
+        if (message.body) {
+          onMessageReceived(JSON.parse(message.body));
+        }
+      }
+    );
+   subscribers.set(userId, subscription);
+  } catch (error) {
+    console.error("Error subscribing to conversation:", error);
+  }
+}
+
+export const sendRequestToWebSocket = async (receiverId) => {
+  await ensureWebSocketConnected();
+  if (!stompClient || !stompClient.connected) {
+    console.error("WebSocket is not connected");
+    return;
+  }
+  console.log("Sending friend request to WebSocket", receiverId);
+
+  const token = await getToken();
+  console.log("Token:", token); // Kiểm tra token
+  if (!token) {
+      throw new Error("Token is missing or invalid");
+  }
+  stompClient.publish({
+      destination: "/app/friend/send-request",
+      headers: {
+          "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify(receiverId),
+  });
+};
+
+// export const subscribeFriendRequestReceiver = async (userId, onMessageReceived) => {
+//   try {
+//     await ensureWebSocketConnected();
+//     if (!stompClient || !stompClient.connected) {
+//       console.error("WebSocket is not connected");
+//       return;
+//     }
+//     console.log("Subscribing to /friend/request/" + userId);
+
+//     const subscription = stompClient.subscribe(
+//       `/friend/request/${userId}`,
+//       (message) => {
+//         if (message.body) {
+//           onMessageReceived(JSON.parse(message.body));
+//         }
+//       }
+//     );
+//    subscribers.set(userId, subscription);
+//   } catch (error) {
+//     console.error("Error subscribing to conversation:", error);
+//   }
+// }
+
 export const disconnectWebSocket = () => {
   if (stompClient && stompClient.connected) {
     stompClient.deactivate();
     subscribers.clear();
   }
 };
+
+

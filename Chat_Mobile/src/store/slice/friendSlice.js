@@ -20,25 +20,38 @@ const acceptReq = createAsyncThunk('friend/acceptReq', acceptFriendReq);
 const rejectReq = createAsyncThunk('friend/rejectReq', rejectFriendReq);
 const checkFriendStatus = createAsyncThunk('friend/checkStatus', checkFriend);
 
-
-
 const sendReq = createAsyncThunk('friend/sendReq', async (friendId, thunkAPI) => {
+    console.log("friendId", friendId);
     try {
         const response = await sendFriendReq(friendId);
         return response;
     } catch (error) {
         console.log("Error sending friend request:", error);
-        return thunkAPI.rejectWithValue(error.response.data?.message || error.message);
+        return thunkAPI.rejectWithValue(
+            (typeof error?.response?.data?.message === 'string' && error.response.data.message)
+            || (typeof error?.message === 'string' && error.message)
+            || "Không thể gửi lời mời kết bạn."
+        );
+
     }
 });
-
 
 const friendSlice = createSlice({
     name: "friend",
     initialState,
     reducers: {
         setFriends(state, action) {
-            state.friends = action.payload;
+            const newFriend = action.payload;
+            if(state.friends.some(friend => friend.userId === newFriend.userId)) {
+                state.friends = state.friends.map(friend => {
+                    if(friend.userId === newFriend.userId) {
+                        return newFriend;
+                    }
+                    return friend;
+                });
+            } else {
+                state.friends.push(newFriend);
+            }
         },
         setFriend(state, action) {
             state.friend = action.payload;
@@ -48,6 +61,12 @@ const friendSlice = createSlice({
         },
         setReceivedFriendRequests(state, action) {
             state.receivedFriendRequests = action.payload;
+        },
+        addReceivedRequest(state, action) {
+            if (!state.receivedFriendRequests) {
+                state.receivedFriendRequests = [];
+            }
+            state.receivedFriendRequests.push(action.payload);
         },
         setFriendStatus(state, action) {
             state.friendStatus = action.payload;
@@ -156,6 +175,6 @@ const friendSlice = createSlice({
     }
 })
 
-export const { setFriends, setFriend, setSentRequests, setReceivedFriendRequests, setFriendStatus } = friendSlice.actions;
+export const { setFriends, setFriend, setSentRequests, setReceivedFriendRequests, setFriendStatus, addReceivedRequest } = friendSlice.actions;
 export { getMyFriends, getReqsReceived, getReqsSent, rejectReq, recallReq, acceptReq, sendReq, checkFriendStatus };
 export default friendSlice.reducer;

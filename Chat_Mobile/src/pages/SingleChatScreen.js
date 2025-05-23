@@ -47,9 +47,11 @@ import {
     recallMessageToWebSocket,
     deleteMessageToWebSocket,
     sendFileToWebSocket,
+    sendRequestToWebSocket,
+    subscribeFriendsToAcceptFriendRequest,
 } from "../config/socket";
 
-import { sendReq, checkFriendStatus } from "../store/slice/friendSlice";
+import { sendReq, checkFriendStatus, getReqsReceived, getReqsSent, setFriends } from "../store/slice/friendSlice";
 
 import { uploadFile } from "../api/chatApi";
 import Loading from "../components/Loading";
@@ -77,6 +79,9 @@ const SingleChatScreen = ({ navigation, route }) => {
     const dispatch = useDispatch();
     const { messages } = useSelector((state) => state.message);
     const { user } = useSelector((state) => state.user);
+    const { receivedFriendRequests, sentRequests } = useSelector((state) => state.friend);
+
+
     // State quản lý emoji/gif/sticker
     const [contentType, setContentType] = useState("emoji");
     const [gifs, setGifs] = useState([]);
@@ -193,6 +198,21 @@ const SingleChatScreen = ({ navigation, route }) => {
     // check friend
     const [isFriend, setIsFriend] = useState(false); // Track friend status
 
+    // check trang thai ket ban va phan hoi
+    const [isSentReq, setIsSentReq] = useState(false);
+    const [isReceivedReq, setIsReceivedReq] = useState(false);
+
+    const requestsReceived = useMemo(() => {
+        if(receivedFriendRequests === null) return [];
+        return receivedFriendRequests;
+    }, [receivedFriendRequests]);
+
+    const requestsSent = useMemo(() => {
+        if(sentRequests === null) return [];
+        return sentRequests;
+    }, [sentRequests]);
+
+    //load message
     const messageMemo = useMemo(() => {
         if (!messages) return [];
         return messages;
@@ -211,6 +231,14 @@ const SingleChatScreen = ({ navigation, route }) => {
     const audioPath = useRef(null);
 
     const [selectedMessage, setSelectedMessage] = useState(null);
+
+    useEffect(() => {
+        dispatch(getReqsReceived());
+    }, []);
+
+    useEffect(() => {
+        dispatch(getReqsSent());
+    }, []);
 
     // Gọi hàm lấy tin nhắn từ slice khi component được mount
     useEffect(() => {
@@ -650,26 +678,47 @@ const SingleChatScreen = ({ navigation, route }) => {
 
         if (userReceived?.id) {
             checkIsFriend();
+            const isSent = requestsSent.find((req) => req?.userId === userReceived?.id);
+            if (isSent) {
+                setIsSentReq(true)
+            } else {
+                setIsSentReq(false)
+            }
+
+            //kiểm tra đã nhận lời mời hay chưa
+            const isReceived = requestsReceived.find((req) => req?.userId === userReceived?.id);
+            if(isReceived) {
+                setIsReceivedReq(true);
+            } else {
+                setIsReceivedReq(false);
+            }
         }
     }, [userReceived?.id, dispatch]);
+
+    useEffect(() => {
+        connectWebSocket(() => {
+            subscribeFriendsToAcceptFriendRequest(user?.id, (message) => {
+                console.log("Nhận được tin nhắn từ WebSocket:", message);
+                dispatch(setFriends(message));  
+                const response = dispatch(
+                    checkFriendStatus(message?.userId)
+                );
+                setIsFriend(response);
+                dispatch(getReqsReceived());
+                dispatch(getReqsSent());
+            });
+        });
+        return () => {
+            disconnectWebSocket();
+        };
+    }, [user?.id, dispatch]);
 
     // Gửi lời mời kết bạn
     const handleSendRequest = async (friendId) => {
         try {
-            const response = await dispatch(sendReq(friendId)).unwrap();
-            console.log("response", response);
-            if (response.status === "SUCCESS") {
-                console.log("Lời mời kết bạn đã được gửi thành công.");
-
-                Alert.alert(
-                    "Thông báo",
-                    "Lời mời kết bạn đã được gửi thành công.",
-                    [{ text: "OK" }],
-                    { cancelable: false }
-                );
-            } else {
-                console.log("Không thể gửi lời mời kết bạn.");
-            }
+            sendRequestToWebSocket({ receiverId: friendId });
+            setIsSentReq(true);
+            dispatch(getReqsSent());
         } catch (error) {
             console.log("Lỗi khi gửi lời mời kết bạn:", error);
             Alert.alert(
@@ -805,17 +854,42 @@ const SingleChatScreen = ({ navigation, route }) => {
                         onPress={() => {
                             handleSendRequest(userReceived?.id);
                         }}
+                        disabled = {isReceivedReq || isSentReq}
                     >
-                        <Text
-                            style={{
-                                color: "#000",
-                                textAlign: "center",
-                                fontSize: 18,
-                            }}
-                        >
-                            {" "}
-                            <IconA size={24} name="adduser"></IconA> Kết bạn
-                        </Text>
+                        {
+                            isSentReq ? (
+
+                                <Text
+                                    style={{
+                                        color: "#000",
+                                        textAlign: "center",
+                                        fontSize: 18,
+                                    }}
+                                >
+                                    <IconA size={24} name="adduser"></IconA> Đã gửi lời mời
+                                </Text>
+                            ) : isReceivedReq ? (
+                                <Text
+                                    style={{
+                                        color: "#000",
+                                        textAlign: "center",
+                                        fontSize: 18,
+                                    }}
+                                >
+                                    <IconA size={24} name="adduser"></IconA> Phản hồi
+                                </Text>
+                            ) : (
+                                <Text
+                                    style={{
+                                        color: "#000",
+                                        textAlign: "center",
+                                        fontSize: 18,
+                                    }}
+                                >
+                                    <IconA size={24} name="adduser"></IconA> Kết bạn
+                                </Text>
+                            )
+                        }
                     </TouchableOpacity>
                 ) : (
                     <View></View>
