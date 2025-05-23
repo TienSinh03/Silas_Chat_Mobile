@@ -107,3 +107,19 @@ export const checkFriend = async (friendId) => {
         throw error;
     }
 }
+
+export const unfriendFriend = async (friendId) => {
+    try {
+        const response = await instance.post(`/api/v1/friend/unfriend/${friendId}`);
+        return response.data.response; 
+    } catch (error) {
+        console.error("Error unfriending friend:", error);
+        if (error.response) {
+            console.log("Status:", error.response.status);
+            console.log("Data:", error.response.data);
+        } else {
+            console.log("Other error:", error.message);
+        }
+        throw error;
+    }
+}
