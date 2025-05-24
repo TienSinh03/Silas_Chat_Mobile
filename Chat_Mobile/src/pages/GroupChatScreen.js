@@ -917,15 +917,12 @@ const GroupChatScreen = ({ navigation, route }) => {
                                   alignItems: "center",
                                 }}
                               >
-                                <IconF5
-                                  name={getFileIcon(item?.content)}
-                                  size={30}
-                                  color="black"
-                                  style={{
-                                    marginRight: 5,
-                                    paddingVertical: 5,
-                                    paddingHorizontal: 10,
-                                  }}
+                                <IconF5 name={getFileIcon(item?.content).icon} size={30} color={getFileIcon(item?.content).color} 
+                                    style={{
+                                        marginRight: 5,
+                                        paddingVertical: 5,
+                                        paddingHorizontal: 10,
+                                    }} 
                                 />
                                 <View>
                                   <Text
