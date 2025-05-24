@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
+import { Modal } from "react-native";
+
 import {
   SafeAreaView,
   StatusBar,
@@ -11,8 +13,11 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  
 } from "react-native";
 import Header from "../../components/Header";
+import Entypo from 'react-native-vector-icons/Entypo';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const DiaryMy = () => {
   const posts = [
@@ -23,7 +28,7 @@ const DiaryMy = () => {
       content:
         "[Quận 2] - Trung tâm Hội nghị & Tiệc cưới quy mô lớn cần tuyển các vị trí:\n1️⃣ Marketing Manager (F&B)\n2️⃣ Kế toán (ưu tiên TSCD)",
       time: "6 phút trước",
-      avatar: "https://placekitten.com/200/200",
+      avatar: "https://i.imgur.com/o8bd7yT_d.webp?maxwidth=520&shape=thumb&fidelity=high",
     },
     {
       idPost: 2,
@@ -31,7 +36,7 @@ const DiaryMy = () => {
       name: "Linh Nguyễn",
       content: "Hôm nay trời đẹp quá 🌤️",
       time: "12 phút trước",
-      avatar: "https://placekitten.com/201/201",
+      avatar: "https://i.imgur.com/neU3XIs_d.webp?maxwidth=520&shape=thumb&fidelity=high",
     },
     {
       idPost: 3,
@@ -39,7 +44,7 @@ const DiaryMy = () => {
       name: "Nguyễn Văn Tiến",
       content: "Chúc mọi người một ngày tốt lành! ☀️",
       time: "20 phút trước",
-      avatar: "https://placekitten.com/202/202",
+      avatar: "https://i.imgur.com/avy5i4j_d.webp?maxwidth=520&shape=thumb&fidelity=high",
     },
     {
       idPost: 4,
@@ -47,7 +52,7 @@ const DiaryMy = () => {
       name: "Nguyễn Thị Mai",
       content: "Mới mua được chiếc xe mới 🚗",
       time: "30 phút trước",
-      avatar: "https://placekitten.com/203/203",
+      avatar: "https://i.imgur.com/QlkmTmA_d.webp?maxwidth=520&shape=thumb&fidelity=high",
     },
     {
       idPost: 5,
@@ -55,9 +60,11 @@ const DiaryMy = () => {
       name: "Trần Văn An",
       content: "Đi du lịch Đà Nẵng thật tuyệt vời! 🏖️",
       time: "1 giờ trước",
-      avatar: "https://placekitten.com/204/204",
+      avatar: "https://i.imgur.com/QlkmTmA_d.webp?maxwidth=520&shape=thumb&fidelity=high",
     },
   ];
+const [modalVisible, setModalVisible] = useState(false);
+const [selectedPost, setSelectedPost] = useState(null);
 
   return (
     <KeyboardAvoidingView
@@ -70,7 +77,7 @@ const DiaryMy = () => {
           {/* Post Box */}
           <View style={styles.postBox}>
             <Image
-              source={{ uri: 'https://placekitten.com/100/100' }}
+              source={require('../../../assets/image1.jpg')}
               style={styles.avatar}
             />
             <TextInput
@@ -97,10 +104,27 @@ const DiaryMy = () => {
 
           {/* Stories */}
           <ScrollView horizontal style={styles.stories} showsHorizontalScrollIndicator={false}>
-            <View style={styles.story}><Text style={styles.storyText}>Tạo mới</Text></View>
-            <View style={styles.story}><Text style={styles.storyText}>Linh</Text></View>
-            <View style={styles.story}><Text style={styles.storyText}>Tiến</Text></View>
+            {/* Story đầu tiên: Tạo mới */}
+            <TouchableOpacity style={styles.storyList}>
+              <Image
+                source={require('../../../assets/image1.jpg')}
+                style={styles.avatarList}
+              />
+              <Text style={styles.storyTextList}>Tạo mới</Text>
+            </TouchableOpacity>
+
+            {/* Các story từ mảng posts */}
+            {posts.map((item) => (
+              <TouchableOpacity key={item.idPost} style={styles.storyList}>
+                <Image
+                  source={{ uri: item.avatar }}
+                  style={styles.avatarList}
+                />
+                <Text style={styles.storyTextList}>{item.name}</Text>
+              </TouchableOpacity>
+            ))}
           </ScrollView>
+
 
           {/* Posts from array */}
           {posts.map((post) => (
@@ -110,9 +134,14 @@ const DiaryMy = () => {
                   source={{ uri: post.avatar }}
                   style={styles.avatarSmall}
                 />
-                <View>
-                  <Text style={styles.postName}>{post.name}</Text>
-                  <Text style={styles.postTime}>{post.time}</Text>
+                <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <View>
+                    <Text style={styles.postName}>{post.name}</Text>
+                    <Text style={styles.postTime}>{post.time}</Text>
+                  </View>
+                  <TouchableOpacity>
+                    <Entypo name="dots-three-vertical" size={15} color="black" />
+                  </TouchableOpacity>          
                 </View>
               </View>
               <Text style={styles.postContent}>{post.content}</Text>
@@ -121,8 +150,57 @@ const DiaryMy = () => {
               <Text style={{ fontSize: 10, color: "gray", marginTop: 5 }}>
                 Post ID: {post.idPost} | User ID: {post.idUser}
               </Text>
+              <View style={{ flexDirection: 'row', marginTop: 10 }}>
+                <TouchableOpacity style={styles.likeContainer}>
+                  <Ionicons name="heart-outline" size={20} color="#000" />
+                  <Text style={styles.likeText}>Thích</Text>
+                  <View style={styles.divider} />
+                  <Ionicons name="heart" size={20} color="red" />
+                  <Text style={styles.likeCount}>2</Text>
+                </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.commentContainer}
+                onPress={() => {
+                  setSelectedPost(post);
+                  setModalVisible(true);
+                }}
+              >
+                <Ionicons name="chatbox-ellipses-outline" size={20} color="#000" />
+              </TouchableOpacity>
+
+              </View>
+
+              
             </View>
           ))}
+          <Modal
+            visible={modalVisible}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setModalVisible(false)}
+          >
+            <View style={styles.modalBackground}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Bình luận bài viết</Text>
+                <Text style={{ fontSize: 12, color: '#888' }}>
+                  Bài viết từ: {selectedPost?.name}
+                </Text>
+                <TextInput
+                  placeholder="Nhập bình luận..."
+                  style={styles.commentInput}
+                  multiline
+                />
+                <TouchableOpacity
+                  style={styles.sendButton}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.sendButtonText}>Gửi</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
         </ScrollView>
       </SafeAreaView>
     </KeyboardAvoidingView>
@@ -192,17 +270,49 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
   },
+
+
+  storyList: {
+    width: 100,
+    height: 140,
+    borderRadius: 10,
+    overflow: 'hidden',
+    justifyContent: 'flex-end', 
+    alignItems: 'center',
+    position: 'relative',
+    marginRight: 10,
+  },
+  avatarList: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.5,                     // độ mờ
+    zIndex: 0,
+  },
+
+  storyTextList: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    zIndex: 1,
+  },
+
+
+
+
+
   post: {
     backgroundColor: '#fff',
-    borderRadius: 10,
+    // borderRadius: 10,
     padding: 10,
-    marginVertical: 10,
-    marginHorizontal: 10,
+    // marginVertical: 10,
+    // marginHorizontal: 10,
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
     elevation: 2,
+    marginBottom: 20,
+    // height: 300
   },
   postHeader: {
     flexDirection: 'row',
@@ -226,6 +336,84 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 6,
   },
+
+  // Like and Comment
+
+    likeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    marginRight: 10,
+  },
+  likeText: {
+    marginLeft: 5,
+    marginRight: 10,
+    fontSize: 14,
+  },
+  divider: {
+    width: 1,
+    height: 16,
+    backgroundColor: '#ddd',
+    marginHorizontal: 8,
+  },
+  likeCount: {
+    marginLeft: 4,
+    fontSize: 14,
+    color: '#000',
+  },
+  commentContainer: {
+    borderRadius: 20,
+    padding: 6,
+    backgroundColor: '#f2f2f2',
+  },
+
+
+  // modal
+
+modalBackground: {
+  flex: 1,
+  backgroundColor: 'rgba(0,0,0,0.5)',
+  justifyContent: 'flex-end',  // <-- sửa chỗ này
+  alignItems: 'center',
+},
+
+modalContent: {
+  width: '100%',
+  backgroundColor: 'white',
+  borderRadius: 10,
+  padding: 20,
+  alignItems: 'stretch',
+  
+},
+modalTitle: {
+  fontSize: 18,
+  fontWeight: 'bold',
+  marginBottom: 10,
+},
+commentInput: {
+  borderWidth: 1,
+  borderColor: '#ccc',
+  borderRadius: 8,
+  padding: 10,
+  minHeight: 80,
+  marginBottom: 10,
+  textAlignVertical: 'top',
+},
+sendButton: {
+  backgroundColor: '#3b82f6',
+  padding: 10,
+  borderRadius: 8,
+  alignItems: 'center',
+},
+sendButtonText: {
+  color: 'white',
+  fontWeight: 'bold',
+}
+
 });
 
 export default DiaryMy;
