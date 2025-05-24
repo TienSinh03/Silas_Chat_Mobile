@@ -4,7 +4,7 @@ import React from "react";
 import { updateGroupMembers, getAllConversationsByUserId } from "../store/slice/conversationSlice";
 import { getToken } from "../utils/authHelper";
 
-const HOST_IP = "192.168.214.41"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
+const HOST_IP = "192.168.1.67"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
 
 const WEBSOCKET_URL = `http://${HOST_IP}:8080/ws`;
 

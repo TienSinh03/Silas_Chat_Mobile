@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Modal } from "react-native";
 
 import {
@@ -18,72 +18,146 @@ import {
 import Header from "../../components/Header";
 import Entypo from 'react-native-vector-icons/Entypo';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-
+import { useNavigation } from "@react-navigation/native";
+import { useDispatch, useSelector } from 'react-redux';
+import {getPostsMyByUserId, getFriendsByUserId, getAllPosts, getUserById} from '../../api/postApi';
 const DiaryMy = () => {
-  const posts = [
-    {
-      idPost: 1,
-      idUser: 101,
-      name: "Trần Lê Minh Thư",
-      content:
-        "[Quận 2] - Trung tâm Hội nghị & Tiệc cưới quy mô lớn cần tuyển các vị trí:\n1️⃣ Marketing Manager (F&B)\n2️⃣ Kế toán (ưu tiên TSCD)",
-      time: "6 phút trước",
-      avatar: "https://i.imgur.com/o8bd7yT_d.webp?maxwidth=520&shape=thumb&fidelity=high",
-    },
-    {
-      idPost: 2,
-      idUser: 102,
-      name: "Linh Nguyễn",
-      content: "Hôm nay trời đẹp quá 🌤️",
-      time: "12 phút trước",
-      avatar: "https://i.imgur.com/neU3XIs_d.webp?maxwidth=520&shape=thumb&fidelity=high",
-    },
-    {
-      idPost: 3,
-      idUser: 103,
-      name: "Nguyễn Văn Tiến",
-      content: "Chúc mọi người một ngày tốt lành! ☀️",
-      time: "20 phút trước",
-      avatar: "https://i.imgur.com/avy5i4j_d.webp?maxwidth=520&shape=thumb&fidelity=high",
-    },
-    {
-      idPost: 4,
-      idUser: 104,
-      name: "Nguyễn Thị Mai",
-      content: "Mới mua được chiếc xe mới 🚗",
-      time: "30 phút trước",
-      avatar: "https://i.imgur.com/QlkmTmA_d.webp?maxwidth=520&shape=thumb&fidelity=high",
-    },
-    {
-      idPost: 5,
-      idUser: 105,
-      name: "Trần Văn An",
-      content: "Đi du lịch Đà Nẵng thật tuyệt vời! 🏖️",
-      time: "1 giờ trước",
-      avatar: "https://i.imgur.com/QlkmTmA_d.webp?maxwidth=520&shape=thumb&fidelity=high",
-    },
-  ];
+
 const [modalVisible, setModalVisible] = useState(false);
 const [selectedPost, setSelectedPost] = useState(null);
+const navigation = useNavigation();
+
+// lấy user hiện tại từ Redux store
+  const dispatch = useDispatch();
+  const userProfile = useSelector(state => state.user.user);
+  const user = useMemo(() => {
+          return userProfile || null;
+  }, [userProfile]);
+  console.log("Nhật ký: USER hiện tại--------------------" , userProfile);
+/*
+ (NOBRIDGE) LOG  Nhật ký: USER hiện tại-------------------- {"avatar": "https://res.cloudinary.com/dovnjo6ij/image/upload/v1744734307/yviw4m4qp63sx1xmj6mb.jpg", "display_name": "Tran Minh Tiến", "dob": "2003-02-06", "enabled": true, "gender": "MALE", "id": "67fb51ce6993e15db49bf32f", "password": "$2a$10$BBWzlF0pJxQq9sriX40YQOUQ40BaBJXpUFUMFGjLW/c88AlBr3Ng.", "phone": "+84869188704", "roles": ["ROLE_USER"]}
+*/
+  // Lấy bài viết của người dùng hiện tại
+  const [userPosts, setUserPosts] = useState([]);
+
+  // Lấy bài viết của người dùng hiện tại
+  React.useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const postsData = await getPostsMyByUserId(user?.id);
+        setUserPosts(postsData);
+      } catch (error) {
+        console.error("Lỗi khi lấy bài viết:", error);
+      }
+    };
+    if (user?.id) {
+      fetchPosts();
+    }
+  }, [user?.id]);
+
+  console.log("**************************************Bài viết của người dùng hiện tại:", userPosts);
+
+  // Lấy danh sách bạn bè của người dùng hiện tại
+  const [friends, setFriends] = useState([]);
+  React.useEffect(() => {
+    const fetchFriends = async () => {
+      try {
+        const result = await getFriendsByUserId(user?.id);
+        setFriends(result.response || []);     // nếu dùng như bên dưới sẽ không lấy được do postmain khi test {               ...............} KHÔNG Phải là [..............]
+        /*
+        const friendsData = await getFriendsByUserId(user?.id);
+        setFriends(friendsData); //
+        */
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách bạn bè:", error);
+      }
+    };
+    if (user?.id) {
+      fetchFriends();
+    }
+  }, [user?.id]);
+  console.log("............................danh sách bạn bè:...................................", friends);
+
+
+
+  // Lấy tất cả bài viết
+  const [allPosts, setAllPosts] = useState([]);
+  React.useEffect(() => {
+    const fetchAllPosts = async () => {
+      try {
+        const allPostsData = await getAllPosts();
+        setAllPosts(allPostsData);
+      } catch (error) {
+        console.error("Lỗi khi lấy tất cả bài viết:", error);
+      }
+    };
+    fetchAllPosts();
+  }, []);
+  console.log("**************************************Tất cả bài viết:", allPosts);
+// chỉ lấy bài viết của bạn bè dựa vào friends và allPosts 
+
+  
+// Lọc bài viết của bạn bè
+const [friendPosts, setFriendPosts] = useState([]);
+
+useEffect(() => {
+  if (friends.length > 0 && allPosts.length > 0) {
+    const friendIds = friends.map(friend => friend.userId);
+    const postsFromFriends = allPosts.filter(post => friendIds.includes(post.userId));
+    setFriendPosts(postsFromFriends);
+  }
+}, [friends, allPosts]);
+
+console.log("**************************************Bài viết của bạn bè:", friendPosts);
+ 
+
+
+
+//getUserById
+
+const [friendUsers, setFriendUsers] = useState({});
+const fetchFriendUsers = async () => {
+  try {
+    const users = await Promise.all(
+      friends.map(friend => getUserById(friend.userId))
+    );
+    const usersMap = users.reduce((acc, user) => {
+      acc[user.id] = user;
+      return acc;
+    }, {});
+    setFriendUsers(usersMap);
+  } catch (error) {
+    console.error("Lỗi khi lấy thông tin người dùng:", error);
+  }
+};
+
+useEffect(() => {
+  if (friends.length > 0) {
+    fetchFriendUsers();
+  }
+}, [friends]);
+
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
+
       <SafeAreaView style={styles.container}>
         <Header iconRight="user" />
         <ScrollView contentContainerStyle={styles.scrollContent}>
           {/* Post Box */}
           <View style={styles.postBox}>
+            {/* lấy img từ useProfile */}
             <Image
-              source={require('../../../assets/image1.jpg')}
+              source={{ uri: user?.avatar }}
               style={styles.avatar}
             />
-            <TextInput
-              placeholder="Hôm nay bạn thế nào?"
-              style={styles.input}
-            />
+            <TouchableOpacity  style={styles.input} 
+                    onPress={() => navigation.navigate('PostStatusScreen')}
+            >
+              <Text>
+                Hôm nay bạn thế nào?
+              </Text>
+            </TouchableOpacity>
+
           </View>
 
           {/* Action Buttons */}
@@ -107,37 +181,34 @@ const [selectedPost, setSelectedPost] = useState(null);
             {/* Story đầu tiên: Tạo mới */}
             <TouchableOpacity style={styles.storyList}>
               <Image
-                source={require('../../../assets/image1.jpg')}
+                source={{ uri: user?.avatar }}
                 style={styles.avatarList}
               />
               <Text style={styles.storyTextList}>Tạo mới</Text>
             </TouchableOpacity>
 
             {/* Các story từ mảng posts */}
-            {posts.map((item) => (
-              <TouchableOpacity key={item.idPost} style={styles.storyList}>
-                <Image
-                  source={{ uri: item.avatar }}
-                  style={styles.avatarList}
-                />
-                <Text style={styles.storyTextList}>{item.name}</Text>
+            {friends.map((friend) => (
+              <TouchableOpacity key={friend.userId} style={styles.storyList}>
+                <Image source={{ uri: friend.avatar }} style={styles.avatarList} />
+                <Text style={styles.storyTextList}>{friend.displayName}</Text>
               </TouchableOpacity>
             ))}
-          </ScrollView>
+      </ScrollView>
 
-
-          {/* Posts from array */}
-          {posts.map((post) => (
+          {/* Posts from my */}
+          {userPosts.map((post) => (
             <View key={post.idPost} style={styles.post}>
               <View style={styles.postHeader}>
                 <Image
-                  source={{ uri: post.avatar }}
+                  source={{ uri: user.avatar }}
                   style={styles.avatarSmall}
                 />
                 <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <View>
-                    <Text style={styles.postName}>{post.name}</Text>
-                    <Text style={styles.postTime}>{post.time}</Text>
+                    {/* <Text style={styles.postName}>{post.fonts}</Text> */}
+                    <Text style={styles.postName}>{user.display_name}</Text>
+                    <Text style={styles.postTime}>{post.createdAt}</Text>
                   </View>
                   <TouchableOpacity>
                     <Entypo name="dots-three-vertical" size={15} color="black" />
@@ -170,10 +241,59 @@ const [selectedPost, setSelectedPost] = useState(null);
               </TouchableOpacity>
 
               </View>
-
-              
             </View>
           ))}
+
+          {/* Posts FRIEND*/}
+          {friendPosts.map((post) => (
+            
+            <View key={post.idPost} style={styles.post}>
+              <View style={styles.postHeader}>
+                <Image
+                  source={{ uri: user.avatar }}
+                  style={styles.avatarSmall}
+                />
+                <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <View>
+                    {/* <Text style={styles.postName}>{post.fonts}</Text> */}
+                    <Text style={styles.postName}>{post.userId}</Text>
+                    <Text style={styles.postTime}>{post.createdAt}</Text>
+                  </View>
+                  <TouchableOpacity>
+                    <Entypo name="dots-three-vertical" size={15} color="black" />
+                  </TouchableOpacity>          
+                </View>
+              </View>
+              <Text style={styles.postContent}>{post.content}</Text>
+
+              {/* Example of accessing idPost and idUser */}
+              <Text style={{ fontSize: 10, color: "gray", marginTop: 5 }}>
+                Post ID: {post.idPost} | User ID: {post.idUser}
+              </Text>
+              <View style={{ flexDirection: 'row', marginTop: 10 }}>
+                <TouchableOpacity style={styles.likeContainer}>
+                  <Ionicons name="heart-outline" size={20} color="#000" />
+                  <Text style={styles.likeText}>Thích</Text>
+                  <View style={styles.divider} />
+                  <Ionicons name="heart" size={20} color="red" />
+                  <Text style={styles.likeCount}>2</Text>
+                </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.commentContainer}
+                onPress={() => {
+                  setSelectedPost(post);
+                  setModalVisible(true);
+                }}
+              >
+                <Ionicons name="chatbox-ellipses-outline" size={20} color="#000" />
+              </TouchableOpacity>
+
+              </View>
+            </View>
+          ))}
+
+          
           <Modal
             visible={modalVisible}
             transparent
@@ -202,9 +322,7 @@ const [selectedPost, setSelectedPost] = useState(null);
           </Modal>
 
         </ScrollView>
-      </SafeAreaView>
-    </KeyboardAvoidingView>
-  );
+      </SafeAreaView>  );
 };
 
 
