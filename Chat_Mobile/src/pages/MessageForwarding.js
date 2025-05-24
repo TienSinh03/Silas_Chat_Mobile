@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, Image, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useSelector, useDispatch } from 'react-redux';
@@ -7,17 +7,73 @@ import Loading from '../components/Loading';
 import { forwardMessage } from '../api/chatApi';
 import { forwardMessageToWebSocket } from '../config/socket';
 
+
+const renderFriendItem = ({ item, toggleFriendSelection, selectedFriends }) => {
+    const isSelected = selectedFriends.includes(item.userId);
+    return (
+      <TouchableOpacity
+        style={styles.contactItem}
+        onPress={() => toggleFriendSelection(item.userId)}
+      >
+        <Image
+          source={{ uri: item.avatar || 'https://via.placeholder.com/40' }}
+          style={styles.avatar}
+        />
+        <View style={styles.chatInfo}>
+          <Text style={styles.contactName}>{item.displayName}</Text>
+        </View>
+        <View style={[styles.checkbox, isSelected ? styles.checkboxSelected : null]} />
+      </TouchableOpacity>
+    );
+  };
+
+  const GroupItem = ({ item, isSelected, toggleGroupSelection }) => {
+  
+    return (
+      <TouchableOpacity key={item?.id} style={styles.groupItem}
+        onPress={() => {
+          toggleGroupSelection(item?.id);
+        }}
+      >
+        <View style={styles.groupAvatars}>
+          {item.members.slice(0, 4).map((member, index) => (
+            <Image key={index} source={{ uri: member.avatar }} style={styles.groupAvatar} />
+            ))}
+          </View>
+  
+          <View style={styles.groupContent}>
+            <Text style={styles.groupName}>{item?.name}</Text>
+            <Text style={styles.groupMessage}>{item?.message}</Text>
+          </View>
+  
+          <Text style={styles.groupTime}>{item?.time}</Text>
+          <View style={[styles.checkbox, isSelected ? styles.checkboxSelected : null]} />
+      </TouchableOpacity>
+  
+    )
+  };
+
 const MessageForwarding = ({ navigation, route }) => {
   const dispatch = useDispatch();
   const { friends, isLoading } = useSelector((state) => state.friend);
   const { user } = useSelector((state) => state.user);
+  const { conversations } = useSelector((state) => state.conversation);
+  
   const [activeTab, setActiveTab] = useState('Bạn bè');
   const [message, setMessage] = useState('');
   const [selectedFriends, setSelectedFriends] = useState([]);
+  const [selectedGroups, setSelectedGroups] = useState([]);
   const [forwarding, setForwarding] = useState(false);
 
   const forwardedMessage = route.params?.forwardedMessage;
   console.log('Forwarded message:', forwardedMessage);
+
+  const groups = useMemo(() => {
+      if(Array.isArray(conversations)) {
+        return conversations.filter((item) => item.is_group);
+      }
+      return [];
+  }, [conversations]);
 
   useEffect(() => {
     dispatch(getMyFriends());
@@ -26,7 +82,7 @@ const MessageForwarding = ({ navigation, route }) => {
   const filteredFriends = friends.filter(friend => {
     if (activeTab === 'Nhóm mới') return friend.type === 'group' || friend.type === 'contact' || !friend.type;
     if (activeTab === 'Bạn bè') return friend.type === 'contact' || !friend.type;
-    if (activeTab === 'App khác') return friend.type === 'app';
+    // if (activeTab === 'App khác') return friend.type === 'app';
     return true;
   });
 
@@ -38,9 +94,17 @@ const MessageForwarding = ({ navigation, route }) => {
     );
   };
 
+  const toggleGroupSelection = (groupId) => {
+    setSelectedGroups(prev =>
+      prev.includes(groupId)
+        ? prev.filter(id => id !== groupId)
+        : [...prev, groupId]
+    );
+  };
+
   const handleForwardMessage = async () => {
-    if (selectedFriends.length === 0) {
-      alert('Vui lòng chọn ít nhất một người nhận!');
+    if (selectedFriends.length === 0 && selectedGroups.length === 0) {
+      alert('Vui lòng chọn ít nhất một người hoặc nhóm nhận!');
       return;
     }
 
@@ -82,24 +146,6 @@ const MessageForwarding = ({ navigation, route }) => {
     }
   };
 
-  const renderFriendItem = ({ item }) => {
-    const isSelected = selectedFriends.includes(item.userId);
-    return (
-      <TouchableOpacity
-        style={styles.contactItem}
-        onPress={() => toggleFriendSelection(item.userId)}
-      >
-        <Image
-          source={{ uri: item.avatar || 'https://via.placeholder.com/40' }}
-          style={styles.avatar}
-        />
-        <View style={styles.chatInfo}>
-          <Text style={styles.contactName}>{item.displayName}</Text>
-        </View>
-        <View style={[styles.checkbox, isSelected ? styles.checkboxSelected : null]} />
-      </TouchableOpacity>
-    );
-  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -141,7 +187,7 @@ const MessageForwarding = ({ navigation, route }) => {
       )}
 
       <View style={styles.tabContainer}>
-        {['Bạn bè', 'Nhật ký', 'App khác'].map(tab => (
+        {['Bạn bè', 'Nhóm'].map(tab => (
           <TouchableOpacity
             key={tab}
             style={[styles.tab, activeTab === tab ? styles.activeTab : null]}
@@ -157,13 +203,24 @@ const MessageForwarding = ({ navigation, route }) => {
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionHeaderText}>Gần đây</Text>
       </View>
-      <FlatList
-        data={filteredFriends}
-        renderItem={renderFriendItem}
-        keyExtractor={item => item.userId.toString()}
-        style={styles.chatList}
-        ListEmptyComponent={<Text style={styles.emptyText}>Không có bạn bè để hiển thị</Text>}
-      />
+      {activeTab === 'Bạn bè' ? (
+
+        <FlatList
+          data={filteredFriends}
+          renderItem={({item}) => renderFriendItem({ item, toggleFriendSelection, selectedFriends })}
+          keyExtractor={item => item.userId.toString()}
+          style={styles.chatList}
+          ListEmptyComponent={<Text style={styles.emptyText}>Không có bạn bè để hiển thị</Text>}
+        />
+      ) : (
+        <FlatList
+          data={groups}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <GroupItem item={item} isSelected={selectedGroups.includes(item.id)} toggleGroupSelection={toggleGroupSelection} />}
+          ListEmptyComponent={<Text style={styles.emptyText}>Không có nhóm để hiển thị</Text>}
+          style={styles.chatList}
+        />
+      )}
 
       <View style={styles.bottomContainer}>
         <TextInput
@@ -346,6 +403,41 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     marginTop: 20,
+  },
+  groupItem: {
+    flexDirection: "row",
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+    alignItems: "center",
+  },
+  groupAvatars: {
+    width: 53,
+    height: 53,
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  groupAvatar: {
+    width: 21,
+    height: 21,
+    borderRadius: 12,
+    margin: 1,
+  },
+  groupContent: {
+    flex: 1,
+    marginLeft: 13,
+  },
+  groupName: {
+    fontWeight: "bold",
+    fontSize: 17,
+  },
+  groupMessage: {
+    color: "gray",
+    fontSize: 15,
+  },
+  groupTime: {
+    color: "gray",
+    fontSize: 13,
   },
 });
 
