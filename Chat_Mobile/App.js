@@ -52,6 +52,7 @@ import { useToast } from 'react-native-toast-notifications';
 import JoinGroupQR from "./src/pages/JoinGroupQR";
 import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 import { showFriendRequestToast } from "./src/utils/toast";
+import TabTopMedia from "./src/navigation/TabTopMedia";
 import PostStatusScreen  from "./src/pages/blog/PostStatusScreen";
 const Stack = createStackNavigator();
 
@@ -188,6 +189,12 @@ const AppNavigation = () => {
               name="JoinGroupQR"
               component={JoinGroupQR}
               options={{ headerTitle: "Tham gia nhóm" }}
+            />
+
+            <Stack.Screen
+              name="TabTopMedia"
+              component={TabTopMedia}
+              options={{ headerTitle: "Ảnh, file" }}
             />
             <Stack.Screen
               name="PostStatusScreen"

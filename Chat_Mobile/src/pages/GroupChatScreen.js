@@ -57,6 +57,8 @@ import {
   deleteConversation,
   removeConversation,
 } from "../store/slice/conversationSlice";
+import VideoMessage from "../components/media.storage/VideoMessage";
+import ImageMessage from "../components/media.storage/ImageMessage";
 
 const GroupChatScreen = ({ navigation, route }) => {
   // tự động cuộn xuống cuối danh sách khi có tin nhắn mới
@@ -831,12 +833,12 @@ const GroupChatScreen = ({ navigation, route }) => {
                               ? "flex-end"
                               : "flex-start",
                           backgroundColor:
-                            item?.messageType === "STICKER"
+                            item?.messageType === "STICKER" || item?.messageType === "VIDEO"
                               ? "transparent"
                               : item?.senderId === user?.id
                               ? "#8FC1FF"
                               : "white",
-                          borderWidth: item?.mediaTypes === "STICKER" ? 0 : 1,
+                          borderWidth: item?.mediaTypes === "STICKER" || item?.messageType === "VIDEO" ? 0 : 1,
                           borderRadius: 10,
                           margin: 5,
                           borderWidth: 1,
@@ -873,30 +875,32 @@ const GroupChatScreen = ({ navigation, route }) => {
                           </View>
                         ) : null}
 
-                        {item?.messageType === "IMAGE" ||
-                        item?.messageType === "GIF" ||
-                        item?.messageType === "STICKER" ? (
-                          <Image
-                            source={{ uri: item?.fileUrl }}
-                            style={{
-                              width:
-                                item?.messageType === "STICKER" ||
-                                item?.messageType === "GIF"
-                                  ? 100
-                                  : 150,
-                              height:
-                                item?.messageType === "STICKER" ||
-                                item?.messageType === "GIF"
-                                  ? 100
-                                  : 150,
-                              borderRadius:
-                                item?.messageType === "IMAGE" ? 10 : 0,
-                              marginTop: 5,
-                              backgroundColor: "transparent",
-                            }}
-                            resizeMode="contain"
+                        {
+                          item?.messageType === "GIF" ||
+                          item?.messageType === "STICKER" ? (
+                            <Image
+                              source={{ uri: item?.fileUrl }}
+                              style={{
+                                width:
+                                  item?.messageType === "STICKER" ||
+                                  item?.messageType === "GIF"
+                                    ? 100
+                                    : 150,
+                                height:
+                                  item?.messageType === "STICKER" ||
+                                  item?.messageType === "GIF"
+                                    ? 100
+                                    : 150,
+                                marginTop: 5,
+                                backgroundColor: "transparent",
+                              }}
+                              resizeMode="contain"
                           />
                         ) : null}
+
+                        {item?.messageType === "IMAGE" && (
+                          <ImageMessage message={item} />
+                        )}
 
                         {item?.messageType === "FILE" ? (
                           <Text
@@ -913,15 +917,12 @@ const GroupChatScreen = ({ navigation, route }) => {
                                   alignItems: "center",
                                 }}
                               >
-                                <IconF5
-                                  name={getFileIcon(item?.content)}
-                                  size={30}
-                                  color="black"
-                                  style={{
-                                    marginRight: 5,
-                                    paddingVertical: 5,
-                                    paddingHorizontal: 10,
-                                  }}
+                                <IconF5 name={getFileIcon(item?.content).icon} size={30} color={getFileIcon(item?.content).color} 
+                                    style={{
+                                        marginRight: 5,
+                                        paddingVertical: 5,
+                                        paddingHorizontal: 10,
+                                    }} 
                                 />
                                 <View>
                                   <Text
@@ -950,44 +951,45 @@ const GroupChatScreen = ({ navigation, route }) => {
                         ) : null}
 
                         {item?.messageType === "VIDEO" ? (
-                          <View>
-                            <TouchableOpacity
-                              onPress={() => playVideo(item?.fileUrl)}
-                            >
-                              <View style={{ position: "relative" }}>
-                                <Image
-                                  source={{
-                                    uri:
-                                      item?.fileUrl ||
-                                      "https://via.placeholder.com/150",
-                                  }}
-                                  style={{
-                                    width: 150,
-                                    height: 150,
-                                    borderRadius: 10,
-                                    marginTop: 5,
-                                  }}
-                                  resizeMode="cover"
-                                />
-                                <View
-                                  style={{
-                                    position: "absolute",
-                                    top: "50%",
-                                    left: "50%",
-                                    transform: [
-                                      { translateX: -15 },
-                                      { translateY: -15 },
-                                    ],
-                                    backgroundColor: "rgba(0,0,0,0.5)",
-                                    borderRadius: 20,
-                                    padding: 5,
-                                  }}
-                                >
-                                  <IconF5 name="play" size={20} color="white" />
-                                </View>
-                              </View>
-                            </TouchableOpacity>
-                          </View>
+                          // <View>
+                          //   <TouchableOpacity
+                          //     onPress={() => playVideo(item?.fileUrl)}
+                          //   >
+                          //     <View style={{ position: "relative" }}>
+                          //       <Image
+                          //         source={{
+                          //           uri:
+                          //             item?.fileUrl ||
+                          //             "https://via.placeholder.com/150",
+                          //         }}
+                          //         style={{
+                          //           width: 150,
+                          //           height: 150,
+                          //           borderRadius: 10,
+                          //           marginTop: 5,
+                          //         }}
+                          //         resizeMode="cover"
+                          //       />
+                          //       <View
+                          //         style={{
+                          //           position: "absolute",
+                          //           top: "50%",
+                          //           left: "50%",
+                          //           transform: [
+                          //             { translateX: -15 },
+                          //             { translateY: -15 },
+                          //           ],
+                          //           backgroundColor: "rgba(0,0,0,0.5)",
+                          //           borderRadius: 20,
+                          //           padding: 5,
+                          //         }}
+                          //       >
+                          //         <IconF5 name="play" size={20} color="white" />
+                          //       </View>
+                          //     </View>
+                          //   </TouchableOpacity>
+                          // </View>
+                          <VideoMessage message={item} />
                         ) : null}
 
                         {item?.messageType === "AUDIO" ? (

@@ -155,7 +155,13 @@ const GroupSettingsScreen = ({ navigation, route }) => {
         </View>
 
         {/* Danh sách tùy chọn */}
-        <OptionRow color="black" icon="folder" text="Ảnh, file, link" />
+        <OptionRow 
+          color="black" 
+          icon="folder" 
+          text="Ảnh, file, link" 
+          onPress={() => navigation.navigate("TabTopMedia")}
+        />
+
         <OptionRow color="black" icon="calendar" text="Lịch nhóm" />
         <OptionRow color="black" icon="bookmark" text="Tin nhắn đã ghim" />
         <OptionRow color="black" icon="bar-chart-2" text="Bình chọn" />

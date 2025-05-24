@@ -61,6 +61,8 @@ const { width, height } = Dimensions.get("window");
 const audioRecorderPlayer = new AudioRecorderPlayer();
 import { getFileIcon } from "../utils/FormatIconFile"; // Import hàm getFileIcon từ file FormatIconFile.js
 import EmojiSelector from "react-native-emoji-selector";
+import VideoMessage from "../components/media.storage/VideoMessage";
+import ImageMessage from "../components/media.storage/ImageMessage";
 
 const SingleChatScreen = ({ navigation, route }) => {
     // tự động cuộn xuống cuối danh sách khi có tin nhắn mới
@@ -995,34 +997,34 @@ const SingleChatScreen = ({ navigation, route }) => {
                                                 </Text>
                                             </View>
                                         ) : null}
-                                        {item?.messageType === "IMAGE" ||
-                                        item?.messageType === "GIF" ||
-                                        item?.messageType === "STICKER" ? (
-                                            <Image
-                                                source={{ uri: item?.fileUrl }}
-                                                style={{
-                                                    width:
-                                                        item?.messageType ===
-                                                        "STICKER"
-                                                            ? 100 // Smaller size for stickers and GIFs
-                                                            : 150, // Original size for images
-                                                    height:
-                                                        item?.messageType ===
-                                                        "STICKER"
-                                                            ? 100 // Smaller size for stickers and GIFs
-                                                            : 150, // Original size for images
-                                                    borderRadius:
-                                                        item?.messageType ===
-                                                        "IMAGE"
-                                                            ? 10
-                                                            : 0,
-                                                    marginTop: 5,
-                                                    backgroundColor:
-                                                        "transparent",
-                                                }}
-                                                resizeMode="contain"
-                                            />
+                                        {
+                                            item?.messageType === "GIF" ||
+                                            item?.messageType === "STICKER" ? (
+                                                <Image
+                                                    source={{ uri: item?.fileUrl }}
+                                                    style={{
+                                                        width:
+                                                            item?.messageType ===
+                                                            "STICKER"
+                                                                ? 100 // Smaller size for stickers and GIFs
+                                                                : 150, // Original size for images
+                                                        height:
+                                                            item?.messageType ===
+                                                            "STICKER"
+                                                                ? 100 // Smaller size for stickers and GIFs
+                                                                : 150, // Original size for images
+                                                        marginTop: 5,
+                                                        backgroundColor:
+                                                            "transparent",
+                                                    }}
+                                                    resizeMode="contain"
+                                                />
                                         ) : null}
+
+                                        {item?.messageType === "IMAGE" && (
+                                            <ImageMessage message={item} />
+                                        )}           
+
                                         {item?.messageType === "FILE" ? (
                                             <Text
                                                 style={{
@@ -1044,17 +1046,12 @@ const SingleChatScreen = ({ navigation, route }) => {
                                                                 "center",
                                                         }}
                                                     >
-                                                        <IconF5
-                                                            name={getFileIcon(
-                                                                item?.content
-                                                            )}
-                                                            size={30}
-                                                            color="black"
+                                                        <IconF5 name={getFileIcon(item?.content).icon} size={30} color={getFileIcon(item?.content).color} 
                                                             style={{
                                                                 marginRight: 5,
                                                                 paddingVertical: 5,
                                                                 paddingHorizontal: 10,
-                                                            }}
+                                                            }} 
                                                         />
                                                         <View>
                                                             <Text
@@ -1087,63 +1084,64 @@ const SingleChatScreen = ({ navigation, route }) => {
                                             </Text>
                                         ) : null}
                                         {item?.messageType === "VIDEO" ? (
-                                            <View>
-                                                <TouchableOpacity
-                                                    onPress={() =>
-                                                        playVideo(item?.fileUrl)
-                                                    }
-                                                >
-                                                    <View
-                                                        style={{
-                                                            position:
-                                                                "relative",
-                                                        }}
-                                                    >
-                                                        <Image
-                                                            source={{
-                                                                uri:
-                                                                    item?.fileUrl ||
-                                                                    "https://via.placeholder.com/150",
-                                                            }}
-                                                            style={{
-                                                                width: 150,
-                                                                height: 150,
-                                                                borderRadius: 10,
-                                                                marginTop: 5,
-                                                            }}
-                                                            resizeMode="cover"
-                                                        />
-                                                        <View
-                                                            style={{
-                                                                position:
-                                                                    "absolute",
-                                                                top: "50%",
-                                                                left: "50%",
-                                                                transform: [
-                                                                    {
-                                                                        translateX:
-                                                                            -15,
-                                                                    },
-                                                                    {
-                                                                        translateY:
-                                                                            -15,
-                                                                    },
-                                                                ],
-                                                                backgroundColor:
-                                                                    "rgba(0,0,0,0.5)",
-                                                                borderRadius: 20,
-                                                                padding: 5,
-                                                            }}
-                                                        >
-                                                            <IconF5
-                                                                name="play"
-                                                                size={20}
-                                                                color="white"
-                                                            />
-                                                        </View>
-                                                    </View>
-                                                </TouchableOpacity>
-                                            </View>
+                                            // <View>
+                                            //     <TouchableOpacity
+                                            //         onPress={() =>
+                                            //             playVideo(item?.fileUrl)
+                                            //         }
+                                            //     >
+                                            //         <View
+                                            //             style={{
+                                            //                 position:
+                                            //                     "relative",
+                                            //             }}
+                                            //         >
+                                            //             <Image
+                                            //                 source={{
+                                            //                     uri:
+                                            //                         item?.fileUrl ||
+                                            //                         "https://via.placeholder.com/150",
+                                            //                 }}
+                                            //                 style={{
+                                            //                     width: 150,
+                                            //                     height: 150,
+                                            //                     borderRadius: 10,
+                                            //                     marginTop: 5,
+                                            //                 }}
+                                            //                 resizeMode="cover"
+                                            //             />
+                                            //             <View
+                                            //                 style={{
+                                            //                     position:
+                                            //                         "absolute",
+                                            //                     top: "50%",
+                                            //                     left: "50%",
+                                            //                     transform: [
+                                            //                         {
+                                            //                             translateX:
+                                            //                                 -15,
+                                            //                         },
+                                            //                         {
+                                            //                             translateY:
+                                            //                                 -15,
+                                            //                         },
+                                            //                     ],
+                                            //                     backgroundColor:
+                                            //                         "rgba(0,0,0,0.5)",
+                                            //                     borderRadius: 20,
+                                            //                     padding: 5,
+                                            //                 }}
+                                            //             >
+                                            //                 <IconF5
+                                            //                     name="play"
+                                            //                     size={20}
+                                            //                     color="white"
+                                            //                 />
+                                            //             </View>
+                                            //         </View>
+                                            //     </TouchableOpacity>
+                                            // </View>
+                                            <VideoMessage message={item} />
                                         ) : null}
                                         {item?.messageType === "AUDIO" ? (
                                             <TouchableOpacity

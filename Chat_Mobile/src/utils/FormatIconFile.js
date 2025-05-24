@@ -1,45 +1,62 @@
 export const getFileIcon = (fileName) => {
     const extension = fileName?.split(".").pop()?.toLowerCase();
+    let icon, color;
     switch (extension) {
       case "pdf":
-        return "file-pdf";
+        icon = "file-pdf";
+        color = "red";
+        break;
 
       case "doc":
       case "docx":
-        return "file-word";
+        icon = "file-word";
+        color = "blue";
+        break;
 
       case "xls":
       case "xlsx":
-        return "file-excel";
+        icon = "file-excel";
+        color = "green";
+        break;
 
       case "ppt":
       case "pptx":
-        return "file-powerpoint"; // Icon cho PowerPoint
+        icon = "file-powerpoint";
+        color = "orange";
+        break;
 
       case "jpg":
       case "jpeg":
       case "png":
       case "gif":
-        return "file-image"; // Icon cho hình ảnh
+        icon = "file-image";
+        color = "pink";
+        break;
 
-      case "zip":       
+      case "zip":
       case "rar":
       case "tar":
       case "7z":
-        return "file-archive"; // Icon cho file nén
+        icon = "file-archive";
+        color = "purple"; 
+        break;
 
       case "txt":
-        return "file-alt"; // Icon cho file văn bản
+        icon = "file-alt";
+        color = "gray";
+        break;
 
       case "mp3":
       case "wav":
       case "ogg":
-        return "file-audio"; // Icon cho file âm thanh
+        icon = "file-audio"; // Icon cho file âm thanh
+        break;
 
       case "mp4":
       case "mov":
       case "avi":
-        return "file-video"; // Icon cho file video
+        icon = "file-video"; // Icon cho file video
+        break;
 
       case "js":
       case "jsx":
@@ -56,14 +73,21 @@ export const getFileIcon = (fileName) => {
       case "go":
       case "swift":
       case "rb":
-        return "file-code"; // Icon cho file mã nguồn
+        icon = "file-code"; 
+        color = "blue"; 
+        break;
 
       case "json":
-        return "file-code"; // Icon cho file JSON
+        icon = "file-code"; // Icon cho file JSON
+        color = "orange"; 
+        break;
       case "csv":
-        return "file-csv";
+        icon = "file-csv";
+        color = "green";
+        break;
 
       default:
-        return "file";
+        icon = "file";
     }
+    return { icon, color };
   };
