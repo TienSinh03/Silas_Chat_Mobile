@@ -108,7 +108,7 @@ const AddFriendScreen = () => {
     }
     setPhone("");
 
-  };4
+  };
 
   useEffect(() => {
         dispatch(getReqsReceived());
