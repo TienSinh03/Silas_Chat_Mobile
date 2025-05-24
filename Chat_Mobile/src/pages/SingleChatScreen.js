@@ -49,9 +49,10 @@ import {
     sendFileToWebSocket,
     sendRequestToWebSocket,
     subscribeFriendsToAcceptFriendRequest,
+    subscribeFriendsToUnfriend,
 } from "../config/socket";
 
-import { sendReq, checkFriendStatus, getReqsReceived, getReqsSent, setFriends } from "../store/slice/friendSlice";
+import { sendReq, checkFriendStatus, getReqsReceived, getReqsSent, setFriends, setFriends_Unfriend } from "../store/slice/friendSlice";
 
 import { uploadFile } from "../api/chatApi";
 import Loading from "../components/Loading";
@@ -695,18 +696,46 @@ const SingleChatScreen = ({ navigation, route }) => {
         }
     }, [userReceived?.id, dispatch]);
 
+    // Kiểm tra trạng thái bạn bè khi có thay đổi real-time từ WebSocket    
     useEffect(() => {
         connectWebSocket(() => {
-            subscribeFriendsToAcceptFriendRequest(user?.id, (message) => {
+            subscribeFriendsToAcceptFriendRequest(user?.id, async (message) => {
                 console.log("Nhận được tin nhắn từ WebSocket:", message);
                 dispatch(setFriends(message));  
-                const response = dispatch(
-                    checkFriendStatus(message?.userId)
-                );
-                setIsFriend(response);
-                dispatch(getReqsReceived());
-                dispatch(getReqsSent());
+                try {
+                    const response = await dispatch(
+                        checkFriendStatus(userReceived?.id)
+                    ).unwrap();
+                    setIsFriend(response); 
+
+                    dispatch(getReqsReceived());
+                    dispatch(getReqsSent());
+                    console.log("Trạng thái bạn bè accept:", response);
+                } catch (error) {
+                    console.log(`Lỗi khi kiểm tra trạng thái bạn bè cho:`, error);
+                    setIsFriend(false); // Nếu có lỗi, coi như không phải bạn bè
+                }
+                
             });
+
+            subscribeFriendsToUnfriend(user?.id, async (message) => {
+                console.log("Nhận được tin nhắn từ WebSocket unfriend:", message);
+                
+                dispatch(setFriends_Unfriend(message));
+
+                try {
+                    const response = await dispatch(
+                        checkFriendStatus(userReceived?.id)
+                    ).unwrap();
+                    setIsFriend(response); 
+
+                    console.log("Trạng thái bạn bè unfriend:", response);
+                } catch (error) {
+                    console.log(`Lỗi khi kiểm tra trạng thái bạn bè cho:`, error);
+                    setIsFriend(false); // Nếu có lỗi, coi như không phải bạn bè
+                }
+                
+            })
         });
         return () => {
             disconnectWebSocket();

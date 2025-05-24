@@ -77,8 +77,8 @@ const friendSlice = createSlice({
         //getMyFriends
         builder.addCase(getMyFriends.pending, (state) => {})
         builder.addCase(getMyFriends.fulfilled, (state, action) => {
-            state.friends = action.payload.response;
             state.isLoading = false;
+            state.friends = action.payload.response;
         })
         builder.addCase(getMyFriends.rejected, (state, action) => {
             state.isLoading = false;
