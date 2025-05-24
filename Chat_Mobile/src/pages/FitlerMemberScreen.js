@@ -273,10 +273,7 @@ const CreateGroupScreen = ({navigation, route}) => {
               <IconA name="play" size={40} color="#006AF5" style={{padding: 10}} 
                 onPress={() => {
                   // Nếu là tạo nhóm thì gọi hàm tạo nhóm
-                  nextScreen === "ConversationList" ? handleCreateGroup() : 
-
-                  handleAddMember()
-                  
+                  nextScreen === "ConversationList" ? handleCreateGroup() : handleAddMember()
                 }}
               />
 
