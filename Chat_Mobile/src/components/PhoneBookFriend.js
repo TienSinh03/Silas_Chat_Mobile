@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
 import IconF6 from "react-native-vector-icons/FontAwesome6";
+import IconA from "react-native-vector-icons/AntDesign";
 import { useDispatch, useSelector } from "react-redux";
 import { getMyFriends, setFriends, unfriend, setFriends_Unfriend } from "../store/slice/friendSlice";
 import { createConversation, getAllConversationsByUserId } from "../store/slice/conversationSlice"
@@ -203,6 +204,10 @@ const PhoneBookFriend = ({navigation}) => {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
+            <IconA name="closecircleo" size={24} color="#000"
+              style={{ position: "absolute", top: 10, right: 10 }}
+              onPress={() => setModalVisible(false)}
+            />
             <View style={{display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20}}>
               <Image
                 source={{ uri: selectedFriend?.avatar }}
@@ -236,7 +241,7 @@ const PhoneBookFriend = ({navigation}) => {
                 <Text style={{color: "#000", fontWeight: 'bold'}}>Xóa bạn</Text>
               </TouchableOpacity>
               <TouchableOpacity style={{backgroundColor: "#007AFF", paddingVertical: 5, borderRadius: 5, alignItems: "center", gap: 5, width: width*0.35, borderRadius: 12}}
-                 onPress={() => handleCreateConversation(item)}
+                 onPress={() => handleCreateConversation(selectedFriend)}
               >
                 <Text style={{color: "#fff", fontWeight: 'bold'}}>Nhắn tin</Text>
               </TouchableOpacity>
