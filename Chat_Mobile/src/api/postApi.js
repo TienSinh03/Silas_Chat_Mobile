@@ -56,3 +56,14 @@ export const getUsersWithPosts = async () => {
     throw new Error(error.response?.data?.message || "Lỗi khi lấy người dùng có bài viết");
   }
 };
+
+// save
+export const savePost = async (postData) => {
+  try {
+    const response = await instance.post('/api/v1/posts/save', postData);
+    return response.data;
+  } catch (error) {
+    console.error("Error saving post:", error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || "Lỗi khi lưu bài viết");
+  }
+};
