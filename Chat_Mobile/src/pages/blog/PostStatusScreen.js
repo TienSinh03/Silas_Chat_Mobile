@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,8 +17,8 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { useDispatch, useSelector } from 'react-redux';
-import {savePost} from '../../api/postApi'; 
-const PostStatusScreen = () => {
+import {savePost, updatePost} from '../../api/postApi'; 
+const PostStatusScreen = ({route}) => {
   const fonts = [
     { idFonts: 0, name: 'Fountain', key: 'f1' },
     { idFonts: 1, name: 'Pixel', key: 'f2' },
@@ -41,6 +41,9 @@ const PostStatusScreen = () => {
     Signature: ['#000000', '#696969'],    
   };
 
+  const { postToEdit } = route.params || {};
+  console.log("Nhật ký: postToEdit", postToEdit);
+
   const [text, setText] = useState('');
   const [selectedFont, setSelectedFont] = useState('Fountain');
   const navigation = useNavigation();
@@ -60,6 +63,16 @@ const PostStatusScreen = () => {
 
   if (!loaded) return null;
 
+  useEffect(() => {
+    if (postToEdit) {
+      setText(postToEdit.content);
+      const font = fonts.find(f => f.idFonts === postToEdit.fonts);
+      if (font) {
+        setSelectedFont(font.name);
+      }
+    }
+  }, [postToEdit]);
+
   // SAVE
 const handlePost = async () => {
   if (!text.trim()) {
@@ -75,9 +88,15 @@ console.log('isPublic value:', isPublic);
     fonts: selectedFontObj.idFonts, // Save as integer (e.g., 2 for Vintage)
     public: isPublic, // true: công khai, false: chỉ mình tôi
   };
+  
 
   try {
-    const response = await savePost(postData); // Gọi API lưu bài viết
+    if(postToEdit) {
+      postData.id = postToEdit.id;
+      await updatePost({postId:postToEdit?.id, postData}); // Gọi API để cập nhật bài viết
+    } else {
+      await savePost(postData); // Gọi API để lưu bài viết
+    }
     Alert.alert('Đã đăng', 'Nội dung của bạn đã được đăng!');
     navigation.goBack();
   } catch (error) {
@@ -105,6 +124,7 @@ const handleSelect = (value) => {
           return userProfile || null;
   }, [userProfile]);
   console.log("Nhật ký: USER hiện tại--------------------" , userProfile);
+
 
   return (
     <View style={styles.container}>
@@ -147,7 +167,7 @@ const handleSelect = (value) => {
         </View>
 
         <TouchableOpacity onPress={handlePost}>
-          <Text style={styles.postButton}>Đăng</Text>
+          <Text style={styles.postButton}>{postToEdit ? 'Cập nhật' : 'Đăng'}</Text>
         </TouchableOpacity>
       </View>
 

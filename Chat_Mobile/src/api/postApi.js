@@ -67,3 +67,25 @@ export const savePost = async (postData) => {
     throw new Error(error.response?.data?.message || "Lỗi khi lưu bài viết");
   }
 };
+//XÓA http://localhost:8080/api/v1/posts/68319d0bd35a6033b682c0ff
+export const deletePost = async (postId) => {
+  try {
+    const response = await instance.delete(`/api/v1/posts/${postId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting post:", error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || "Lỗi khi xóa bài viết");
+  }
+};
+
+
+//update
+export const updatePost = async ({postId, postData}) => {
+  try {
+    const response = await instance.put(`/api/v1/posts/update/${postId}`, postData);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating post:", error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || "Lỗi khi cập nhật bài viết");
+  }
+};
