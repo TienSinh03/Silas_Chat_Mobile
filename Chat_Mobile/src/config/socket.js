@@ -1,10 +1,14 @@
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import React from "react";
-import { updateGroupMembers, getAllConversationsByUserId } from "../store/slice/conversationSlice";
+import {
+  updateGroupMembers,
+  getAllConversationsByUserId,
+} from "../store/slice/conversationSlice";
 import { getToken } from "../utils/authHelper";
 
 const HOST_IP = "192.168.11.18"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
+
 
 const WEBSOCKET_URL = `http://${HOST_IP}:8080/ws`;
 
@@ -285,7 +289,10 @@ export const subscribeToDeleteConversation = async (
 };
 
 //Friend
-export const subscribeToSendFriendRequest = async (userId, onMessageReceived) => {
+export const subscribeToSendFriendRequest = async (
+  userId,
+  onMessageReceived
+) => {
   try {
     await ensureWebSocketConnected();
     if (!stompClient || !stompClient.connected) {
@@ -302,13 +309,16 @@ export const subscribeToSendFriendRequest = async (userId, onMessageReceived) =>
         }
       }
     );
-   subscribers.set(userId, subscription);
+    subscribers.set(userId, subscription);
   } catch (error) {
     console.error("Error subscribing to conversation:", error);
   }
-}
+};
 
-export const subscribeFriendsToAcceptFriendRequest = async (userId, onMessageReceived) => {
+export const subscribeFriendsToAcceptFriendRequest = async (
+  userId,
+  onMessageReceived
+) => {
   try {
     await ensureWebSocketConnected();
     if (!stompClient || !stompClient.connected) {
@@ -325,11 +335,11 @@ export const subscribeFriendsToAcceptFriendRequest = async (userId, onMessageRec
         }
       }
     );
-   subscribers.set(userId, subscription);
+    subscribers.set(userId, subscription);
   } catch (error) {
     console.error("Error subscribing to conversation:", error);
   }
-}
+};
 
 export const sendRequestToWebSocket = async (receiverId) => {
   await ensureWebSocketConnected();
@@ -342,14 +352,14 @@ export const sendRequestToWebSocket = async (receiverId) => {
   const token = await getToken();
   console.log("Token:", token); // Kiểm tra token
   if (!token) {
-      throw new Error("Token is missing or invalid");
+    throw new Error("Token is missing or invalid");
   }
   stompClient.publish({
-      destination: "/app/friend/send-request",
-      headers: {
-          "Authorization": `Bearer ${token}`,
-      },
-      body: JSON.stringify(receiverId),
+    destination: "/app/friend/send-request",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(receiverId),
   });
 };
 
@@ -376,7 +386,6 @@ export const sendRequestToWebSocket = async (receiverId) => {
 //   }
 // }
 
-
 export const subscribeFriendsToUnfriend = async (userId, onMessageReceived) => {
   try {
     await ensureWebSocketConnected();
@@ -394,16 +403,14 @@ export const subscribeFriendsToUnfriend = async (userId, onMessageReceived) => {
         }
       }
     );
-   subscribers.set(userId, subscription);
+    subscribers.set(userId, subscription);
   } catch (error) {
     console.error("Error subscribing to conversation:", error);
   }
-}
+};
 export const disconnectWebSocket = () => {
   if (stompClient && stompClient.connected) {
     stompClient.deactivate();
     subscribers.clear();
   }
 };
-
-
