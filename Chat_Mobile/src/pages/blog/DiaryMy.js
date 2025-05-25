@@ -1,26 +1,13 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Modal } from "react-native";
 
-import {
-  SafeAreaView,
-  StatusBar,
-  StyleSheet,
-  View,
-  Text,
-  TextInput,
-  Image,
-  ScrollView,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-  
-} from "react-native";
+import { SafeAreaView, StatusBar, StyleSheet, View, Text, TextInput, Image, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, } from "react-native";
 import Header from "../../components/Header";
 import Entypo from 'react-native-vector-icons/Entypo';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from 'react-redux';
-import {getPostsMyByUserId, getFriendsByUserId, getAllPosts, getUserById} from '../../api/postApi';
+import {getPostsMyByUserId, getFriendsByUserId, getAllPosts, getUserById, getUsersWithPosts} from '../../api/postApi';
 const DiaryMy = () => {
 
 const [modalVisible, setModalVisible] = useState(false);
@@ -98,17 +85,17 @@ const navigation = useNavigation();
 
   
 // Lọc bài viết của bạn bè
-const [friendPosts, setFriendPosts] = useState([]);
+// const [friendPosts, setFriendPosts] = useState([]);
 
-useEffect(() => {
-  if (friends.length > 0 && allPosts.length > 0) {
-    const friendIds = friends.map(friend => friend.userId);
-    const postsFromFriends = allPosts.filter(post => friendIds.includes(post.userId));
-    setFriendPosts(postsFromFriends);
-  }
-}, [friends, allPosts]);
+// useEffect(() => {
+//   if (friends.length > 0 && allPosts.length > 0) {
+//     const friendIds = friends.map(friend => friend.userId);
+//     const postsFromFriends = allPosts.filter(post => friendIds.includes(post.userId));
+//     setFriendPosts(postsFromFriends);
+//   }
+// }, [friends, allPosts]);
 
-console.log("**************************************Bài viết của bạn bè:", friendPosts);
+// console.log("**************************************Bài viết của bạn bè:", friendPosts);
  
 
 
@@ -137,6 +124,27 @@ useEffect(() => {
   }
 }, [friends]);
 
+// lây danh sách người dùng có thông tin user có bài viếết và chỉ lọc theo danh sách bạn bè
+const [usersWithPosts, setUsersWithPosts] = useState([]); // New state for getUsersWithPosts
+useEffect(() => {
+    const fetchUsersWithPosts = async () => {
+      try {
+        const usersData = await getUsersWithPosts();
+        // Filter to only include users who are friends and have posts
+        const friendIds = friends.map(friend => friend.userId);
+        const filteredUsers = usersData.filter(item => 
+          friendIds.includes(item.user.id) && item.posts.length > 0
+        );
+        setUsersWithPosts(filteredUsers);
+      } catch (error) {
+        console.error("Lỗi khi lấy người dùng có bài viết:", error);
+      }
+    };
+    if (friends.length > 0) {
+      fetchUsersWithPosts();
+    }
+  }, [friends]);
+console.log("**************************************Danh sách người dùng có bài viết:", usersWithPosts);
 
   return (
 
@@ -245,30 +253,74 @@ useEffect(() => {
           ))}
 
           {/* Posts FRIEND*/}
-          {friendPosts.map((post) => (
-            
-            <View key={post.idPost} style={styles.post}>
+        
+{/*
+{friendPosts.map((post) => (
+  <View key={post.idPost} style={styles.post}>
+    <View style={styles.postHeader}>
+      <Image
+        source={{ uri: user.avatar }}
+        style={styles.avatarSmall}
+      />
+      <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <View>
+          <Text style={styles.postName}>{post.userId}</Text>
+          <Text style={styles.postTime}>{post.createdAt}</Text>
+        </View>
+        <TouchableOpacity>
+          <Entypo name="dots-three-vertical" size={15} color="black" />
+        </TouchableOpacity>          
+      </View>
+    </View>
+    <Text style={styles.postContent}>{post.content}</Text>
+    <Text style={{ fontSize: 10, color: "gray", marginTop: 5 }}>
+      Post ID: {post.idPost} | User ID: {post.idUser}
+    </Text>
+    <View style={{ flexDirection: 'row', marginTop: 10 }}>
+      <TouchableOpacity style={styles.likeContainer}>
+        <Ionicons name="heart-outline" size={20} color="#000" />
+        <Text style={styles.likeText}>Thích</Text>
+        <View style={styles.divider} />
+        <Ionicons name="heart" size={20} color="red" />
+        <Text style={styles.likeCount}>2</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.commentContainer}
+        onPress={() => {
+          setSelectedPost(post);
+          setModalVisible(true);
+        }}
+      >
+        <Ionicons name="chatbox-ellipses-outline" size={20} color="#000" />
+      </TouchableOpacity>
+    </View>
+  </View>
+))}
+*/}
+
+
+
+
+
+          {/* <Text>-----------------TEST LẤY LUÔN INFO4------------------</Text> */}
+{usersWithPosts.map((item) => (
+          item.posts.map((post) => (
+            <View key={post.id} style={styles.post}>
               <View style={styles.postHeader}>
-                <Image
-                  source={{ uri: user.avatar }}
-                  style={styles.avatarSmall}
-                />
+                <Image source={{ uri: item.user.avatar }} style={styles.avatarSmall} />
                 <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <View>
-                    {/* <Text style={styles.postName}>{post.fonts}</Text> */}
-                    <Text style={styles.postName}>{post.userId}</Text>
+                    <Text style={styles.postName}>{item.user.displayName}</Text>
                     <Text style={styles.postTime}>{post.createdAt}</Text>
                   </View>
                   <TouchableOpacity>
                     <Entypo name="dots-three-vertical" size={15} color="black" />
-                  </TouchableOpacity>          
+                  </TouchableOpacity>
                 </View>
               </View>
               <Text style={styles.postContent}>{post.content}</Text>
-
-              {/* Example of accessing idPost and idUser */}
               <Text style={{ fontSize: 10, color: "gray", marginTop: 5 }}>
-                Post ID: {post.idPost} | User ID: {post.idUser}
+                Post ID: {post.id} | User ID: {post.userId}
               </Text>
               <View style={{ flexDirection: 'row', marginTop: 10 }}>
                 <TouchableOpacity style={styles.likeContainer}>
@@ -276,23 +328,21 @@ useEffect(() => {
                   <Text style={styles.likeText}>Thích</Text>
                   <View style={styles.divider} />
                   <Ionicons name="heart" size={20} color="red" />
-                  <Text style={styles.likeCount}>2</Text>
+                  <Text style={styles.likeCount}>{post.likeCount}</Text>
                 </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.commentContainer}
-                onPress={() => {
-                  setSelectedPost(post);
-                  setModalVisible(true);
-                }}
-              >
-                <Ionicons name="chatbox-ellipses-outline" size={20} color="#000" />
-              </TouchableOpacity>
-
+                <TouchableOpacity
+                  style={styles.commentContainer}
+                  onPress={() => {
+                    setSelectedPost({ ...post, name: item.user.displayName });
+                    setModalVisible(true);
+                  }}
+                >
+                  <Ionicons name="chatbox-ellipses-outline" size={20} color="#000" />
+                </TouchableOpacity>
               </View>
             </View>
-          ))}
-
+          ))
+        ))}
           
           <Modal
             visible={modalVisible}

@@ -45,3 +45,14 @@ export const getUserById = async (id_user_friends) => {
     throw new Error(error.response?.data?.message || "Lỗi khi lấy thông tin người dùng");
   }
 };
+
+//     @GetMapping("/users-with-posts")
+export const getUsersWithPosts = async () => {
+  try {
+    const response = await instance.get('/api/v1/posts/users-with-posts');
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching users with posts:", error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || "Lỗi khi lấy người dùng có bài viết");
+  }
+};
