@@ -89,3 +89,20 @@ export const updatePost = async ({postId, postData}) => {
     throw new Error(error.response?.data?.message || "Lỗi khi cập nhật bài viết");
   }
 };
+
+// save binh luan http://localhost:8080/api/v1/postactivity/save
+export const saveComment = async (postId, userIdPost, userIdActor, commentData) => {
+  try {
+    const response = await instance.post('/api/v1/postactivity/save', {
+      postId,
+      userIdPost,
+      userIdActor,
+      commentData
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error saving comment:", error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || "Lỗi khi lưu bình luận");
+  }
+
+};
