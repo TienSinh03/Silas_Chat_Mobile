@@ -246,20 +246,21 @@ const GroupChatScreen = ({ navigation, route }) => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
+      allowsMultipleSelection: true,
       aspect: [1, 1],
       quality: 1,
     });
 
     if (!result.canceled) {
-      const img = result.assets[0];
-      const imageUri = {
-        uri: img.uri,
-        name: img.fileName || "image.jpg",
-        type: "image/jpeg",
-      };
-      setImageUri(imageUri);
-
-      handleSendImage(imageUri);
+      // Nếu chọn nhiều ảnh, result.assets là mảng
+      for (const img of result.assets) {
+        const imageUri = {
+          uri: img.uri,
+          name: img.fileName || "image.jpg",
+          type: "image/jpeg",
+        };
+        await handleSendImage(imageUri);
+      }
     }
   };
 
@@ -279,19 +280,28 @@ const GroupChatScreen = ({ navigation, route }) => {
 
       if (imageUri) {
         formData.append("anh", imageUri);
-        console.log("image :", imageUri);
       }
 
       const response = await uploadFile(formData);
-      console.log("response uploadFile: ", response);
-
-      request.fileUrl = response?.response?.fileUrl;
-      sendMessageToWebSocket(request);
+      // Nếu response trả về nhiều fileUrls
+      const fileUrls = response?.response?.fileUrls || [];
+      if (fileUrls.length > 0) {
+        fileUrls.forEach((url) => {
+          const msg = {
+            ...request,
+            fileUrl: url,
+          };
+          sendMessageToWebSocket(msg);
+        });
+      } else if (response?.response?.fileUrl) {
+        // Trường hợp chỉ có 1 fileUrl
+        request.fileUrl = response?.response?.fileUrl;
+        sendMessageToWebSocket(request);
+      }
     } catch (error) {
       console.error("Lỗi khi gửi ảnh: ", error);
-      // Có thể thêm thông báo lỗi cho người dùng
     } finally {
-      setLoading(false); // Tắt loading
+      setLoading(false);
     }
   };
 
@@ -300,6 +310,7 @@ const GroupChatScreen = ({ navigation, route }) => {
     const result = await DocumentPicker.getDocumentAsync({
       type: "*/*",
       copyToCacheDirectory: true,
+      multiple: true,
     });
 
     if (!result.canceled) {
@@ -833,12 +844,17 @@ const GroupChatScreen = ({ navigation, route }) => {
                               ? "flex-end"
                               : "flex-start",
                           backgroundColor:
-                            item?.messageType === "STICKER" || item?.messageType === "VIDEO"
+                            item?.messageType === "STICKER" ||
+                            item?.messageType === "VIDEO"
                               ? "transparent"
                               : item?.senderId === user?.id
                               ? "#8FC1FF"
                               : "white",
-                          borderWidth: item?.mediaTypes === "STICKER" || item?.messageType === "VIDEO" ? 0 : 1,
+                          borderWidth:
+                            item?.mediaTypes === "STICKER" ||
+                            item?.messageType === "VIDEO"
+                              ? 0
+                              : 1,
                           borderRadius: 10,
                           margin: 5,
                           borderWidth: 1,
@@ -875,26 +891,25 @@ const GroupChatScreen = ({ navigation, route }) => {
                           </View>
                         ) : null}
 
-                        {
-                          item?.messageType === "GIF" ||
-                          item?.messageType === "STICKER" ? (
-                            <Image
-                              source={{ uri: item?.fileUrl }}
-                              style={{
-                                width:
-                                  item?.messageType === "STICKER" ||
-                                  item?.messageType === "GIF"
-                                    ? 100
-                                    : 150,
-                                height:
-                                  item?.messageType === "STICKER" ||
-                                  item?.messageType === "GIF"
-                                    ? 100
-                                    : 150,
-                                marginTop: 5,
-                                backgroundColor: "transparent",
-                              }}
-                              resizeMode="contain"
+                        {item?.messageType === "GIF" ||
+                        item?.messageType === "STICKER" ? (
+                          <Image
+                            source={{ uri: item?.fileUrl }}
+                            style={{
+                              width:
+                                item?.messageType === "STICKER" ||
+                                item?.messageType === "GIF"
+                                  ? 100
+                                  : 150,
+                              height:
+                                item?.messageType === "STICKER" ||
+                                item?.messageType === "GIF"
+                                  ? 100
+                                  : 150,
+                              marginTop: 5,
+                              backgroundColor: "transparent",
+                            }}
+                            resizeMode="contain"
                           />
                         ) : null}
 
@@ -917,12 +932,15 @@ const GroupChatScreen = ({ navigation, route }) => {
                                   alignItems: "center",
                                 }}
                               >
-                                <IconF5 name={getFileIcon(item?.content).icon} size={30} color={getFileIcon(item?.content).color} 
-                                    style={{
-                                        marginRight: 5,
-                                        paddingVertical: 5,
-                                        paddingHorizontal: 10,
-                                    }} 
+                                <IconF5
+                                  name={getFileIcon(item?.content).icon}
+                                  size={30}
+                                  color={getFileIcon(item?.content).color}
+                                  style={{
+                                    marginRight: 5,
+                                    paddingVertical: 5,
+                                    paddingHorizontal: 10,
+                                  }}
                                 />
                                 <View>
                                   <Text
