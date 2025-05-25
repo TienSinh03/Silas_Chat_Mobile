@@ -93,6 +93,14 @@ const SingleChatScreen = ({ navigation, route }) => {
     (state) => state.friend
   );
 
+  // Xử lý tên file quá dài
+  const truncateFileName = (name, maxLength = 25) => {
+    if (!name) return "";
+    return name.length > maxLength
+      ? name.slice(0, maxLength - 3) + "..."
+      : name;
+  };
+
   // State quản lý emoji/gif/sticker
   const [contentType, setContentType] = useState("emoji");
   const [gifs, setGifs] = useState([]);
@@ -402,7 +410,7 @@ const SingleChatScreen = ({ navigation, route }) => {
 
   //send image;
   const handleSendImage = async (imageUri) => {
-    setLoading(true); // Bật loading
+    setLoading(true);
     try {
       const request = {
         senderId: user?.id,
@@ -419,20 +427,27 @@ const SingleChatScreen = ({ navigation, route }) => {
       }
 
       const response = await uploadFile(formData);
-      // Nếu response trả về nhiều fileUrls
       const fileUrls = response?.response?.fileUrls || [];
       if (fileUrls.length > 0) {
         fileUrls.forEach((url) => {
           const msg = {
             ...request,
             fileUrl: url,
+            id: Date.now().toString(), // id tạm
+            timestamp: new Date().toISOString(),
           };
           sendMessageToWebSocket(msg);
+          setMessages((prev) => [...prev, msg]); // Thêm vào UI ngay
         });
       } else if (response?.response?.fileUrl) {
-        // Trường hợp chỉ có 1 fileUrl
         request.fileUrl = response?.response?.fileUrl;
-        sendMessageToWebSocket(request);
+        const msg = {
+          ...request,
+          id: Date.now().toString(),
+          timestamp: new Date().toISOString(),
+        };
+        sendMessageToWebSocket(msg);
+        setMessages((prev) => [...prev, msg]);
       }
     } catch (error) {
       console.error("Lỗi khi gửi ảnh: ", error);
@@ -446,25 +461,23 @@ const SingleChatScreen = ({ navigation, route }) => {
     const result = await DocumentPicker.getDocumentAsync({
       type: "*/*",
       copyToCacheDirectory: true,
+      multiple: true,
     });
 
     if (!result.canceled) {
-      const asset = result.assets[0];
-      const documentUri = {
-        uri: asset.uri,
-        name: asset.name || "document.pdf",
-        type: asset.mimeType || "application/octet-stream",
-      };
-      console.log("documentUri: ", documentUri);
-      setImageUri(documentUri);
-
-      handleSendFile(documentUri);
+      for (const asset of result.assets) {
+        const documentUri = {
+          uri: asset.uri,
+          name: asset.name || "document.pdf",
+          type: asset.mimeType || "application/octet-stream",
+        };
+        await handleSendFile(documentUri);
+      }
     }
   };
 
   const handleSendFile = async (imageUri) => {
-    setLoading(true); // Bật loading
-    console.log("imageUri: ", imageUri?.name);
+    setLoading(true);
     try {
       const request = {
         senderId: user?.id,
@@ -478,19 +491,35 @@ const SingleChatScreen = ({ navigation, route }) => {
 
       if (imageUri) {
         formData.append("anh", imageUri);
-        console.log("file :", imageUri);
       }
 
       const response = await uploadFile(formData);
-      // console.log("response uploadFile: ", response);
-
-      request.fileUrl = response?.response?.fileUrl;
-      sendMessageToWebSocket(request);
+      const fileUrls = response?.response?.fileUrls || [];
+      if (fileUrls.length > 0) {
+        fileUrls.forEach((url) => {
+          const msg = {
+            ...request,
+            fileUrl: url,
+            id: Date.now().toString(),
+            timestamp: new Date().toISOString(),
+          };
+          sendMessageToWebSocket(msg);
+          setMessages((prev) => [...prev, msg]);
+        });
+      } else if (response?.response?.fileUrl) {
+        request.fileUrl = response?.response?.fileUrl;
+        const msg = {
+          ...request,
+          id: Date.now().toString(),
+          timestamp: new Date().toISOString(),
+        };
+        sendMessageToWebSocket(msg);
+        setMessages((prev) => [...prev, msg]);
+      }
     } catch (error) {
       console.error("Lỗi khi gửi file: ", error);
-      // Có thể thêm thông báo lỗi cho người dùng
     } finally {
-      setLoading(false); // Tắt loading
+      setLoading(false);
     }
   };
 
@@ -510,7 +539,7 @@ const SingleChatScreen = ({ navigation, route }) => {
 
   // Hàm gửi video
   const handleSendVideo = async (videoUri) => {
-    setLoading(true); // Bật loading
+    setLoading(true);
     try {
       const request = {
         senderId: user?.id,
@@ -522,17 +551,34 @@ const SingleChatScreen = ({ navigation, route }) => {
       formData.append("request", JSON.stringify(request), "application/json");
       if (videoUri) {
         formData.append("anh", videoUri);
-        console.log("videoUri :", videoUri);
       }
       const response = await uploadFile(formData);
-      console.log("response uploadFile: ", response);
-      request.fileUrl = response?.response?.fileUrl;
-      sendMessageToWebSocket(request);
+      const fileUrls = response?.response?.fileUrls || [];
+      if (fileUrls.length > 0) {
+        fileUrls.forEach((url) => {
+          const msg = {
+            ...request,
+            fileUrl: url,
+            id: Date.now().toString(),
+            timestamp: new Date().toISOString(),
+          };
+          sendMessageToWebSocket(msg);
+          setMessages((prev) => [...prev, msg]);
+        });
+      } else if (response?.response?.fileUrl) {
+        request.fileUrl = response?.response?.fileUrl;
+        const msg = {
+          ...request,
+          id: Date.now().toString(),
+          timestamp: new Date().toISOString(),
+        };
+        sendMessageToWebSocket(msg);
+        setMessages((prev) => [...prev, msg]);
+      }
     } catch (error) {
       console.error("Lỗi khi gửi video: ", error);
-      // Có thể thêm thông báo lỗi cho người dùng
     } finally {
-      setLoading(false); // Tắt loading
+      setLoading(false);
     }
   };
 
@@ -541,19 +587,19 @@ const SingleChatScreen = ({ navigation, route }) => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Videos,
       allowsEditing: true,
+      allowsMultipleSelection: true,
       aspect: [4, 3], // Tỉ lệ khung hình 1:1
       quality: 1,
     });
-    console.log("result", result);
     if (!result.canceled) {
-      const video = result.assets[0];
-      const videoUri = {
-        uri: video.uri,
-        name: video.fileName || `video_${Date.now()}.mp4`,
-        type: "video/mp4",
-      };
-      setImageUri(videoUri);
-      handleSendVideo(videoUri);
+      for (const video of result.assets) {
+        const videoUri = {
+          uri: video.uri,
+          name: video.fileName || `video_${Date.now()}.mp4`,
+          type: "video/mp4",
+        };
+        await handleSendVideo(videoUri);
+      }
     }
   };
 
@@ -1025,7 +1071,7 @@ const SingleChatScreen = ({ navigation, route }) => {
                                   paddingRight: 10,
                                 }}
                               >
-                                {item?.content}
+                                {truncateFileName(item?.content)}
                               </Text>
                               <Text
                                 style={{

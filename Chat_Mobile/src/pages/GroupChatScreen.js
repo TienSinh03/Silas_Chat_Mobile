@@ -91,7 +91,15 @@ const GroupChatScreen = ({ navigation, route }) => {
   const isAdmin = conversation.members.some(
     (member) => member.id === user.id && member.role === "ADMIN"
   );
-  console.log(isAdmin);
+  // console.log(isAdmin);
+
+  // Xử lý tên file quá dài
+  const truncateFileName = (name, maxLength = 25) => {
+    if (!name) return "";
+    return name.length > maxLength
+      ? name.slice(0, maxLength - 3) + "..."
+      : name;
+  };
 
   // State quản lý emoji/gif/sticker
   const [contentType, setContentType] = useState("emoji");
@@ -314,16 +322,14 @@ const GroupChatScreen = ({ navigation, route }) => {
     });
 
     if (!result.canceled) {
-      const asset = result.assets[0];
-      const documentUri = {
-        uri: asset.uri,
-        name: asset.name || "document.pdf",
-        type: asset.mimeType || "application/octet-stream",
-      };
-      console.log("documentUri: ", documentUri);
-      setImageUri(documentUri);
-
-      handleSendFile(documentUri);
+      for (const asset of result.assets) {
+        const documentUri = {
+          uri: asset.uri,
+          name: asset.name || "document.pdf",
+          type: asset.mimeType || "application/octet-stream",
+        };
+        await handleSendFile(documentUri);
+      }
     }
   };
 
@@ -343,19 +349,26 @@ const GroupChatScreen = ({ navigation, route }) => {
 
       if (imageUri) {
         formData.append("anh", imageUri);
-        console.log("file :", imageUri);
       }
 
       const response = await uploadFile(formData);
-      // console.log("response uploadFile: ", response);
-
-      request.fileUrl = response?.response?.fileUrl;
-      sendMessageToWebSocket(request);
+      const fileUrls = response?.response?.fileUrls || [];
+      if (fileUrls.length > 0) {
+        fileUrls.forEach((url) => {
+          const msg = {
+            ...request,
+            fileUrl: url,
+          };
+          sendMessageToWebSocket(msg);
+        });
+      } else if (response?.response?.fileUrl) {
+        request.fileUrl = response?.response?.fileUrl;
+        sendMessageToWebSocket(request);
+      }
     } catch (error) {
       console.error("Lỗi khi gửi file: ", error);
-      // Có thể thêm thông báo lỗi cho người dùng
     } finally {
-      setLoading(false); // Tắt loading
+      setLoading(false);
     }
   };
 
@@ -390,14 +403,24 @@ const GroupChatScreen = ({ navigation, route }) => {
         console.log("videoUri :", videoUri);
       }
       const response = await uploadFile(formData);
-      console.log("response uploadFile: ", response);
-      request.fileUrl = response?.response?.fileUrl;
-      sendMessageToWebSocket(request);
+      // Xử lý nhiều fileUrls trả về
+      const fileUrls = response?.response?.fileUrls || [];
+      if (fileUrls.length > 0) {
+        fileUrls.forEach((url) => {
+          const msg = {
+            ...request,
+            fileUrl: url,
+          };
+          sendMessageToWebSocket(msg);
+        });
+      } else if (response?.response?.fileUrl) {
+        request.fileUrl = response?.response?.fileUrl;
+        sendMessageToWebSocket(request);
+      }
     } catch (error) {
       console.error("Lỗi khi gửi video: ", error);
-      // Có thể thêm thông báo lỗi cho người dùng
     } finally {
-      setLoading(false); // Tắt loading
+      setLoading(false);
     }
   };
 
@@ -406,19 +429,19 @@ const GroupChatScreen = ({ navigation, route }) => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Videos,
       allowsEditing: true,
+      allowsMultipleSelection: true,
       aspect: [4, 3], // Tỉ lệ khung hình 1:1
       quality: 1,
     });
-    console.log("result", result);
     if (!result.canceled) {
-      const video = result.assets[0];
-      const videoUri = {
-        uri: video.uri,
-        name: video.fileName || `video_${Date.now()}.mp4`,
-        type: "video/mp4",
-      };
-      setImageUri(videoUri);
-      handleSendVideo(videoUri);
+      for (const video of result.assets) {
+        const videoUri = {
+          uri: video.uri,
+          name: video.fileName || `video_${Date.now()}.mp4`,
+          type: "video/mp4",
+        };
+        await handleSendVideo(videoUri);
+      }
     }
   };
 
@@ -950,7 +973,7 @@ const GroupChatScreen = ({ navigation, route }) => {
                                       paddingRight: 10,
                                     }}
                                   >
-                                    {item?.content}
+                                    {truncateFileName(item?.content)}
                                   </Text>
                                   <Text
                                     style={{
