@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Alert,
+  Alert, Modal, Pressable
 } from 'react-native';
 import {
   Ionicons,
@@ -16,28 +16,29 @@ import {
 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-
+import { useDispatch, useSelector } from 'react-redux';
+import {savePost} from '../../api/postApi'; 
 const PostStatusScreen = () => {
   const fonts = [
-    { name: 'Fountain', key: 'f1' },
-    { name: 'Pixel', key: 'f2' },
-    { name: 'Vintage', key: 'f3' },
-    { name: 'Terminal', key: 'f4' },
-    { name: 'Florence', key: 'f5' },
-    { name: 'Retro', key: 'f6' },
-    { name: 'Graffiti', key: 'f7' },
-    { name: 'Signature', key: 'f8' },
+    { idFonts: 0, name: 'Fountain', key: 'f1' },
+    { idFonts: 1, name: 'Pixel', key: 'f2' },
+    { idFonts: 2, name: 'Vintage', key: 'f3' },
+    { idFonts: 3, name: 'Terminal', key: 'f4' },
+    { idFonts: 4, name: 'Florence', key: 'f5' },
+    { idFonts: 5, name: 'Retro', key: 'f6' },
+    { idFonts: 6, name: 'Graffiti', key: 'f7' },
+    { idFonts: 7, name: 'Signature', key: 'f8' },
   ];
 
   const fontColors = {
-    Fountain: ['#FF6347', '#FFA07A'],     // Đỏ cam – Cam nhạt
-    Pixel: ['#1E90FF', '#87CEFA'],        // Xanh dương – Xanh trời
-    Vintage: ['#8B4513', '#D2B48C'],      // Nâu đất – Nâu vàng
-    Terminal: ['#32CD32', '#7CFC00'],     // Xanh lá – Xanh nõn chuối
-    Florence: ['#BA55D3', '#DDA0DD'],     // Tím hoa cà – Tím nhạt
-    Retro: ['#FFD700', '#FFA500'],        // Vàng chanh – Cam
-    Graffiti: ['#DC143C', '#FF69B4'],     // Đỏ thắm – Hồng cánh sen
-    Signature: ['#000000', '#696969'],    // Đen – Xám tro
+    Fountain: ['#FF6347', '#FFA07A'],     
+    Pixel: ['#1E90FF', '#87CEFA'],        
+    Vintage: ['#8B4513', '#D2B48C'],      
+    Terminal: ['#32CD32', '#7CFC00'],     
+    Florence: ['#BA55D3', '#DDA0DD'],     
+    Retro: ['#FFD700', '#FFA500'],       
+    Graffiti: ['#DC143C', '#FF69B4'],     
+    Signature: ['#000000', '#696969'],    
   };
 
   const [text, setText] = useState('');
@@ -59,16 +60,51 @@ const PostStatusScreen = () => {
 
   if (!loaded) return null;
 
-  const handlePost = () => {
-    if (!text.trim()) {
-      Alert.alert('Thông báo', 'Vui lòng nhập nội dung trước khi đăng.');
-      return;
-    }
-    console.log('Post nội dung:', text);
-    console.log('Font:', selectedFont);
+  // SAVE
+const handlePost = async () => {
+  if (!text.trim()) {
+    Alert.alert('Thông báo', 'Vui lòng nhập nội dung trước khi đăng.');
+    return;
+  }
+console.log('isPublic value:', isPublic);
+
+  const selectedFontObj = fonts.find(f => f.name === selectedFont);
+  const postData = {
+    userId: userProfile.id,
+    content: text,
+    fonts: selectedFontObj.idFonts, // Save as integer (e.g., 2 for Vintage)
+    public: isPublic, // true: công khai, false: chỉ mình tôi
+  };
+
+  try {
+    const response = await savePost(postData); // Gọi API lưu bài viết
     Alert.alert('Đã đăng', 'Nội dung của bạn đã được đăng!');
     navigation.goBack();
-  };
+  } catch (error) {
+    console.error('Lỗi khi đăng bài:', error);
+    Alert.alert('Lỗi', 'Không thể đăng bài viết. Vui lòng thử lại.');
+  }
+};
+
+  // quyền xem
+  const [privacy, setPrivacy] = useState('Quyền xem');
+  const [isPublic, setIsPublic] = useState(true); // true: công khai, false: chỉ mình tôi
+  const [modalVisible, setModalVisible] = useState(false);
+
+const handleSelect = (value) => {
+  setPrivacy(value); // Thêm dòng này để cập nhật giao diện
+  // setPrivacyLabel(value); // Removed as it was undefined
+  setIsPublic(value === 'Công khai'); // true nếu công khai, ngược lại là false
+  setModalVisible(false);
+};
+
+  // lấy user hiện tại từ Redux store
+  const dispatch = useDispatch();
+  const userProfile = useSelector(state => state.user.user);
+  const user = useMemo(() => {
+          return userProfile || null;
+  }, [userProfile]);
+  console.log("Nhật ký: USER hiện tại--------------------" , userProfile);
 
   return (
     <View style={styles.container}>
@@ -78,7 +114,37 @@ const PostStatusScreen = () => {
           <Ionicons name="arrow-back" size={24} />
         </TouchableOpacity>
 
-        <Text style={styles.headerText}>Tất cả bạn bè</Text>
+        <Text>{userProfile.id}</Text>
+
+        <View>
+          <TouchableOpacity onPress={() => setModalVisible(true)}>
+            <Text style={styles.headerText}>{privacy}</Text>
+          </TouchableOpacity>
+
+          <Modal
+            visible={modalVisible}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setModalVisible(false)}
+          >
+            <Pressable style={styles.overlay} onPress={() => setModalVisible(false)}>
+              <View style={styles.modalContent}>
+                <TouchableOpacity onPress={() => handleSelect('Công khai')}>
+                  <Text style={styles.optionText}>
+                    <FontAwesome5 name="user-friends" size={16} color="#007AFF" />
+                    Công khai
+                    </Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleSelect('Chỉ mình tôi')}>
+                  <Text style={styles.optionText}>
+                    <FontAwesome5 name="lock" size={16} color="#007AFF"  />
+                    Chỉ mình tôi
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </Pressable>
+          </Modal>
+        </View>
 
         <TouchableOpacity onPress={handlePost}>
           <Text style={styles.postButton}>Đăng</Text>
@@ -122,6 +188,8 @@ const PostStatusScreen = () => {
           </TouchableOpacity>
         ))}
       </ScrollView>
+
+   
 
       {/* Options */}
       <View style={styles.options}>
@@ -177,9 +245,30 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   headerText: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: 'bold',
     color: '#333',
+    padding: 10,
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    // justifyContent: 'center',
+    marginBottom: 'auto',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    width: 200,
+    borderRadius: 8,
+    padding: 15,
+    elevation: 5,
+    marginTop: 50,
+  },
+  optionText: {
+    fontSize: 16,
+    paddingVertical: 8,
+    color: '#007AFF',
   },
   postButton: {
     color: '#1e90ff',

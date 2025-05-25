@@ -7,7 +7,11 @@ import {
 } from "../store/slice/conversationSlice";
 import { getToken } from "../utils/authHelper";
 
+<<<<<<< HEAD
 const HOST_IP = "192.168.10.239"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
+=======
+const HOST_IP = "192.168.1.67"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
+>>>>>>> 64df7d7821c7098810d93470e39d000f9b309099
 
 const WEBSOCKET_URL = `http://${HOST_IP}:8080/ws`;
 
