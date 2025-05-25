@@ -5,24 +5,28 @@ import { SafeAreaView, StatusBar, StyleSheet, View, Text, TextInput, Image, Scro
 import Header from "../../components/Header";
 import { useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from 'react-redux';
-import {getPostsMyByUserId, getFriendsByUserId, getAllPosts, getUserById, getUsersWithPosts} from '../../api/postApi';
+import {getPostsMyByUserId, getFriendsByUserId, getAllPosts, getUserById, getUsersWithPosts, deletePost} from '../../api/postApi';
 import { useFonts } from 'expo-font';
 import {
   Ionicons,
   FontAwesome5,
   MaterialIcons,
   Entypo,
+  AntDesign,
 } from '@expo/vector-icons';
 
+import { Alert } from 'react-native';
 
 
 
 
 const DiaryMy = () => {
-
+const [refreshing, setRefreshing] = useState(false); // State for pull-to-refresh
 const [modalVisible, setModalVisible] = useState(false);
 const [selectedPost, setSelectedPost] = useState(null);
 const navigation = useNavigation();
+
+const [modalFunctionVisible, setModalFunctionVisible] = useState(false);
 
 // lấy user hiện tại từ Redux store
   const dispatch = useDispatch();
@@ -157,6 +161,41 @@ useEffect(() => {
 console.log("**************************************Danh sách người dùng có bài viết:", usersWithPosts);
 
 
+// XÓA POST
+const confirmDeletePost = (postId) => {
+  Alert.alert(
+    "Xác nhận xoá",
+    "Bạn có chắc muốn xoá bài viết này không?",
+    [
+      {
+        text: "Huỷ",
+        style: "cancel"
+      },
+      {
+        text: "Xoá",
+        style: "destructive",
+        onPress: () => handleDeletePost(postId)
+      }
+    ]
+  );
+};
+
+const handleDeletePost = async (postId) => {
+  try {
+    await deletePost(postId);
+    setUserPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+    setModalFunctionVisible(false);
+
+    Alert.alert("Thành công", "Bài viết đã được xoá.");
+  } catch (error) {
+    console.error("Lỗi khi xóa bài viết:", error);
+    Alert.alert("Lỗi", "Xảy ra lỗi khi xoá bài viết.");
+  }
+};
+
+
+
+
 
   // font
     const fonts = [
@@ -250,7 +289,8 @@ console.log("**************************************Danh sách người dùng có
             <View key={post.idPost} style={styles.post}>
               {/* <Text>{post.public ? "Công khai" : "Chỉ mình tôi"}</Text> */}
               <View style={styles.postHeader}>
-                <Image
+                <Image 
+                
                   source={{ uri: user.avatar }}
                   style={styles.avatarSmall}
                 />
@@ -271,9 +311,13 @@ console.log("**************************************Danh sách người dùng có
                     </Text>
                     <Text style={styles.postTime}>{post.createdAt}</Text>
                   </View>
-                  <TouchableOpacity>
+                  <TouchableOpacity onPress={() => {
+                    setSelectedPost(post);
+                    setModalFunctionVisible(true); // mở modal sửa/xoá
+                  }}>
                     <Entypo name="dots-three-vertical" size={15} color="black" />
-                  </TouchableOpacity>          
+                  </TouchableOpacity>
+    
                 </View>
               </View>
               
@@ -359,7 +403,7 @@ console.log("**************************************Danh sách người dùng có
 
 
           {/* <Text>-----------------TEST LẤY LUÔN INFO4------------------</Text> */}
-{usersWithPosts.map((item) => (
+        {usersWithPosts.map((item) => (
           item.posts.map((post) => (
             <View key={post.id} style={styles.post}>
               <View style={styles.postHeader}>
@@ -403,6 +447,7 @@ console.log("**************************************Danh sách người dùng có
           ))
         ))}
           
+          {/* Modal hiển thị bình luận */}
           <Modal
             visible={modalVisible}
             transparent
@@ -430,8 +475,48 @@ console.log("**************************************Danh sách người dùng có
             </View>
           </Modal>
 
+          {/* Modal hiển thị xóa/sửa */}
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={modalFunctionVisible}
+          onRequestClose={() => setModalFunctionVisible(false)}
+        >
+          <TouchableOpacity
+            style={styles.overlay}
+            activeOpacity={1}
+            onPressOut={() => setModalFunctionVisible(false)}
+          >
+            <View style={styles.modalContainer}>
+              {/* <TouchableOpacity style={styles.modalOption}>
+                <AntDesign name="edit" size={16} color="black" style={{marginRight: 5}} />
+                  <Text style={styles.editText}>Sửa bài viết</Text> 
+              </TouchableOpacity> */}
+              <TouchableOpacity
+                style={styles.modalOption}
+                onPress={() => {
+                  setModalFunctionVisible(false); // Đóng modal chức năng
+                  navigation.navigate('PostStatusScreen', {
+                    postToEdit: selectedPost, // Gửi dữ liệu bài viết sang để sửa
+                  });
+                }}
+              >
+                <AntDesign name="edit" size={16} color="black" style={{marginRight: 5}} />
+                <Text style={styles.editText}>Sửa bài viết</Text> 
+              </TouchableOpacity>
+
+
+              <TouchableOpacity style={styles.modalOption} onPress={() => confirmDeletePost(selectedPost.id)}>
+                <AntDesign name="delete" size={16} color="black" style={{marginRight: 5}} />
+                <Text style={styles.deleteText}>Xoá bài viết</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+
         </ScrollView>
-      </SafeAreaView>  );
+      </SafeAreaView>  
+      );
 };
 
 
@@ -639,7 +724,36 @@ sendButton: {
 sendButtonText: {
   color: 'white',
   fontWeight: 'bold',
-}
+},
+  modalContainer: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    width: '100%',
+    elevation: 5,
+  },
+  modalOption: {
+    paddingVertical: 10,
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  editText: {
+    fontSize: 16,
+  },
+  deleteText: {
+    fontSize: 16,
+    color: 'red',
+  },  
+  
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+
 
 });
 
