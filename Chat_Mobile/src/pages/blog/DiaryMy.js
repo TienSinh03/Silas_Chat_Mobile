@@ -3,11 +3,21 @@ import { Modal } from "react-native";
 
 import { SafeAreaView, StatusBar, StyleSheet, View, Text, TextInput, Image, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, } from "react-native";
 import Header from "../../components/Header";
-import Entypo from 'react-native-vector-icons/Entypo';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from 'react-redux';
 import {getPostsMyByUserId, getFriendsByUserId, getAllPosts, getUserById, getUsersWithPosts} from '../../api/postApi';
+import { useFonts } from 'expo-font';
+import {
+  Ionicons,
+  FontAwesome5,
+  MaterialIcons,
+  Entypo,
+} from '@expo/vector-icons';
+
+
+
+
+
 const DiaryMy = () => {
 
 const [modalVisible, setModalVisible] = useState(false);
@@ -42,7 +52,7 @@ const navigation = useNavigation();
     }
   }, [user?.id]);
 
-  console.log("**************************************Bài viết của người dùng hiện tại:", userPosts);
+  console.log("**************************************Bài viết của người dùng hiện tại:---------------------", userPosts);
 
   // Lấy danh sách bạn bè của người dùng hiện tại
   const [friends, setFriends] = useState([]);
@@ -146,6 +156,37 @@ useEffect(() => {
   }, [friends]);
 console.log("**************************************Danh sách người dùng có bài viết:", usersWithPosts);
 
+
+
+  // font
+    const fonts = [
+    { idFonts: 1, key: 'f1' },
+    { idFonts: 2, key: 'f2' },
+    { idFonts: 3, key: 'f3' },
+    { idFonts: 4, key: 'f4' },
+    { idFonts: 5, key: 'f5' },
+    { idFonts: 6, key: 'f6' },
+    { idFonts: 7, key: 'f7' },
+    { idFonts: 8, key: 'f8' },
+  ];
+  const [loaded] = useFonts({
+    f1: require('../../../assets/font/f1.ttf'),
+    f2: require('../../../assets/font/f2.ttf'),
+    f3: require('../../../assets/font/f3.ttf'),
+    f4: require('../../../assets/font/f4.ttf'),
+    f5: require('../../../assets/font/f5.ttf'),
+    f6: require('../../../assets/font/f6.ttf'),
+    f7: require('../../../assets/font/f7.ttf'),
+    f8: require('../../../assets/font/f8.ttf'),
+  });
+  if (!loaded) return null;
+  // console.log("fonts", fonts);
+  console.log("fonts", fonts.map(f => f.key));
+
+  const getFontKey = (fontId) => {
+      const font = fonts.find(f => f.idFonts === fontId);
+      return font ? font.key : 'f1'; // Default to 'f1' if fontId not found
+    };
   return (
 
       <SafeAreaView style={styles.container}>
@@ -207,15 +248,27 @@ console.log("**************************************Danh sách người dùng có
           {/* Posts from my */}
           {userPosts.map((post) => (
             <View key={post.idPost} style={styles.post}>
+              {/* <Text>{post.public ? "Công khai" : "Chỉ mình tôi"}</Text> */}
               <View style={styles.postHeader}>
                 <Image
                   source={{ uri: user.avatar }}
                   style={styles.avatarSmall}
                 />
+
                 <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <View>
                     {/* <Text style={styles.postName}>{post.fonts}</Text> */}
-                    <Text style={styles.postName}>{user.display_name}</Text>
+                    <Text style={styles.postName}>{user.display_name}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10, paddingLeft: 5 }}>
+                        <FontAwesome5
+                          name={post.public ? "user-friends" : "lock"}
+                          size={15}
+                          color="#9699aa"
+                          style={{ marginRight: 6 }}
+                        />
+                        <Text>{post.public ? "" : ""}</Text>
+                      </View>
+                    </Text>
                     <Text style={styles.postTime}>{post.createdAt}</Text>
                   </View>
                   <TouchableOpacity>
@@ -223,11 +276,14 @@ console.log("**************************************Danh sách người dùng có
                   </TouchableOpacity>          
                 </View>
               </View>
-              <Text style={styles.postContent}>{post.content}</Text>
+              
+              <Text style={[styles.postContent, { fontFamily: getFontKey(post.fonts) }]}>
+                  {post.content}
+              </Text>              
 
               {/* Example of accessing idPost and idUser */}
               <Text style={{ fontSize: 10, color: "gray", marginTop: 5 }}>
-                Post ID: {post.idPost} | User ID: {post.idUser}
+                Post ID: {post.id} | User ID: {post.userId}
               </Text>
               <View style={{ flexDirection: 'row', marginTop: 10 }}>
                 <TouchableOpacity style={styles.likeContainer}>
@@ -318,7 +374,10 @@ console.log("**************************************Danh sách người dùng có
                   </TouchableOpacity>
                 </View>
               </View>
-              <Text style={styles.postContent}>{post.content}</Text>
+                <Text style={[styles.postContent, { fontFamily: getFontKey(post.fonts) }]}>
+                    {post.content}
+                </Text>
+
               <Text style={{ fontSize: 10, color: "gray", marginTop: 5 }}>
                 Post ID: {post.id} | User ID: {post.userId}
               </Text>
