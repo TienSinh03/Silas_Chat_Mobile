@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Modal } from "react-native";
 
-import { SafeAreaView, StatusBar, StyleSheet, View, Text, TextInput, Image, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, } from "react-native";
+import { SafeAreaView, StatusBar, StyleSheet, View, Text, TextInput, Image, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform,TouchableWithoutFeedback } from "react-native";
 import Header from "../../components/Header";
 import { useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from 'react-redux';
-import {getPostsMyByUserId, getFriendsByUserId, getAllPosts, getUserById, getUsersWithPosts, deletePost} from '../../api/postApi';
+import {getPostsMyByUserId, getFriendsByUserId, getAllPosts, getUserById, getUsersWithPosts, deletePost, saveComment} from '../../api/postApi';
 import { useFonts } from 'expo-font';
 import {
   Ionicons,
@@ -13,6 +13,7 @@ import {
   MaterialIcons,
   Entypo,
   AntDesign,
+  FontAwesome
 } from '@expo/vector-icons';
 
 import { Alert } from 'react-native';
@@ -21,7 +22,7 @@ import { Alert } from 'react-native';
 
 
 const DiaryMy = () => {
-const [refreshing, setRefreshing] = useState(false); // State for pull-to-refresh
+// Khởi tạo state cho modal và bài viết đã chọn
 const [modalVisible, setModalVisible] = useState(false);
 const [selectedPost, setSelectedPost] = useState(null);
 const navigation = useNavigation();
@@ -138,6 +139,9 @@ useEffect(() => {
   }
 }, [friends]);
 
+
+
+
 // lây danh sách người dùng có thông tin user có bài viếết và chỉ lọc theo danh sách bạn bè
 const [usersWithPosts, setUsersWithPosts] = useState([]); // New state for getUsersWithPosts
 useEffect(() => {
@@ -226,6 +230,57 @@ const handleDeletePost = async (postId) => {
       const font = fonts.find(f => f.idFonts === fontId);
       return font ? font.key : 'f1'; // Default to 'f1' if fontId not found
     };
+
+
+    
+    // reload page when user change
+
+    // khi nhấn vào bình luận lấy các thông tin
+    /*
+          console.log('Bình luận đã được gửi:', commentData);
+      console.log('----------bài viết ID:', postId);
+      console.log('----------------nguoi dang:', userIdPost);
+      console.log('Nid-------------------------------- nguoi binh luan:', userIdActor);
+    */
+    
+    
+
+    // binh luan
+
+
+  const [commentText, setCommentText] = useState('');
+  const handleCommentSubmit = async (postId, userIdPost, userIdActor) => {
+    if (!commentText.trim()) return;
+
+    try {
+      const commentData = {
+        content: commentText,
+        createdAt: new Date().toISOString(), // optional, only if backend needs it
+      };
+
+      await saveComment(postId, userIdPost, userIdActor, commentData);
+      console.log('Bình luận đã được gửi:', commentData);
+      console.log('----------bài viết ID:', postId);
+      console.log('----------------nguoi dang:', userIdPost);
+      console.log('Nid-------------------------------- nguoi binh luan:', userIdActor);
+
+      // Clear input after successful comment
+      setCommentText('');
+
+      // Optional: reload comments or call a callback function
+      // await fetchComments(postId); // if you have such a function
+    } catch (error) {
+      console.error('Lỗi khi gửi bình luận:', error.message);
+      alert('Không thể gửi bình luận. Vui lòng thử lại.');
+    }
+  };
+
+
+
+  
+
+
+
   return (
 
       <SafeAreaView style={styles.container}>
@@ -448,32 +503,43 @@ const handleDeletePost = async (postId) => {
         ))}
           
           {/* Modal hiển thị bình luận */}
-          <Modal
-            visible={modalVisible}
-            transparent
-            animationType="slide"
-            onRequestClose={() => setModalVisible(false)}
-          >
+        <Modal
+          visible={modalVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setModalVisible(false)}
+
+        >
+          <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
             <View style={styles.modalBackground}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Bình luận bài viết</Text>
-                <Text style={{ fontSize: 12, color: '#888' }}>
-                  Bài viết từ: {selectedPost?.name}
-                </Text>
-                <TextInput
-                  placeholder="Nhập bình luận..."
-                  style={styles.commentInput}
-                  multiline
-                />
-                <TouchableOpacity
-                  style={styles.sendButton}
-                  onPress={() => setModalVisible(false)}
-                >
-                  <Text style={styles.sendButtonText}>Gửi</Text>
-                </TouchableOpacity>
-              </View>
+              {/* Ngăn chặn việc đóng modal khi bấm vào nội dung */}
+              <TouchableWithoutFeedback onPress={() => {}}>
+                <View style={styles.modalContent}>
+                  <TouchableOpacity>
+                    <FontAwesome name="smile-o" size={20} color="#000" />
+                  </TouchableOpacity>
+
+                  <TextInput
+                    placeholder="Nhập bình luận..."
+                    style={styles.commentInput}
+                    multiline
+                    value={commentText}
+                    onChangeText={setCommentText}
+                  />
+
+                  <TouchableOpacity>
+                    <FontAwesome5 name="camera" size={20} color="#000" style={{ marginLeft: 10 }} />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity style={{ marginLeft: 10 }} onPress={() => handleCommentSubmit(selectedPost.id, userPosts.id, userProfile.id, commentText)}>
+
+                    <FontAwesome5 name="paper-plane" size={20} color="#000" />
+                  </TouchableOpacity>
+                </View>
+              </TouchableWithoutFeedback>
             </View>
-          </Modal>
+          </TouchableWithoutFeedback>
+        </Modal>
 
           {/* Modal hiển thị xóa/sửa */}
         <Modal
@@ -563,6 +629,7 @@ const styles = StyleSheet.create({
   actionText: {
     fontSize: 12,
     color: '#333',
+
   },
   stories: {
     flexDirection: 'row',
@@ -686,45 +753,30 @@ const styles = StyleSheet.create({
 
   // modal
 
-modalBackground: {
-  flex: 1,
-  backgroundColor: 'rgba(0,0,0,0.5)',
-  justifyContent: 'flex-end',  // <-- sửa chỗ này
-  alignItems: 'center',
-},
+  modalBackground: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    // margin: 10,
+    // borderRadius: 25,
+    elevation: 5,
+    // height: 260,
+  },
+  commentInput: {
+    flex: 1,
+    paddingHorizontal: 10,
+    fontSize: 14,
+    color: '#000',
+    maxHeight: 100,
+  },
 
-modalContent: {
-  width: '100%',
-  backgroundColor: 'white',
-  borderRadius: 10,
-  padding: 20,
-  alignItems: 'stretch',
-  
-},
-modalTitle: {
-  fontSize: 18,
-  fontWeight: 'bold',
-  marginBottom: 10,
-},
-commentInput: {
-  borderWidth: 1,
-  borderColor: '#ccc',
-  borderRadius: 8,
-  padding: 10,
-  minHeight: 80,
-  marginBottom: 10,
-  textAlignVertical: 'top',
-},
-sendButton: {
-  backgroundColor: '#3b82f6',
-  padding: 10,
-  borderRadius: 8,
-  alignItems: 'center',
-},
-sendButtonText: {
-  color: 'white',
-  fontWeight: 'bold',
-},
   modalContainer: {
     backgroundColor: 'white',
     padding: 20,
