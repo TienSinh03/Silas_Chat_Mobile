@@ -30,7 +30,9 @@ import {
   subscribeToDissolveGroup,
 } from "../config/socket";
 
-const ConservationItem = ({ item, user, dispatch }) => {
+import { setConversation } from "../store/slice/conversationSlice";
+
+const ConservationItem = ({ item, user, dispatch, setConversation }) => {
   const navigation = useNavigation();
 
   // console.log("Item: ", item);
@@ -39,7 +41,8 @@ const ConservationItem = ({ item, user, dispatch }) => {
 
   const handleChooseChat = (item) => {
     if (item?.is_group) {
-      navigation.navigate("GroupChatScreen", { conversation: item });
+      dispatch(setConversation(item));
+      navigation.navigate("GroupChatScreen");
     } else {
       const userReceived = item?.members.find(
         (member) => member?.id !== user?.id
@@ -245,7 +248,7 @@ const ConservationList = ({ category }) => {
       <FlatList
         data={conversationsMemo}
         renderItem={({ item }) => (
-          <ConservationItem item={item} user={user} dispatch={dispatch} />
+          <ConservationItem item={item} user={user} dispatch={dispatch}  setConversation={setConversation}/>
         )}
         keyExtractor={(item) => item?.id}
       />

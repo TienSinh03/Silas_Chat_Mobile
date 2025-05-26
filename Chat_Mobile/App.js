@@ -201,6 +201,11 @@ const AppNavigation = () => {
               component={PostStatusScreen}
               options={{headerShown: false }}
             />
+            <Stack.Screen
+              name="ChooseLeaderScreen"
+              component={ChooseLeaderScreen}
+              options={{headerShown: false }}
+            />
           </>
         ) : (
           <>

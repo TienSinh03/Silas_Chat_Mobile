@@ -6,7 +6,9 @@ import { getRefreshToken, storeToken } from "../utils/authHelper";
 const HOST_IP = "192.168.1.5"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
 
 
+
 const chatEndpoint = `http://${HOST_IP}:8080`;
+// const chatEndpoint = 'https://api.tranminhtien.io.vn';
 
 const instance = axios.create({
   baseURL: chatEndpoint,
