@@ -3,10 +3,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getRefreshToken, storeToken } from "../utils/authHelper";
 
 
-const HOST_IP = "192.168.11.18"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
+const HOST_IP = "172.16.0.115"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
 
 
 const chatEndpoint = `http://${HOST_IP}:8080`;
+// const chatEndpoint = 'https://api.tranminhtien.io.vn';
 
 const instance = axios.create({
   baseURL: chatEndpoint,

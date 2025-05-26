@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -20,6 +20,7 @@ import {
   updateGroupMembers,
   dissolveGroup,
   removeConversation,
+  restrictMessagingThunk
 } from "../store/slice/conversationSlice";
 import Loading from "../components/Loading";
 
@@ -28,6 +29,7 @@ const GroupSettingsScreen = ({ navigation, route }) => {
   const { user } = useSelector((state) => state.user);
 
   const actionSheetRef = React.useRef(null);
+  const actionSheetRoleMessageRef = React.useRef(null);
   const dispatch = useDispatch();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -35,12 +37,20 @@ const GroupSettingsScreen = ({ navigation, route }) => {
   const [isPinned, setIsPinned] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
 
+  const [isRestrictMessaging, setIsRestrictMessaging] = useState(false);
+
   const isAdmin = useMemo(() => {
     const currentMember = conversation?.members?.find(
       (member) => member.id === user?.id
     );
     return currentMember?.role === "ADMIN";
   }, [conversation?.members, user?.id]);
+
+  // useEffect(() => {
+  //   if(conversation?.id) {
+  //     setIsRestrictMessaging(conversation?.restrictMessagingToAdmin);
+  //   }
+  // }, [conversation?.id]);
 
   const clearChatHistory = () => {
     Alert.alert("Xác nhận", "Bạn có chắc muốn xóa lịch sử trò chuyện?", [
@@ -120,6 +130,32 @@ const GroupSettingsScreen = ({ navigation, route }) => {
       console.error("Lỗi lấy link nhóm:", error);
     }
   };
+
+  const handleRestrictMessaging = async (isRestrictMessaging) => {
+    setIsLoading(true);
+    actionSheetRoleMessageRef.current?.hide();
+    try {
+      const response = await dispatch(
+        restrictMessagingThunk({
+          conversationId: conversation?.id,
+          restrict: isRestrictMessaging,
+        })
+      ).unwrap();
+
+      console.log("Cập nhật quyền gửi tin nhắn handle:", response);
+      setIsRestrictMessaging(isRestrictMessaging);
+
+      navigation.replace('Main');
+    } catch (error) {
+      console.error("Lỗi cập nhật quyền gửi tin nhắn:", error);
+      Alert.alert(
+        "Lỗi",
+        "Không thể cập nhật quyền gửi tin nhắn. Vui lòng thử lại sau."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }
   
 
   return (
@@ -162,7 +198,9 @@ const GroupSettingsScreen = ({ navigation, route }) => {
           onPress={() => navigation.navigate("TabTopMedia")}
         />
 
-        <OptionRow color="black" icon="calendar" text="Lịch nhóm" />
+        {isAdmin && (
+          <OptionRow color="black" icon="calendar" text="Quyền gửi tin nhắn"  onPress={() => actionSheetRoleMessageRef.current.show()}/>
+        )}
         <OptionRow color="black" icon="bookmark" text="Tin nhắn đã ghim" />
         <OptionRow color="black" icon="bar-chart-2" text="Bình chọn" />
         <OptionRow
@@ -269,6 +307,39 @@ const GroupSettingsScreen = ({ navigation, route }) => {
             >
               <Text style={{ color: "white", textAlign: "center" }}>
                 Xác nhận
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ActionSheet>
+
+        {/* Actionsheet chuyển quyền tin nhắn */}
+        <ActionSheet ref={actionSheetRoleMessageRef} gestureEnabled={true}>
+          <View style={{ padding: 20 }}>
+            <Text
+              style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}
+            >
+              Quyền gửi tin nhắn
+            </Text>
+           
+            <TouchableOpacity
+              style={{ backgroundColor: "#D6E9FF", padding: 15, borderRadius: 10, marginBottom: 10 }}
+              onPress={() => {
+                setIsRestrictMessaging(false), handleRestrictMessaging(false);
+              }}
+            >
+              <Text style={{ color: "#006AF5", textAlign: "center" }}>
+                Tất cả thành viên
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={{ backgroundColor: "#D6E9FF", padding: 15, borderRadius: 10 }}
+              onPress={() => {
+                setIsRestrictMessaging(true), handleRestrictMessaging(true);
+              }}
+            >
+              <Text style={{ color: "#006AF5", textAlign: "center" }}>
+                Chỉ nhóm trưởng
               </Text>
             </TouchableOpacity>
           </View>
