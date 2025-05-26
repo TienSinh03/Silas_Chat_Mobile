@@ -6,6 +6,7 @@ import {
   dissolveConversation,
   deleteConversationForUser,
   transferLeader,
+  restrictMessagingService,
 } from "../../api/chatApi";
 
 const initialState = {
@@ -113,6 +114,25 @@ const transferLeaderThunk = createAsyncThunk(
     }
   }
 );
+const restrictMessagingThunk = createAsyncThunk(
+  "message/restrictMessaging",
+  async ({ conversationId, restrict }, thunkAPI) => {
+    try {
+      const response = await restrictMessagingService(
+        conversationId, restrict
+      );
+      return response;
+    } catch (error) {
+      console.error(
+        "Error restricting messaging service:",
+        error.response?.data || error.message
+      );
+      return thunkAPI.rejectWithValue(
+        error.response.data?.message || error.message
+      );
+    }
+  }
+);
 
 const conversationSlice = createSlice({
   name: "conversation",
@@ -171,6 +191,23 @@ const conversationSlice = createSlice({
         (conversation) => conversation.id !== conversationId
       );
     },
+    setConversation(state, action) {
+      const newConversation = action.payload;
+      state.conversation = newConversation;
+
+      // Kiểm tra nếu conversation đã tồn tại trong danh sách
+      const existingIndex = state.conversations.findIndex(
+        (item) => item.id === newConversation.id
+      );
+
+      // Nếu không tồn tại, thêm mới vào danh sách
+      if (existingIndex === -1) {
+        state.conversations.push(newConversation);
+      } else {
+        // Nếu đã tồn tại, cập nhật thông tin
+        state.conversations[existingIndex] = newConversation;
+      }
+    }
   },
   extraReducers: (builder) => {
     builder.addCase(getAllConversationsByUserId.pending, (state) => {});
@@ -190,7 +227,7 @@ const conversationSlice = createSlice({
     builder.addCase(createConversation.fulfilled, (state, action) => {
       const newConversation = action.payload;
       if (newConversation) {
-        state.conversation = newConversation;
+        // state.conversationRedux = newConversation;
         state.conversations.push(newConversation);
       }
       state.isLoading = false;
@@ -210,7 +247,7 @@ const conversationSlice = createSlice({
         newConversation &&
         !state.conversations.find((item) => item.id === newConversation.id)
       ) {
-        state.conversation = newConversation;
+        // state.conversationRedux = newConversation;
         state.conversations.push(newConversation);
       }
       state.isLoading = false;
@@ -243,6 +280,8 @@ const conversationSlice = createSlice({
       state.isLoading = false;
       state.error = action.payload;
     });
+
+    //transferLeaderThunk
     builder.addCase(transferLeaderThunk.pending, (state) => {
       state.isLoading = true;
     });
@@ -253,6 +292,18 @@ const conversationSlice = createSlice({
       state.isLoading = false;
       state.error = action.error.message;
     });
+
+    //restrictMessagingService
+    builder.addCase(restrictMessagingThunk.pending, (state) => {
+      state.isLoading = true;
+    });
+    builder.addCase(restrictMessagingThunk.fulfilled, (state, action) => {
+      state.isLoading = false;
+    });
+    builder.addCase(restrictMessagingThunk.rejected, (state, action) => {
+      state.isLoading = false;
+    });
+
   },
 });
 
@@ -261,6 +312,8 @@ export const {
   setConversationsGroup,
   updateGroupMembers,
   removeConversation,
+  conversation,
+  setConversation
 } = conversationSlice.actions;
 export {
   getAllConversationsByUserId,
@@ -269,5 +322,6 @@ export {
   dissolveGroup,
   deleteConversation,
   transferLeaderThunk,
+  restrictMessagingThunk,
 };
 export default conversationSlice.reducer;

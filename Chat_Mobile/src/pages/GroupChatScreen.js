@@ -43,6 +43,7 @@ import {
   recallMessageToWebSocket,
   deleteMessageToWebSocket,
   sendFileToWebSocket,
+  subscribeToConversation,
 } from "../config/socket";
 
 import { GIPHY_API_KEY } from "@env";
@@ -56,6 +57,7 @@ import { getFileIcon } from "../utils/FormatIconFile"; // Import hàm getFileIco
 import {
   deleteConversation,
   removeConversation,
+  setConversation,
 } from "../store/slice/conversationSlice";
 import VideoMessage from "../components/media.storage/VideoMessage";
 import ImageMessage from "../components/media.storage/ImageMessage";
@@ -65,18 +67,20 @@ const GroupChatScreen = ({ navigation, route }) => {
   const bottomRef = useRef(null);
 
   const actionSheetRef = useRef(null);
+  const { conversation } = useSelector((state) => state.conversation);
 
-  const { conversation, userReceived } = route.params; // Nhận userId từ params
+
+  // const { userReceived } = route.params; // Nhận userId từ params
   const conversationId = conversation?.id; // Lấy conversationId từ params
-  console.log("conversation", conversation);
+  // console.log("conversation", conversation);
   //   console.log("conversationId", conversationId);
 
   const isGroupDeleted = useMemo(() => {
     return conversation?.dissolved;
   }, [conversation]);
 
-  console.log("isGroupDeleted", isGroupDeleted);
-
+  
+  // const [conversation, setConversationState] = useState(null);
   // state để điều khiển hiển thị thanh công cụ
   const [emojiToolbarVisible, setEmojiToolbarVisible] = useState(false);
   const [fileToolbarVisible, setFileToolbarVisible] = useState(false);
@@ -88,8 +92,10 @@ const GroupChatScreen = ({ navigation, route }) => {
   const { user } = useSelector((state) => state.user);
   //   console.log("user ", user);
 
+
+
   const isAdmin = conversation.members.some(
-    (member) => member.id === user.id && member.role === "ADMIN"
+    (member) => member?.id === user?.id && member.role === "ADMIN"
   );
   // console.log(isAdmin);
 
@@ -198,6 +204,7 @@ const GroupChatScreen = ({ navigation, route }) => {
     return member;
   };
 
+
   // Kết nối WebSocket
   useEffect(() => {
     connectWebSocket(() => {
@@ -205,6 +212,11 @@ const GroupChatScreen = ({ navigation, route }) => {
         console.log("Received message:", newMessage);
         if (!newMessage?.id) return;
         dispatch(addMessage(newMessage));
+      });
+
+      subscribeToConversation(user?.id, (updatedConversation) => {
+        console.log("Updated conversation group chat:", updatedConversation);
+        dispatch(setConversation(updatedConversation));
       });
     });
 
@@ -860,6 +872,7 @@ const GroupChatScreen = ({ navigation, route }) => {
 
                       <TouchableOpacity
                         onLongPress={() => handleSelectMessage(item)}
+                        disabled={conversation?.restrictMessagingToAdmin && !isAdmin}                      
                         style={{
                           padding: 10,
                           alignSelf:
@@ -992,44 +1005,6 @@ const GroupChatScreen = ({ navigation, route }) => {
                         ) : null}
 
                         {item?.messageType === "VIDEO" ? (
-                          // <View>
-                          //   <TouchableOpacity
-                          //     onPress={() => playVideo(item?.fileUrl)}
-                          //   >
-                          //     <View style={{ position: "relative" }}>
-                          //       <Image
-                          //         source={{
-                          //           uri:
-                          //             item?.fileUrl ||
-                          //             "https://via.placeholder.com/150",
-                          //         }}
-                          //         style={{
-                          //           width: 150,
-                          //           height: 150,
-                          //           borderRadius: 10,
-                          //           marginTop: 5,
-                          //         }}
-                          //         resizeMode="cover"
-                          //       />
-                          //       <View
-                          //         style={{
-                          //           position: "absolute",
-                          //           top: "50%",
-                          //           left: "50%",
-                          //           transform: [
-                          //             { translateX: -15 },
-                          //             { translateY: -15 },
-                          //           ],
-                          //           backgroundColor: "rgba(0,0,0,0.5)",
-                          //           borderRadius: 20,
-                          //           padding: 5,
-                          //         }}
-                          //       >
-                          //         <IconF5 name="play" size={20} color="white" />
-                          //       </View>
-                          //     </View>
-                          //   </TouchableOpacity>
-                          // </View>
                           <VideoMessage message={item} />
                         ) : null}
 
@@ -1059,7 +1034,28 @@ const GroupChatScreen = ({ navigation, route }) => {
         </TouchableNativeFeedback>
 
         {/* Nhập tin nhắn - Ẩn hoặc vô hiệu hóa khi nhóm bị xóa  */}
-        {!isGroupDeleted ? (
+        {conversation?.restrictMessagingToAdmin && !isAdmin ? (
+          <View
+            style={{
+              backgroundColor: "#f8f8f8",
+              padding: 15,
+              borderTopWidth: 1,
+              borderTopColor: "#ddd",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Text
+              style={{
+                color: "#666",
+                fontSize: width * 0.04,
+              }}
+            >
+              Chỉ trưởng nhóm mới có thể gửi tin nhắn trong nhóm này
+            </Text>
+          </View>
+        ) : 
+        !isGroupDeleted ? (
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
           >
