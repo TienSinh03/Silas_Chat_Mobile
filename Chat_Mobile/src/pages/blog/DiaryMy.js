@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect, } from "react";
-import { Modal } from "react-native";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { Modal, RefreshControl } from "react-native";
 
 
 import { SafeAreaView, StatusBar, StyleSheet, View, Text, TextInput, Image, ScrollView, TouchableOpacity,TouchableWithoutFeedback } from "react-native";
@@ -12,7 +12,10 @@ import { useNavigation, useFocusEffect, useRoute } from "@react-navigation/nativ
 import { useDispatch, useSelector } from 'react-redux';
 import {getPostsMyByUserId, getFriendsByUserId, getAllPosts, 
   getUserById, getUsersWithPosts, deletePost, 
-  saveComment, getCommentsByPostId, getCommentsIfFriend
+  saveComment, getCommentsByPostId, getCommentCountByPostId,
+  checkLikedStatus, 
+  updateLikeStatus,  
+  
 
 
 
@@ -32,6 +35,22 @@ import { Alert } from 'react-native';
 
 
 const DiaryMy = () => {
+  // tạo relod khi vuốt màn hình
+    const [refreshing, setRefreshing] = useState(false);
+
+const onRefresh = useCallback(() => {
+  setRefreshing(true);
+  Promise.all([
+    fetchUserPosts(),
+    fetchFriends(),
+    fetchUsersWithPosts()
+  ]).finally(() => {
+    setRefreshing(false);
+  });
+}, [fetchUserPosts, fetchFriends, fetchUsersWithPosts]);
+
+
+
 // Khởi tạo state cho modal và bài viết đã chọn
 const [modalVisible, setModalVisible] = useState(false);
 const [selectedPost, setSelectedPost] = useState(null);
@@ -112,6 +131,8 @@ const [modalFunctionVisible, setModalFunctionVisible] = useState(false);
       try {
         const postsData = await getPostsMyByUserId(user?.id);
         setUserPosts(postsData);
+        
+  // console.log("**************************************Bài viết của người dùng hiện tại:---------------------", userPosts);
 
       
       } catch (error) {
@@ -128,24 +149,18 @@ const [modalFunctionVisible, setModalFunctionVisible] = useState(false);
 
   // Lấy danh sách bạn bè của người dùng hiện tại
   const [friends, setFriends] = useState([]);
-  React.useEffect(() => {
-    const fetchFriends = async () => {
-      try {
-        const result = await getFriendsByUserId(user?.id);
-        setFriends(result.response || []);     // nếu dùng như bên dưới sẽ không lấy được do postmain khi test {               ...............} KHÔNG Phải là [..............]
-        /*
-        const friendsData = await getFriendsByUserId(user?.id);
-        setFriends(friendsData); //
-        */
-      } catch (error) {
-        console.error("Lỗi khi lấy danh sách bạn bè:", error);
-      }
-    };
-    if (user?.id) {
-      fetchFriends();
-    }
-  }, [user?.id]);
+const fetchFriends = useCallback(async () => {
+  if (!user?.id) return;
+  try {
+    const result = await getFriendsByUserId(user.id);
+    setFriends(result.response || []);
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách bạn bè:", error);
+  }
+}, [user?.id]);
   console.log("............109999999................danh sách bạn bè", friends);
+  
+  
 
 
 
@@ -499,11 +514,81 @@ const filteredComments = useMemo(() => {
 
 
 
+
+
+// count bình luận
+const [commentCounts, setCommentCounts] = useState({});
+
+const fetchCommentCounts = async (posts) => {
+  try {
+    const counts = {};
+    for (const post of posts) {
+      const count = await getCommentCountByPostId(post.id);
+      // Nếu API trả về object, lấy đúng trường count, ví dụ count.data.count hoặc count.data
+      counts[post.id] = count?.data?.count || count; 
+    }
+    setCommentCounts(counts);
+  } catch (error) {
+    console.error("Lỗi khi lấy số lượng bình luận:", error);
+  }
+};
+
+useEffect(() => {
+  // Gộp userPosts và posts từ usersWithPosts
+  const allFriendPosts = usersWithPosts.flatMap(userWithPosts => userWithPosts.posts);
+  const allPostsToCount = [...userPosts, ...allFriendPosts];
+  
+  if (allPostsToCount.length > 0) {
+    fetchCommentCounts(allPostsToCount);
+  }
+}, [userPosts, usersWithPosts]);
+
+
+
+// lay avatar của người dùng bình luận
+const friendAvatars = useMemo(() => {
+  const map = {};
+  friends.forEach(friend => {
+    map[friend.userId] = friend.avatar;
+  });
+  return map;
+}, [friends]);
+
+
+// tym
+const [likedPosts, setLikedPosts] = useState({});
+// Khi userPosts hoặc user.id thay đổi, load trạng thái like từng bài
+useEffect(() => {
+  if (!user?.id) return;
+
+  userPosts.forEach(post => {
+    checkLikedStatus(post.id, user.id)
+      .then(liked => {
+        setLikedPosts(prev => ({ ...prev, [post.id]: liked }));
+      })
+      .catch(err => console.error("Lỗi kiểm tra like", post.id, err));
+  });
+}, [userPosts, user?.id]);
+
+// Xử lý like/unlike bài viết
+const handleLike = async (postId, userId) => {
+  try {
+    const updatedStatus = await updateLikeStatus(postId, userId);
+    // Giả sử API trả về liked (true/false)
+    setLikedPosts(prev => ({ ...prev, [postId]: updatedStatus.liked }));
+  } catch (error) {
+    console.error("Lỗi khi cập nhật trạng thái like:", error);
+    Alert.alert("Lỗi", "Xảy ra lỗi khi cập nhật trạng thái like.");
+  }
+};
+
   return (
 
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container}  >
         <Header iconRight="user" />
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView contentContainerStyle={styles.scrollContent} refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }>
           {/* Post Box */}
           <View style={styles.postBox}>
             {/* lấy img từ useProfile */}
@@ -605,13 +690,17 @@ const filteredComments = useMemo(() => {
               {/* gán idPost và idUser vào mảng commentInfo */}
 
               <View style={{ flexDirection: 'row', marginTop: 10 }}>
-                <TouchableOpacity style={styles.likeContainer}>
-                  <Ionicons name="heart-outline" size={20} color="#000" />
-                  <Text style={styles.likeText}>Thích</Text>
-                  <View style={styles.divider} />
-                  <Ionicons name="heart" size={20} color="red" />
-                  <Text style={styles.likeCount}>2</Text>
-                </TouchableOpacity>
+<TouchableOpacity style={styles.likeContainer} onPress={() => handleLike(post.id, post.userId)}>
+  <Ionicons
+    name="heart"
+    size={20}
+    color={likedPosts[post.id] ? "red" : "#aaaaaa"}
+  />
+  <Text style={styles.likeText}>Thích</Text>
+  <View style={styles.divider} />
+  <Text style={styles.likeCount}>{post.likeCount || 0}</Text>
+</TouchableOpacity>
+
 
               <TouchableOpacity
                 style={styles.commentContainer}
@@ -622,7 +711,12 @@ const filteredComments = useMemo(() => {
                 }}
                 
               >
-                <Ionicons name="chatbox-ellipses-outline" size={20} color="#000" />
+                    <View style={{display: 'flex', flexDirection: 'row',}}>
+                      <Ionicons name="chatbox-ellipses-outline" size={20} color="#000" />
+                      <Text style={styles.likeCount}>
+                        {commentCounts[post.id] ?? 0}
+                      </Text>                    
+                    </View>
               </TouchableOpacity>
 
               </View>
@@ -680,6 +774,7 @@ const filteredComments = useMemo(() => {
 
 
           {/* <Text>-----------------TEST LẤY LUÔN INFO4------------------</Text> */}
+        {/* Bài viết của bạn bè */}
         {usersWithPosts.map((item) => (
           item.posts.map((post) => (
             <View  style={styles.post}>
@@ -703,13 +798,20 @@ const filteredComments = useMemo(() => {
                 Post ID: {post.id} | User ID----: {post.userId}
               </Text>
               <View style={{ flexDirection: 'row', marginTop: 10 }}>
-                <TouchableOpacity style={styles.likeContainer}>
-                  <Ionicons name="heart-outline" size={20} color="#000" />
-                  <Text style={styles.likeText}>Thích</Text>
-                  <View style={styles.divider} />
-                  <Ionicons name="heart" size={20} color="red" />
-                  <Text style={styles.likeCount}>{post.likeCount}</Text>
-                </TouchableOpacity>
+{/* <TouchableOpacity style={styles.likeContainer} onPress={() => handleLike(post.id, user.id)}>
+  <Ionicons
+    name="heart"
+    size={20}
+    color={likedPosts[post.id] ? "red" : "#aaaaaa"}
+  />
+  <Text style={styles.likeText}>Thích</Text>
+  <View style={styles.divider} />
+  <Text style={styles.likeCount}>{post.likeCount || 0}</Text>
+</TouchableOpacity>
+ */}
+
+
+
                 <TouchableOpacity
                   style={styles.commentContainer}
                   onPress={() => {
@@ -717,7 +819,12 @@ const filteredComments = useMemo(() => {
                     setModalVisible(true);
                   }}
                 >
-                  <Ionicons name="chatbox-ellipses-outline" size={20} color="#000" />
+                    <View style={{display: 'flex', flexDirection: 'row',}}>
+                      <Ionicons name="chatbox-ellipses-outline" size={20} color="#000" />
+                      <Text style={styles.likeCount}>
+                        {commentCounts[post.id] ?? 0}
+                      </Text>
+                    </View>
                 </TouchableOpacity>
               </View>
             </View>
@@ -775,48 +882,63 @@ const filteredComments = useMemo(() => {
                       </ScrollView> */}
 
 
-<ScrollView>
-  {loadingComments ? (
-    <View style={{ alignItems: 'center', padding: 20 }}>
-      <Text>Đang tải bình luận...</Text>
-    </View>
-  ) : filteredComments.length === 0 ? (
-    <View style={{ alignItems: 'center', padding: 20 }}>
-      <Text>Chưa có bình luận nào từ bạn bè hoặc chính bạn.</Text>
-    </View>
-  ) : (
-    filteredComments.map(comment => (
-      <View
-        key={comment.id}
-        style={{
-          flexDirection: 'row',
-          alignItems: 'flex-start',
-          marginBottom: 15,
-          padding: 10,
-          borderRadius: 8
-        }}
-      >
-        <Image
-          source={{ uri: 'https://i.pravatar.cc/50?u=' + comment.userIdActor }}
-          style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10, borderWidth: 1, borderColor: '#ddd' }}
-        />
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: comment.userIdActor === user.id ? '#d1f7c4' : '#f2f2f2', // Màu nền khác nếu là bình luận của user
-            padding: 10,
-            borderRadius: 8
-          }}
-        >
-          <Text style={styles.commentText}>{comment.comment}</Text>
-          <Text style={{ fontSize: 10, color: 'gray', marginTop: 4 }}>
-            {new Date(comment.activityTime).toLocaleString()}
-          </Text>
-        </View>
-      </View>
-    ))
-  )}
-</ScrollView>
+                <ScrollView>
+                  {loadingComments ? (
+                    <View style={{ alignItems: 'center', padding: 20 }}>
+                      <Text>Đang tải bình luận...</Text>
+                    </View>
+                  ) : filteredComments.length === 0 ? (
+                    <View style={{ alignItems: 'center', padding: 20 }}>
+                      <Image
+                        source={require('../../../assets/icon_cmt.png')}
+                        style={{ width: 200, height: 150 }}
+                      />
+                      {/* <Text>Chưa có bình luận nào từ bạn bè hoặc chính bạn.</Text> */}
+                    </View>
+                  ) : (
+                    filteredComments.map(comment => (
+                      <View
+                        key={comment.id}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'flex-start',
+                          marginBottom: 15,
+                          padding: 10,
+                          borderRadius: 8
+                        }}
+                      >
+                        {/* Lấy ảnh avart */}
+                        <Image
+                          source={{
+                            uri:
+                              comment.userIdActor === user.id
+                                ? user.avatar
+                                : friendAvatars[comment.userIdActor] || 'https://cdn2.fptshop.com.vn/small/avatar_trang_1_cd729c335b.jpg'
+                          }}
+                          style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10, borderWidth: 1, borderColor: '#ddd' }}
+                        />
+
+                        {/* <Image
+                          source={{ uri: 'https://i.pravatar.cc/50?u=' + comment.userIdActor }}
+                          style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10, borderWidth: 1, borderColor: '#ddd' }}
+                        /> */}
+                        <View
+                          style={{
+                            flex: 1,
+                            backgroundColor: comment.userIdActor === user.id ? '#d1f7c4' : '#f2f2f2', // Màu nền khác nếu là bình luận của user
+                            padding: 10,
+                            borderRadius: 8
+                          }}
+                        >
+                          <Text style={styles.commentText}>{comment.comment}</Text>
+                          <Text style={{ fontSize: 10, color: 'gray', marginTop: 4 }}>
+                            {new Date(comment.activityTime).toLocaleString()}
+                          </Text>
+                        </View>
+                      </View>
+                    ))
+                  )}
+                </ScrollView>
 
 
                  
