@@ -139,26 +139,41 @@ export const getCommentsByPostId = async (postId) => {
   }
 };
 
-// Lấy bình luận của bài viết (nếu userIdActor là bạn bè)
-// Lấy bình luận bài viết nếu người xem và người bình luận là bạn bè
-export const getCommentsIfFriend = async (viewerUserId, postId) => {
+
+//http://localhost:8080/api/v1/postactivity/post/comment/count/6833038e3dbd51227e1a3fc6
+export const getCommentCountByPostId = async (postId) => {
   try {
-    // 1. Lấy danh sách bạn bè của người xem
-    const friends = await getFriendsByUserId(viewerUserId);
-    const friendIds = friends.map(f => f.userId);
-
-    // 2. Lấy toàn bộ bình luận của bài viết
-    const res = await instance.get(`/api/v1/postactivity/post/comment/${postId}`);
-    const comments = res.data || [];
-
-    // 3. Lọc bình luận: chỉ giữ lại bình luận của người bình luận là bạn bè hoặc bình luận của chính người xem (trường hợp xem bình luận của mình)
-    const filteredComments = comments.filter(comment =>
-      comment.userIdActor === viewerUserId || friendIds.includes(comment.userIdActor)
-    );
-
-    return filteredComments;
+    const response = await instance.get(`/api/v1/postactivity/post/comment/count/${postId}`);
+    return response.data;
   } catch (error) {
-    console.error('Lỗi khi lấy bình luận nếu là bạn bè:', error);
-    throw error;
+    console.error("Error fetching comment count by post ID:", error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || "Lỗi khi lấy số lượng bình luận của bài viết");
   }
 };
+// Cập nhật trạng thái like (tym) của user trên bài viết http://localhost:8080/api/v1/postactivity/post/6833038e3dbd51227e1a3fc6/user/67fb51ce6993e15db49bf32f/tym
+export const updateLikeStatus = async (postId, userId) => {
+  try {
+    const liked = await checkLikedStatus(postId, userId);
+    const response = await instance.put(`/api/v1/postactivity/post/${postId}/user/${userId}/tym`, { liked: !liked });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating like status:", error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || "Lỗi khi cập nhật trạng thái like");
+  }
+};
+// Kiem tra trang thai like (tym) cua user tren bai viet http://localhost:8080/api/v1/postactivity/post/6833038e3dbd51227e1a3fc6/user/67fb51ce6993e15db49bf32f/tym
+/*
+{
+    "liked": false
+}*/
+export const checkLikedStatus = async (postId, userId) => {
+  try {
+    const response = await instance.get(`/api/v1/postactivity/post/${postId}/user/${userId}/tym`);
+    return response.data.liked; // Giả sử API trả về { liked: true/false }
+  } catch (error) {
+    console.error("Error checking liked status:", error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || "Lỗi khi kiểm tra trạng thái like");
+  }
+};
+
+
