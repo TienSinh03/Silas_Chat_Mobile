@@ -96,9 +96,10 @@ console.log('isPublic value:', isPublic);
       await updatePost({postId:postToEdit?.id, postData}); // Gọi API để cập nhật bài viết
     } else {
       await savePost(postData); // Gọi API để lưu bài viết
+
     }
     Alert.alert('Đã đăng', 'Nội dung của bạn đã được đăng!');
-    navigation.goBack();
+    navigation.goBack({ reload: true });
   } catch (error) {
     console.error('Lỗi khi đăng bài:', error);
     Alert.alert('Lỗi', 'Không thể đăng bài viết. Vui lòng thử lại.');

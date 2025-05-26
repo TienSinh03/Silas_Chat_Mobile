@@ -91,18 +91,74 @@ export const updatePost = async ({postId, postData}) => {
 };
 
 // save binh luan http://localhost:8080/api/v1/postactivity/save
-export const saveComment = async (postId, userIdPost, userIdActor, commentData) => {
+// export const saveComment = async (postId, userIdPost, userIdActor, commentData) => {
+//   try {
+//     const response = await instance.post('/api/v1/postactivity/save', {
+//       postId,
+//       userIdPost,
+//       userIdActor,
+//       commentData
+//     });
+//     return response.data;
+//   } catch (error) {
+//     console.error("Error saving comment:", error.response?.data || error.message);
+//     throw new Error(error.response?.data?.message || "Lỗi khi lưu bình luận");
+//   }
+
+// };
+// Hàm saveComment với header Content-Type
+export const saveComment = async (postId, userIdPost, userIdActor, comment) => { 
   try {
     const response = await instance.post('/api/v1/postactivity/save', {
       postId,
       userIdPost,
       userIdActor,
-      commentData
+      comment  // comment là string
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
     return response.data;
   } catch (error) {
     console.error("Error saving comment:", error.response?.data || error.message);
     throw new Error(error.response?.data?.message || "Lỗi khi lưu bình luận");
   }
+};
 
+
+// lấy danh sách bình luận theo postId http://localhost:8080/api/v1/postactivity/post/comment/683301663dbd51227e1a3fc2
+export const getCommentsByPostId = async (postId) => {
+  try {
+    const response = await instance.get(`/api/v1/postactivity/post/comment/${postId}`);
+    console.log("Response data:=============================", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching comments by post ID:", error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || "Lỗi khi lấy bình luận của bài viết");
+  }
+};
+
+// Lấy bình luận của bài viết (nếu userIdActor là bạn bè)
+// Lấy bình luận bài viết nếu người xem và người bình luận là bạn bè
+export const getCommentsIfFriend = async (viewerUserId, postId) => {
+  try {
+    // 1. Lấy danh sách bạn bè của người xem
+    const friends = await getFriendsByUserId(viewerUserId);
+    const friendIds = friends.map(f => f.userId);
+
+    // 2. Lấy toàn bộ bình luận của bài viết
+    const res = await instance.get(`/api/v1/postactivity/post/comment/${postId}`);
+    const comments = res.data || [];
+
+    // 3. Lọc bình luận: chỉ giữ lại bình luận của người bình luận là bạn bè hoặc bình luận của chính người xem (trường hợp xem bình luận của mình)
+    const filteredComments = comments.filter(comment =>
+      comment.userIdActor === viewerUserId || friendIds.includes(comment.userIdActor)
+    );
+
+    return filteredComments;
+  } catch (error) {
+    console.error('Lỗi khi lấy bình luận nếu là bạn bè:', error);
+    throw error;
+  }
 };
