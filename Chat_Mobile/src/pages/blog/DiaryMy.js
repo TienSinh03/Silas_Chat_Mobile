@@ -31,6 +31,7 @@ import {
 } from '@expo/vector-icons';
 
 import { Alert } from 'react-native';
+import FastImage from 'react-native-fast-image';
 
 
 
@@ -731,13 +732,18 @@ const handleUpdateComment = async () => {
           {/* Stories */}
           <ScrollView horizontal style={styles.stories} showsHorizontalScrollIndicator={false}>
             {/* Story đầu tiên: Tạo mới */}
-            <TouchableOpacity style={styles.storyList}>
-              <Image
-                source={{ uri: user?.avatar }}
-                style={styles.avatarList}
-              />
-              <Text style={styles.storyTextList}>Tạo mới</Text>
-            </TouchableOpacity>
+    <TouchableOpacity style={styles.storyList}>
+      <Image
+        source={{ uri: user?.avatar }}
+        style={styles.avatarList}
+      />
+      <Text style={styles.storyTextList}>Tạo mới</Text>
+      <Image
+        source={{ uri: 'https://i.pinimg.com/originals/32/4b/4b/324b4bafc4a9f645548e40716361814e.gif' }}
+        style={styles.icon}
+      />
+      
+    </TouchableOpacity>
 
             {/* Các story từ mảng posts */}
             {friends.map((friend) => (
@@ -1274,8 +1280,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     justifyContent: 'flex-end', 
     alignItems: 'center',
-    position: 'relative',
+    // position: 'relative',
     marginRight: 10,
+        position: 'relative',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
   },
   avatarList: {
     ...StyleSheet.absoluteFillObject,
@@ -1292,7 +1302,15 @@ const styles = StyleSheet.create({
   },
 
 
-
+  icon: {
+    position: 'absolute',
+    top: 10,            // khoảng cách từ trên container đến icon (bạn chỉnh sửa để hợp ý)
+    left: '50%',
+    width: 40,
+    height: 40,
+    borderRadius: 20,   // bo tròn 50%
+    transform: [{ translateX: -20 }],  // căn giữa icon ngang
+  },
 
 
   post: {

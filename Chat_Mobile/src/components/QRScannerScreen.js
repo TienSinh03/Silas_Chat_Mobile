@@ -61,6 +61,14 @@ export default function QRScannerScreen({ route }) {
               }
             }
           ]);
+          //nếu người dùng đã tồn tại trong nhóm thì không cần thêm nữa
+          const linkGroup = await getLinkGroup(conversationId?.id);
+          if (linkGroup) {
+            console.log("Link nhóm:", linkGroup);
+          } else {
+            console.error("Không tìm thấy link nhóm.");
+          }
+          
         } else {
           Alert.alert("Lỗi", "Không thể thêm bạn vào nhóm.");
         }
