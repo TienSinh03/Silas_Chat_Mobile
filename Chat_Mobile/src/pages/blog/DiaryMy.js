@@ -1,31 +1,66 @@
-import React, { useState, useMemo, useEffect } from "react";
-import { Modal } from "react-native";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { Modal, RefreshControl } from "react-native";
 
-import { SafeAreaView, StatusBar, StyleSheet, View, Text, TextInput, Image, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform,TouchableWithoutFeedback } from "react-native";
+
+import { SafeAreaView, StatusBar, StyleSheet, View, Text, TextInput, Image, ScrollView, TouchableOpacity,TouchableWithoutFeedback } from "react-native";
 import Header from "../../components/Header";
-import { useNavigation } from "@react-navigation/native";
+
+
+import { useNavigation, useFocusEffect, useRoute } from "@react-navigation/native";
+
+
 import { useDispatch, useSelector } from 'react-redux';
-import {getPostsMyByUserId, getFriendsByUserId, getAllPosts, getUserById, getUsersWithPosts, deletePost, saveComment} from '../../api/postApi';
+import {getPostsMyByUserId, getFriendsByUserId, getAllPosts, 
+  getUserById, getUsersWithPosts, deletePost, 
+  saveComment, getCommentsByPostId, getCommentCountByPostId,
+  checkLikedStatus, 
+  updateLikeStatus,  
+  deleteComment,updateComment
+  
+
+
+
+} from '../../api/postApi';
 import { useFonts } from 'expo-font';
 import {
   Ionicons,
   FontAwesome5,
-  MaterialIcons,
   Entypo,
   AntDesign,
   FontAwesome
 } from '@expo/vector-icons';
 
 import { Alert } from 'react-native';
+import FastImage from 'react-native-fast-image';
 
 
 
 
 const DiaryMy = () => {
+  // tạo relod khi vuốt màn hình
+    const [refreshing, setRefreshing] = useState(false);
+
+const onRefresh = useCallback(() => {
+  setRefreshing(true);
+  Promise.all([
+    fetchUserPosts(),
+    fetchFriends(),
+    fetchUsersWithPosts()
+  ]).finally(() => {
+    setRefreshing(false);
+  });
+}, [fetchUserPosts, fetchFriends, fetchUsersWithPosts]);
+
+
+
 // Khởi tạo state cho modal và bài viết đã chọn
 const [modalVisible, setModalVisible] = useState(false);
 const [selectedPost, setSelectedPost] = useState(null);
 const navigation = useNavigation();
+const route = useRoute();
+const reloadHandledRef = React.useRef(false);
+
+
 
 const [modalFunctionVisible, setModalFunctionVisible] = useState(false);
 
@@ -36,9 +71,59 @@ const [modalFunctionVisible, setModalFunctionVisible] = useState(false);
           return userProfile || null;
   }, [userProfile]);
   console.log("Nhật ký: USER hiện tại--------------------" , userProfile);
+  console.log("Nhật ký: USER hiện tại+++++++++++++++++++++++++++++++++++ ", user.id);
 /*
  (NOBRIDGE) LOG  Nhật ký: USER hiện tại-------------------- {"avatar": "https://res.cloudinary.com/dovnjo6ij/image/upload/v1744734307/yviw4m4qp63sx1xmj6mb.jpg", "display_name": "Tran Minh Tiến", "dob": "2003-02-06", "enabled": true, "gender": "MALE", "id": "67fb51ce6993e15db49bf32f", "password": "$2a$10$BBWzlF0pJxQq9sriX40YQOUQ40BaBJXpUFUMFGjLW/c88AlBr3Ng.", "phone": "+84869188704", "roles": ["ROLE_USER"]}
 */
+
+
+  // Hàm reload cả bài của mình và bạn bè
+  // const reloadAllPosts = async () => {
+  //   await fetchUserPosts();
+  //   await fetchUsersWithPosts();
+  // };
+// khi dang se reload lại trang này thì sẽ lấy lại user
+  // Hàm fetch lại bài viết user
+    
+
+  // Hàm lấy bài viết user
+  const fetchUserPosts = async () => {
+    if (!user?.id) return;
+    try {
+      // Dùng API lấy tất cả bài viết rồi lọc userId, hoặc thay bằng getPostsMyByUserId(user?.id)
+      // const allPostsData = await getAllPosts();
+      // const filteredPosts = allPostsData.filter(post => post.userId === user.id);
+      // setUserPosts(filteredPosts);
+
+      // Hoặc gọi trực tiếp API getPostsMyByUserId
+      const postsData = await getPostsMyByUserId(user.id);
+      setUserPosts(postsData);
+      // reloadAllPosts();
+
+    } catch (error) {
+      console.error('Lỗi khi lấy bài viết:', error);
+    }
+  };
+
+    // Reload bài viết khi màn hình được focus lại và khi lần đầu load
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchUserPosts();
+    }, [user?.id])
+  );
+
+  // useFocusEffect(
+  //   React.useCallback(() => {
+  //     // Kiểm tra params reload khi màn hình được focus lại
+  //     if (route.params?.reload) {
+  //       fetchUserPosts();
+  //       // Xóa params reload để không gọi lại lần nữa
+  //       navigation.setParams({ reload: false });
+  //     }
+  //   }, [route.params?.reload])
+  // );
+
+
   // Lấy bài viết của người dùng hiện tại
   const [userPosts, setUserPosts] = useState([]);
 
@@ -48,6 +133,10 @@ const [modalFunctionVisible, setModalFunctionVisible] = useState(false);
       try {
         const postsData = await getPostsMyByUserId(user?.id);
         setUserPosts(postsData);
+        
+  // console.log("**************************************Bài viết của người dùng hiện tại:---------------------", userPosts);
+
+      
       } catch (error) {
         console.error("Lỗi khi lấy bài viết:", error);
       }
@@ -59,26 +148,21 @@ const [modalFunctionVisible, setModalFunctionVisible] = useState(false);
 
   console.log("**************************************Bài viết của người dùng hiện tại:---------------------", userPosts);
 
+
   // Lấy danh sách bạn bè của người dùng hiện tại
   const [friends, setFriends] = useState([]);
-  React.useEffect(() => {
-    const fetchFriends = async () => {
-      try {
-        const result = await getFriendsByUserId(user?.id);
-        setFriends(result.response || []);     // nếu dùng như bên dưới sẽ không lấy được do postmain khi test {               ...............} KHÔNG Phải là [..............]
-        /*
-        const friendsData = await getFriendsByUserId(user?.id);
-        setFriends(friendsData); //
-        */
-      } catch (error) {
-        console.error("Lỗi khi lấy danh sách bạn bè:", error);
-      }
-    };
-    if (user?.id) {
-      fetchFriends();
-    }
-  }, [user?.id]);
-  console.log("............................danh sách bạn bè:...................................", friends);
+const fetchFriends = useCallback(async () => {
+  if (!user?.id) return;
+  try {
+    const result = await getFriendsByUserId(user.id);
+    setFriends(result.response || []);
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách bạn bè:", error);
+  }
+}, [user?.id]);
+  console.log("............109999999................danh sách bạn bè", friends);
+  
+  
 
 
 
@@ -136,6 +220,9 @@ const fetchFriendUsers = async () => {
 useEffect(() => {
   if (friends.length > 0) {
     fetchFriendUsers();
+  }   
+  if (friends.length > 0) {
+    fetchUsersWithPosts();
   }
 }, [friends]);
 
@@ -144,25 +231,49 @@ useEffect(() => {
 
 // lây danh sách người dùng có thông tin user có bài viếết và chỉ lọc theo danh sách bạn bè
 const [usersWithPosts, setUsersWithPosts] = useState([]); // New state for getUsersWithPosts
-useEffect(() => {
-    const fetchUsersWithPosts = async () => {
-      try {
-        const usersData = await getUsersWithPosts();
-        // Filter to only include users who are friends and have posts
-        const friendIds = friends.map(friend => friend.userId);
-        const filteredUsers = usersData.filter(item => 
-          friendIds.includes(item.user.id) && item.posts.length > 0
-        );
-        setUsersWithPosts(filteredUsers);
-      } catch (error) {
-        console.error("Lỗi khi lấy người dùng có bài viết:", error);
-      }
-    };
-    if (friends.length > 0) {
-      fetchUsersWithPosts();
-    }
-  }, [friends]);
-console.log("**************************************Danh sách người dùng có bài viết:", usersWithPosts);
+const fetchUsersWithPosts = async () => {
+  try {
+    const usersData = await getUsersWithPosts();
+    const friendIds = friends.map(friend => friend.userId);
+    const filteredUsers = usersData.filter(item =>
+      friendIds.includes(item.user.id) && item.posts.length > 0
+    );
+    setUsersWithPosts(filteredUsers);
+  } catch (error) {
+    console.error("Lỗi khi lấy người dùng có bài viết:", error);
+  }
+};
+
+// useEffect(() => {
+//     const fetchUsersWithPosts = async () => {
+//       try {
+//         const usersData = await getUsersWithPosts();
+//         // Filter to only include users who are friends and have posts
+//         const friendIds = friends.map(friend => friend.userId);
+//         const filteredUsers = usersData.filter(item => 
+//           friendIds.includes(item.user.id) && item.posts.length > 0
+//         );
+//         setUsersWithPosts(filteredUsers);
+
+//         //reload
+//       } catch (error) {
+//         console.error("Lỗi khi lấy người dùng có bài viết:", error);
+//       }
+//     };
+//     if (friends.length > 0) {
+//       fetchUsersWithPosts();
+//     }
+//   }, [friends]);
+console.log("*******************usersWithPosts*****10**************Danh sách người dùng có bài viết:", usersWithPosts);
+
+
+
+
+// lấy ra list id của các bài viết từ usersWithPosts
+const postIds = useMemo(() => {
+  return usersWithPosts.flatMap(item => item.posts.map(post => post.id));
+}, [usersWithPosts]);
+console.log("postIds", postIds); // Log the list of post IDs
 
 
 // XÓA POST
@@ -190,6 +301,10 @@ const handleDeletePost = async (postId) => {
     setUserPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
     setModalFunctionVisible(false);
 
+    // fetchPosts();
+    // reloadAllPosts();
+
+
     Alert.alert("Thành công", "Bài viết đã được xoá.");
   } catch (error) {
     console.error("Lỗi khi xóa bài viết:", error);
@@ -203,14 +318,14 @@ const handleDeletePost = async (postId) => {
 
   // font
     const fonts = [
-    { idFonts: 1, key: 'f1' },
-    { idFonts: 2, key: 'f2' },
-    { idFonts: 3, key: 'f3' },
-    { idFonts: 4, key: 'f4' },
-    { idFonts: 5, key: 'f5' },
-    { idFonts: 6, key: 'f6' },
-    { idFonts: 7, key: 'f7' },
-    { idFonts: 8, key: 'f8' },
+    { idFonts: 1, keys: 'f1' },
+    { idFonts: 2, keys: 'f2' },
+    { idFonts: 3, keys: 'f3' },
+    { idFonts: 4, keys: 'f4' },
+    { idFonts: 5, keys: 'f5' },
+    { idFonts: 6, keys: 'f6' },
+    { idFonts: 7, keys: 'f7' },
+    { idFonts: 8, keys: 'f8' },
   ];
   const [loaded] = useFonts({
     f1: require('../../../assets/font/f1.ttf'),
@@ -222,13 +337,13 @@ const handleDeletePost = async (postId) => {
     f7: require('../../../assets/font/f7.ttf'),
     f8: require('../../../assets/font/f8.ttf'),
   });
-  if (!loaded) return null;
+  // if (!loaded) return null;
   // console.log("fonts", fonts);
-  console.log("fonts", fonts.map(f => f.key));
+  // console.log("fonts", fonts.map(f => f.key));
 
   const getFontKey = (fontId) => {
       const font = fonts.find(f => f.idFonts === fontId);
-      return font ? font.key : 'f1'; // Default to 'f1' if fontId not found
+      return font ? font.keys : 'f1'; // Default to 'f1' if fontId not found
     };
 
 
@@ -247,45 +362,340 @@ const handleDeletePost = async (postId) => {
 
     // binh luan
 
+       // tạo mảng rổng lưu idpost, id suer đang chọn để bình luận
+    const [commentInfo, setCommentInfo] = useState([]); // Mảng rỗng ban đầu
+
+
+
 
   const [commentText, setCommentText] = useState('');
-  const handleCommentSubmit = async (postId, userIdPost, userIdActor) => {
-    if (!commentText.trim()) return;
+// const handleCommentSubmit = async (postId, userIdPost, userIdActor, commentText) => {
+//   if (!commentText || !commentText.trim()) {
+//     Alert.alert("Thông báo", "Vui lòng nhập bình luận.");
+//     return;
+//   }
 
-    try {
-      const commentData = {
-        content: commentText,
-        createdAt: new Date().toISOString(), // optional, only if backend needs it
-      };
+//   try {
+//     const commentData = {
+//       postId,
+//       userIdPost,
+//       userIdActor,
+//       content: commentText, // Ensure content is set to commentText
+//     };
+//     console.log('Comment Data to API:', commentData); // Debug the payload
+//     await saveComment(postId, userIdPost, userIdActor, commentData);
+//     setCommentText(''); // Clear input after submission
+//     setModalVisible(false); // Close modal
 
-      await saveComment(postId, userIdPost, userIdActor, commentData);
-      console.log('Bình luận đã được gửi:', commentData);
-      console.log('----------bài viết ID:', postId);
-      console.log('----------------nguoi dang:', userIdPost);
-      console.log('Nid-------------------------------- nguoi binh luan:', userIdActor);
+//     // Update commentInfo for local storage
+//     setCommentInfo((prev) => [...prev, { postId, userIdPost, userIdActor, content: commentText }]);
+//     console.log('Bình luận đã được gửi:====================================================', commentData);
+//     Alert.alert("Thành công", "Bình luận đã được gửi.");
+//   } catch (error) {
+//     console.error("Lỗi khi gửi bình luận:", error);
+//     Alert.alert("Lỗi", "Xảy ra lỗi khi gửi bình luận.");
+//   }
+// };
 
-      // Clear input after successful comment
-      setCommentText('');
+// const handleCommentSubmit = async (postId, userIdPost, userIdActor, commentText) => {
+//   if (!commentText || !commentText.trim()) {
+//     Alert.alert("Thông báo", "Vui lòng nhập bình luận.");
+//     return;
+//   }
 
-      // Optional: reload comments or call a callback function
-      // await fetchComments(postId); // if you have such a function
-    } catch (error) {
-      console.error('Lỗi khi gửi bình luận:', error.message);
-      alert('Không thể gửi bình luận. Vui lòng thử lại.');
+//   try {
+//     const commentData = {
+//       postId,
+//       userIdPost,
+//       userIdActor,
+//       comment: commentText,
+//     };
+
+//     console.log('Comment Data to API:', commentData);
+//     await saveComment(postId, userIdPost, userIdActor, commentData);
+
+//     setCommentText('');
+//     setModalVisible(false);
+
+//     setCommentInfo((prev) => [
+//       ...prev,
+//       { postId, userIdPost, userIdActor, content: commentText },
+//     ]);
+
+//     Alert.alert("Thành công", "Bình luận đã được gửi.");
+//   } catch (error) {
+//     console.error("Lỗi khi gửi bình luận:", error);
+//     Alert.alert("Lỗi", "Gửi bình luận thất bại.");
+//   }
+// };
+
+// const handleCommentSubmit = async (postId, userIdPost, userIdActor, commentText) => {
+//   if (!commentText || !commentText.trim()) {
+//     Alert.alert("Thông báo", "Vui lòng nhập bình luận.");
+//     return;
+//   }
+
+//   try {
+//     console.log("Gửi comment với dữ liệu:", {
+//       postId,
+//       userIdPost,
+//       userIdActor,
+//       comment: commentText,
+//     });
+
+//     const result = await saveComment(postId, userIdPost, userIdActor, commentText);
+
+//     console.log("Kết quả lưu comment:", result);
+
+//     setCommentText('');
+//     setModalVisible(false);
+
+//     Alert.alert("Thành công", "Bình luận đã được gửi.");
+//   } catch (error) {
+//     console.error("Lỗi khi gửi bình luận:", error);
+//     Alert.alert("Lỗi", "Gửi bình luận thất bại.");
+//   }
+// };
+
+const handleCommentSubmit = async (postId, userIdPost, userIdActor, commentText) => {
+  if (!commentText || !commentText.trim()) {
+    Alert.alert("Thông báo", "Vui lòng nhập bình luận.");
+    return;
+  }
+
+  try {
+    if (editingCommentId) {
+      // Đang sửa bình luận
+      await updateComment(editingCommentId, commentText);
+
+      // Cập nhật lại comment trong state
+      setComments(prev =>
+        prev.map(c =>
+          c.id === editingCommentId ? { ...c, comment: commentText } : c
+        )
+      );
+
+      setEditingCommentId(null); // xóa id sửa
+      Alert.alert("Thành công", "Bình luận đã được cập nhật.");
+    } else {
+      // Thêm bình luận mới
+      await saveComment(postId, userIdPost, userIdActor, commentText);
+      Alert.alert("Thành công", "Bình luận đã được gửi.");
     }
-  };
+
+    setCommentText('');
+    setModalVisible(false);
+
+  } catch (error) {
+    console.error("Lỗi khi gửi hoặc cập nhật bình luận:", error);
+    Alert.alert("Lỗi", editingCommentId ? "Cập nhật bình luận thất bại." : "Gửi bình luận thất bại.");
+  }
+};
 
 
-
+// bình luan
+  // if (!loaded) {
+  //   return null; // Chờ cho font được tải
+  // }
+  // // nếu không có user thì trả về null
+  // if (!user) {
+  //   return null; // Chờ cho user được tải
+  // }
+  // // nếu không có userPosts thì trả về null
+  // if (!userPosts || userPosts.length === 0) {
+  //   return (
+  //     <SafeAreaView style={styles.container}>
+  //       <Header iconRight="user" />
+  //       <ScrollView contentContainerStyle={styles.scrollContent}>
+  //         <Text style={{ textAlign: 'center', marginTop: 20 }}>Bạn chưa có bài viết nào.</Text>
+  //       </ScrollView>
+  //     </SafeAreaView>
+  //   );
+  // }
   
+  // lay danh sách bài viết theo idPost
+
+const [comments, setComments] = useState([]);
+const [loadingComments, setLoadingComments] = useState(false);
+useEffect(() => {
+  if (modalVisible && selectedPost) {
+    setLoadingComments(true);
+    getCommentsByPostId(selectedPost.id)
+      .then(data => {
+        setComments(data);
+      })
+      .catch(error => {
+        console.error('Lỗi khi lấy bình luận:', error);
+        setComments([]);
+      })
+      .finally(() => setLoadingComments(false));
+  } else {
+    setComments([]);
+  }
+}, [modalVisible, selectedPost]);
+
+console.log("Bình luận của bài viết:00000000000000000000000000000000000000000:      ", comments);
+
+
+// Để chỉ render bình luận khi người bình luận là bạn bè với user hiện tại, bạn có thể:
+
+
+const friendIdsSet = useMemo(() => new Set(friends.map(f => f.userId)), [friends]);
+
+const filteredComments = useMemo(() => {
+  return comments.filter(comment => 
+    friendIdsSet.has(comment.userIdActor) || comment.userIdActor === user.id
+  );
+}, [comments, friendIdsSet, user.id]);
+
+
+
+
+
+// count bình luận
+const [commentCounts, setCommentCounts] = useState({});
+
+const fetchCommentCounts = async (posts) => {
+  try {
+    const counts = {};
+    for (const post of posts) {
+      const count = await getCommentCountByPostId(post.id);
+      // Nếu API trả về object, lấy đúng trường count, ví dụ count.data.count hoặc count.data
+      counts[post.id] = count?.data?.count || count; 
+    }
+    setCommentCounts(counts);
+  } catch (error) {
+    console.error("Lỗi khi lấy số lượng bình luận:", error);
+  }
+};
+
+useEffect(() => {
+  // Gộp userPosts và posts từ usersWithPosts
+  const allFriendPosts = usersWithPosts.flatMap(userWithPosts => userWithPosts.posts);
+  const allPostsToCount = [...userPosts, ...allFriendPosts];
+  
+  if (allPostsToCount.length > 0) {
+    fetchCommentCounts(allPostsToCount);
+  }
+}, [userPosts, usersWithPosts]);
+
+
+
+// lay avatar của người dùng bình luận
+const friendAvatars = useMemo(() => {
+  const map = {};
+  friends.forEach(friend => {
+    map[friend.userId] = friend.avatar;
+  });
+  return map;
+}, [friends]);
+
+
+// tym
+const [likedPosts, setLikedPosts] = useState({});
+// Khi userPosts hoặc user.id thay đổi, load trạng thái like từng bài
+useEffect(() => {
+  if (!user?.id) return;
+
+  userPosts.forEach(post => {
+    checkLikedStatus(post.id, user.id)
+      .then(liked => {
+        setLikedPosts(prev => ({ ...prev, [post.id]: liked }));
+      })
+      .catch(err => console.error("Lỗi kiểm tra like", post.id, err));
+  });
+}, [userPosts, user?.id]);
+
+// Xử lý like/unlike bài viết
+const handleLike = async (postId, userId) => {
+  try {
+    const updatedStatus = await updateLikeStatus(postId, userId);
+    // Giả sử API trả về liked (true/false)
+    setLikedPosts(prev => ({ ...prev, [postId]: updatedStatus.liked }));
+  } catch (error) {
+    console.error("Lỗi khi cập nhật trạng thái like:", error);
+    Alert.alert("Lỗi", "Xảy ra lỗi khi cập nhật trạng thái like.");
+  }
+};
+
+// state quản lý modal sửa/xóa bình luận
+const [modalCommentFunctionVisible, setModalCommentFunctionVisible] = useState(false);
+const [selectedComment, setSelectedComment] = useState(null);
+
+
+const confirmDeleteComment = (commentId) => {
+  Alert.alert(
+    "Xác nhận xoá",
+    "Bạn có chắc muốn xoá bình luận này không?",
+    [
+      { text: "Huỷ", style: "cancel" },
+      {
+        text: "Xoá",
+        style: "destructive",
+        onPress: () => handleDeleteComment(commentId),
+      },
+    ]
+  );
+};
+
+const handleDeleteComment = async (commentId) => {
+  try {
+    await deleteComment(commentId);
+    // Cập nhật lại danh sách comments trong state, lọc bỏ comment vừa xóa
+    setComments(prevComments => prevComments.filter(c => c.id !== commentId));
+    setModalCommentFunctionVisible(false);
+    Alert.alert("Thành công", "Bình luận đã được xoá.");
+  } catch (error) {
+    console.error("Lỗi khi xóa bình luận:", error);
+    Alert.alert("Lỗi", error.message || "Xảy ra lỗi khi xóa bình luận.");
+  }
+};
+
+// update comment
+const [editCommentText, setEditCommentText] = useState('');
+
+// Khi mở modal sửa, gán text hiện tại vào editCommentText
+useEffect(() => {
+  if (modalCommentFunctionVisible && selectedComment) {
+    setEditCommentText(selectedComment.comment);
+  }
+}, [modalCommentFunctionVisible, selectedComment]);
+
+// Hàm submit cập nhật comment
+const handleUpdateComment = async () => {
+  if (!editCommentText.trim()) {
+    Alert.alert("Thông báo", "Vui lòng nhập nội dung bình luận.");
+    return;
+  }
+
+  try {
+    await updateComment(selectedComment.id, editCommentText);
+    
+    // Cập nhật lại danh sách comments trong state
+    setComments(prevComments =>
+      prevComments.map(c =>
+        c.id === selectedComment.id ? { ...c, comment: editCommentText } : c
+      )
+    );
+
+    setModalCommentFunctionVisible(false);
+    Alert.alert("Thành công", "Bình luận đã được cập nhật.");
+  } catch (error) {
+    console.error("Lỗi khi cập nhật bình luận:", error);
+    Alert.alert("Lỗi", "Cập nhật bình luận thất bại.");
+  }
+};
+  const [editingCommentId, setEditingCommentId] = useState(null);
 
 
 
   return (
 
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container}  >
         <Header iconRight="user" />
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView contentContainerStyle={styles.scrollContent} refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }>
           {/* Post Box */}
           <View style={styles.postBox}>
             {/* lấy img từ useProfile */}
@@ -322,17 +732,22 @@ const handleDeletePost = async (postId) => {
           {/* Stories */}
           <ScrollView horizontal style={styles.stories} showsHorizontalScrollIndicator={false}>
             {/* Story đầu tiên: Tạo mới */}
-            <TouchableOpacity style={styles.storyList}>
-              <Image
-                source={{ uri: user?.avatar }}
-                style={styles.avatarList}
-              />
-              <Text style={styles.storyTextList}>Tạo mới</Text>
-            </TouchableOpacity>
+    <TouchableOpacity style={styles.storyList}>
+      <Image
+        source={{ uri: user?.avatar }}
+        style={styles.avatarList}
+      />
+      <Text style={styles.storyTextList}>Tạo mới</Text>
+      <Image
+        source={{ uri: 'https://i.pinimg.com/originals/32/4b/4b/324b4bafc4a9f645548e40716361814e.gif' }}
+        style={styles.icon}
+      />
+      
+    </TouchableOpacity>
 
             {/* Các story từ mảng posts */}
             {friends.map((friend) => (
-              <TouchableOpacity key={friend.userId} style={styles.storyList}>
+              <TouchableOpacity style={styles.storyList}>
                 <Image source={{ uri: friend.avatar }} style={styles.avatarList} />
                 <Text style={styles.storyTextList}>{friend.displayName}</Text>
               </TouchableOpacity>
@@ -341,7 +756,7 @@ const handleDeletePost = async (postId) => {
 
           {/* Posts from my */}
           {userPosts.map((post) => (
-            <View key={post.idPost} style={styles.post}>
+            <View  style={styles.post}>
               {/* <Text>{post.public ? "Công khai" : "Chỉ mình tôi"}</Text> */}
               <View style={styles.postHeader}>
                 <Image 
@@ -382,25 +797,39 @@ const handleDeletePost = async (postId) => {
 
               {/* Example of accessing idPost and idUser */}
               <Text style={{ fontSize: 10, color: "gray", marginTop: 5 }}>
-                Post ID: {post.id} | User ID: {post.userId}
+                Post ID://// {post.id} | User ID: {post.userId}
+                {/* Post Acctivity: {post.activity} */}
               </Text>
+              {/* gán idPost và idUser vào mảng commentInfo */}
+
               <View style={{ flexDirection: 'row', marginTop: 10 }}>
-                <TouchableOpacity style={styles.likeContainer}>
-                  <Ionicons name="heart-outline" size={20} color="#000" />
-                  <Text style={styles.likeText}>Thích</Text>
-                  <View style={styles.divider} />
-                  <Ionicons name="heart" size={20} color="red" />
-                  <Text style={styles.likeCount}>2</Text>
-                </TouchableOpacity>
+<TouchableOpacity style={styles.likeContainer} onPress={() => handleLike(post.id, post.userId)}>
+  <Ionicons
+    name="heart"
+    size={20}
+    color={likedPosts[post.id] ? "red" : "#aaaaaa"}
+  />
+  <Text style={styles.likeText}>Thích</Text>
+  <View style={styles.divider} />
+  <Text style={styles.likeCount}>{post.likeCount || 0}</Text>
+</TouchableOpacity>
+
 
               <TouchableOpacity
                 style={styles.commentContainer}
                 onPress={() => {
                   setSelectedPost(post);
+                  
                   setModalVisible(true);
                 }}
+                
               >
-                <Ionicons name="chatbox-ellipses-outline" size={20} color="#000" />
+                    <View style={{display: 'flex', flexDirection: 'row',}}>
+                      <Ionicons name="chatbox-ellipses-outline" size={20} color="#000" />
+                      <Text style={styles.likeCount}>
+                        {commentCounts[post.id] ?? 0}
+                      </Text>                    
+                    </View>
               </TouchableOpacity>
 
               </View>
@@ -458,9 +887,10 @@ const handleDeletePost = async (postId) => {
 
 
           {/* <Text>-----------------TEST LẤY LUÔN INFO4------------------</Text> */}
+        {/* Bài viết của bạn bè */}
         {usersWithPosts.map((item) => (
           item.posts.map((post) => (
-            <View key={post.id} style={styles.post}>
+            <View  style={styles.post}>
               <View style={styles.postHeader}>
                 <Image source={{ uri: item.user.avatar }} style={styles.avatarSmall} />
                 <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -478,16 +908,23 @@ const handleDeletePost = async (postId) => {
                 </Text>
 
               <Text style={{ fontSize: 10, color: "gray", marginTop: 5 }}>
-                Post ID: {post.id} | User ID: {post.userId}
+                Post ID: {post.id} | User ID----: {post.userId}
               </Text>
               <View style={{ flexDirection: 'row', marginTop: 10 }}>
-                <TouchableOpacity style={styles.likeContainer}>
-                  <Ionicons name="heart-outline" size={20} color="#000" />
-                  <Text style={styles.likeText}>Thích</Text>
-                  <View style={styles.divider} />
-                  <Ionicons name="heart" size={20} color="red" />
-                  <Text style={styles.likeCount}>{post.likeCount}</Text>
-                </TouchableOpacity>
+<TouchableOpacity style={styles.likeContainer} onPress={() => handleLike(post.id, item.user.id)}>
+  <Ionicons
+    name="heart"
+    size={20}
+    color={likedPosts[post.id] ? "red" : "#aaaaaa"}
+  />
+  <Text style={styles.likeText}>Thích</Text>
+  <View style={styles.divider} />
+  <Text style={styles.likeCount}>{post.likeCount || 0}</Text>
+</TouchableOpacity>
+
+
+
+
                 <TouchableOpacity
                   style={styles.commentContainer}
                   onPress={() => {
@@ -495,7 +932,12 @@ const handleDeletePost = async (postId) => {
                     setModalVisible(true);
                   }}
                 >
-                  <Ionicons name="chatbox-ellipses-outline" size={20} color="#000" />
+                    <View style={{display: 'flex', flexDirection: 'row',}}>
+                      <Ionicons name="chatbox-ellipses-outline" size={20} color="#000" />
+                      <Text style={styles.likeCount}>
+                        {commentCounts[post.id] ?? 0}
+                      </Text>
+                    </View>
                 </TouchableOpacity>
               </View>
             </View>
@@ -508,36 +950,170 @@ const handleDeletePost = async (postId) => {
           transparent
           animationType="slide"
           onRequestClose={() => setModalVisible(false)}
-
         >
           <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
-            <View style={styles.modalBackground}>
-              {/* Ngăn chặn việc đóng modal khi bấm vào nội dung */}
-              <TouchableWithoutFeedback onPress={() => {}}>
-                <View style={styles.modalContent}>
-                  <TouchableOpacity>
-                    <FontAwesome name="smile-o" size={20} color="#000" />
-                  </TouchableOpacity>
+              <View style={styles.modalBackground}>
 
-                  <TextInput
-                    placeholder="Nhập bình luận..."
-                    style={styles.commentInput}
-                    multiline
-                    value={commentText}
-                    onChangeText={setCommentText}
-                  />
+                {/* Vùng chứa các bình luận */}
+                <View style={{ flex: 1, padding: 10, backgroundColor: '#fff', marginTop: '100%' }}>
+                  
+                    {/* <View style={{ alignItems: 'center', padding: 20 }}>
+                      <Text>Đang tải bình luận...</Text>
+                    </View> */}
+                
+                       {/* render all chưa lọc bạn bè */}
+                      {/* <ScrollView>
+                        {loadingComments ? (
+                          <View style={{ alignItems: 'center', padding: 20 }}>
+                            <Text>Đang tải bình luận...</Text>
+                          </View>
+                        ) : comments.length === 0 ? (
+                          <View style={{ alignItems: 'center', padding: 20 }}>
+                            <Text>Chưa có bình luận nào.</Text>
+                          </View>
+                        ) : (
+                          comments.map((comment) => (
 
-                  <TouchableOpacity>
-                    <FontAwesome5 name="camera" size={20} color="#000" style={{ marginLeft: 10 }} />
-                  </TouchableOpacity>
 
-                  <TouchableOpacity style={{ marginLeft: 10 }} onPress={() => handleCommentSubmit(selectedPost.id, userPosts.id, userProfile.id, commentText)}>
+                            <View key={comment.id} style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 15, padding: 10, borderRadius: 8 }}>
+                              <Image
+                                source={{ uri: 'https://i.pravatar.cc/50?u=' + comment.userIdActor }} // Ví dụ avatar tùy chỉnh theo userIdActor
+                                style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10, borderWidth: 1, borderColor: '#ddd' }}
+                              />
+                              <View style={{ flex: 1, backgroundColor: '#f2f2f2', padding: 10 }}>
+                                <Text style={styles.commentText}>{comment.comment}</Text>
+                                <Text style={{ fontSize: 10, color: 'gray', marginTop: 4 }}>
+                                  {new Date(comment.activityTime).toLocaleString()}
+                                </Text>
+                              </View>
+                            </View>
 
-                    <FontAwesome5 name="paper-plane" size={20} color="#000" />
-                  </TouchableOpacity>
+
+
+                          ))
+                        )}
+                      </ScrollView> */}
+
+
+               <ScrollView>
+                {loadingComments ? (
+                  <View style={{ alignItems: 'center', padding: 20 }}>
+                    <Text>Đang tải bình luận...</Text>
+                  </View>
+                ) : filteredComments.length === 0 ? (
+                  <View style={{ alignItems: 'center', padding: 20 }}>
+                    <Image
+                      source={require('../../../assets/icon_cmt.png')}
+                      style={{ width: 200, height: 150 }}
+                    />
+                    {/* <Text>Chưa có bình luận nào từ bạn bè hoặc chính bạn.</Text> */}
+                  </View>
+                ) : (
+                  filteredComments.map(comment => {
+                    const isMyComment = comment.userIdActor === user.id;
+                    const isFriendCommentOnMyPost = comment.userIdActor !== user.id &&
+                                                  friendIdsSet.has(comment.userIdActor) &&
+                                                  selectedPost?.userId === user.id;
+                    const canShowMenu = isMyComment || isFriendCommentOnMyPost;
+
+                    return (
+                      <View
+                        key={comment.id}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'flex-start',
+                          marginBottom: 15,
+                          padding: 10,
+                          borderRadius: 8
+                        }}
+                      >
+                        <Image
+                          source={{
+                            uri:
+                              comment.userIdActor === user.id
+                                ? user.avatar
+                                : friendAvatars[comment.userIdActor] || 'https://cdn2.fptshop.com.vn/small/avatar_trang_1_cd729c335b.jpg'
+                          }}
+                          style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10, borderWidth: 1, borderColor: '#ddd' }}
+                        />
+
+                        <View
+                          style={{
+                            flex: 1,
+                            backgroundColor: isMyComment ? '#d1f7c4' : '#f2f2f2',
+                            padding: 10,
+                            borderRadius: 8,
+                            flexDirection: 'row',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                          }}
+                        >
+                          <View style={{ flex: 1, paddingRight: 10 }}>
+                            <Text style={styles.commentText}>{comment.comment}</Text>
+                            <Text style={{ fontSize: 10, color: 'gray', marginTop: 4 }}>
+                              {new Date(comment.activityTime).toLocaleString()}
+                            </Text>
+                          </View>
+
+                          {canShowMenu && (
+                            <TouchableOpacity
+                              onPress={() => {
+                                setSelectedComment(comment);
+                                setModalCommentFunctionVisible(true);
+                              }}
+                              style={{ paddingHorizontal: 8, paddingVertical: 4 }}
+                            >
+                              <Entypo name="dots-three-vertical" size={20} color="#555" />
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      </View>
+                    );
+                  })
+                )}
+              </ScrollView>
+
+
+                 
                 </View>
-              </TouchableWithoutFeedback>
-            </View>
+                <TouchableWithoutFeedback onPress={() => {}}>
+                  <View style={styles.modalContent}>
+                    <TouchableOpacity>
+                      <FontAwesome name="smile-o" size={20} color="#000" />
+                    </TouchableOpacity>
+
+<TextInput
+  placeholder={editingCommentId ? "Sửa bình luận..." : "Nhập bình luận..."}
+  style={styles.commentInput}
+  multiline
+  value={commentText}
+  onChangeText={setCommentText}
+/>
+
+
+                    <TouchableOpacity>
+                      <FontAwesome5 name="camera" size={20} color="#000" style={{ marginLeft: 10 }} />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={{ marginLeft: 10 }}
+                      onPress={() => {
+                        handleCommentSubmit(
+                          selectedPost.id,
+                          typeof selectedPost.userId === 'string' ? selectedPost.userId : selectedPost.userId?.id || '',
+                          user.id,
+                          commentText
+                        );
+                      }}
+                    >
+                      <FontAwesome5 name="paper-plane" size={20} color="#000" />
+                    </TouchableOpacity>
+
+                  </View>
+                </TouchableWithoutFeedback>
+
+
+              </View>
           </TouchableWithoutFeedback>
         </Modal>
 
@@ -548,11 +1124,7 @@ const handleDeletePost = async (postId) => {
           visible={modalFunctionVisible}
           onRequestClose={() => setModalFunctionVisible(false)}
         >
-          <TouchableOpacity
-            style={styles.overlay}
-            activeOpacity={1}
-            onPressOut={() => setModalFunctionVisible(false)}
-          >
+          <TouchableOpacity style={styles.overlay} activeOpacity={1} onPressOut={() => setModalFunctionVisible(false)}>
             <View style={styles.modalContainer}>
               {/* <TouchableOpacity style={styles.modalOption}>
                 <AntDesign name="edit" size={16} color="black" style={{marginRight: 5}} />
@@ -579,6 +1151,56 @@ const handleDeletePost = async (postId) => {
             </View>
           </TouchableOpacity>
         </Modal>
+
+        {/* modal hien thi xoa sua bình luan */}
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={modalCommentFunctionVisible}
+          onRequestClose={() => setModalCommentFunctionVisible(false)}
+        >
+          <TouchableOpacity
+            style={styles.overlay}
+            activeOpacity={1}
+            onPressOut={() => setModalCommentFunctionVisible(false)}
+          >
+            <View style={styles.modalContainer}>
+              {/* Nếu là comment của bạn, hiện nút sửa */}
+              {selectedComment?.userIdActor === user.id && (
+<TouchableOpacity
+  style={styles.modalOption}
+  onPress={() => {
+    setModalCommentFunctionVisible(false); // đóng modal chức năng
+    setModalVisible(true); // mở modal bình luận nếu chưa mở
+    setCommentText(selectedComment.comment); // gán nội dung comment vào ô nhập bình luận
+    setEditingCommentId(selectedComment.id); // lưu id comment đang sửa
+  }}
+>
+  <AntDesign name="edit" size={16} color="black" style={{ marginRight: 5 }} />
+  <Text style={styles.editText}>Sửa bình luận</Text>
+</TouchableOpacity>
+
+              )}
+
+              {/* Nút xoá luôn hiện, nhưng chỉ cho phép xoá khi thỏa điều kiện */}
+              {(selectedComment?.userIdActor === user.id ||
+                (friendIdsSet.has(selectedComment?.userIdActor) && selectedPost?.userId === user.id)) && (
+                  <TouchableOpacity
+                    style={styles.modalOption}
+                    onPress={() => confirmDeleteComment(selectedComment.id)}
+                  >
+                    <AntDesign name="delete" size={16} color="black" style={{ marginRight: 5 }} />
+                    <Text style={styles.deleteText}>Xoá bình luận</Text>
+                  </TouchableOpacity>
+
+              )}
+            </View>
+          </TouchableOpacity>
+        </Modal>
+
+        {/* modal sua */}
+
+
 
         </ScrollView>
       </SafeAreaView>  
@@ -658,8 +1280,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     justifyContent: 'flex-end', 
     alignItems: 'center',
-    position: 'relative',
+    // position: 'relative',
     marginRight: 10,
+        position: 'relative',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
   },
   avatarList: {
     ...StyleSheet.absoluteFillObject,
@@ -676,7 +1302,15 @@ const styles = StyleSheet.create({
   },
 
 
-
+  icon: {
+    position: 'absolute',
+    top: 10,            // khoảng cách từ trên container đến icon (bạn chỉnh sửa để hợp ý)
+    left: '50%',
+    width: 40,
+    height: 40,
+    borderRadius: 20,   // bo tròn 50%
+    transform: [{ translateX: -20 }],  // căn giữa icon ngang
+  },
 
 
   post: {
@@ -753,37 +1387,42 @@ const styles = StyleSheet.create({
 
   // modal
 
-  modalBackground: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.3)',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    // margin: 10,
-    // borderRadius: 25,
-    elevation: 5,
-    // height: 260,
-  },
-  commentInput: {
-    flex: 1,
-    paddingHorizontal: 10,
-    fontSize: 14,
-    color: '#000',
-    maxHeight: 100,
-  },
+ modalBackground: {
+  flex: 1,
+  justifyContent: 'flex-end',
+  backgroundColor: 'rgba(0,0,0,0.3)',
+},
 
-  modalContainer: {
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 10,
-    width: '100%',
-    elevation: 5,
-  },
+modalContainer: {
+  backgroundColor: 'white',
+  width: '100%',
+  // borderTopLeftRadius: 15,
+  // borderTopRightRadius: 15,
+  paddingTop: 10,
+  paddingBottom: 5,
+  maxHeight: '70%', // để không che hết màn hình
+},
+
+modalContent: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  paddingHorizontal: 10,
+  paddingVertical: 8,
+  borderTopWidth: 1,
+  borderColor: '#ccc',
+  backgroundColor: '#fff',
+},
+
+commentInput: {
+    flex: 1,
+    minHeight: 40,
+    maxHeight: 100,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: '#eee',
+    borderRadius: 20,
+},
+
   modalOption: {
     paddingVertical: 10,
     display: 'flex',

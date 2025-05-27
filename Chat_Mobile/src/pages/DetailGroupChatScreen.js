@@ -202,7 +202,17 @@ const GroupSettingsScreen = ({ navigation, route }) => {
           <OptionRow color="black" icon="calendar" text="Quyền gửi tin nhắn"  onPress={() => actionSheetRoleMessageRef.current.show()}/>
         )}
         <OptionRow color="black" icon="bookmark" text="Tin nhắn đã ghim" />
-        <OptionRow color="black" icon="bar-chart-2" text="Bình chọn" />
+        <OptionRow color="black" icon="bar-chart-2" text="Bình chọn" 
+          onPress={() =>
+            navigation.navigate("CreateVoteScreen", {
+              members: conversation?.members,
+              conversationId: conversation?.id,
+            })
+          }
+        
+        
+        
+        />
         <OptionRow
           color="black"
           icon="users"
