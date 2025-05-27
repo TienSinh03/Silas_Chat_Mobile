@@ -177,3 +177,31 @@ export const checkLikedStatus = async (postId, userId) => {
 };
 
 
+
+/*
+// xóa bình luận theo id activity
+    @DeleteMapping("/activity/{activityId}")
+*/
+export const deleteComment = async (activityId) => {
+  try {
+    const response = await instance.delete(`/api/v1/postactivity/activity/${activityId}`);
+    return response.data;
+  }
+  catch (error) {
+    console.error("Error deleting comment:", error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || "Lỗi khi xóa bình luận");
+  }
+};
+
+//     @PutMapping("/activity/{activityId}/comment/{comment}")
+
+// update bình luận theo id activity
+export const updateComment = async (activityId, comment) => {
+  try {
+    const response = await instance.put(`/api/v1/postactivity/activity/${activityId}/comment/${comment}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating comment:", error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || "Lỗi khi cập nhật bình luận");
+  }
+};

@@ -15,6 +15,7 @@ import {getPostsMyByUserId, getFriendsByUserId, getAllPosts,
   saveComment, getCommentsByPostId, getCommentCountByPostId,
   checkLikedStatus, 
   updateLikeStatus,  
+  deleteComment,updateComment
   
 
 
@@ -427,6 +428,34 @@ const handleDeletePost = async (postId) => {
 //   }
 // };
 
+// const handleCommentSubmit = async (postId, userIdPost, userIdActor, commentText) => {
+//   if (!commentText || !commentText.trim()) {
+//     Alert.alert("Thông báo", "Vui lòng nhập bình luận.");
+//     return;
+//   }
+
+//   try {
+//     console.log("Gửi comment với dữ liệu:", {
+//       postId,
+//       userIdPost,
+//       userIdActor,
+//       comment: commentText,
+//     });
+
+//     const result = await saveComment(postId, userIdPost, userIdActor, commentText);
+
+//     console.log("Kết quả lưu comment:", result);
+
+//     setCommentText('');
+//     setModalVisible(false);
+
+//     Alert.alert("Thành công", "Bình luận đã được gửi.");
+//   } catch (error) {
+//     console.error("Lỗi khi gửi bình luận:", error);
+//     Alert.alert("Lỗi", "Gửi bình luận thất bại.");
+//   }
+// };
+
 const handleCommentSubmit = async (postId, userIdPost, userIdActor, commentText) => {
   if (!commentText || !commentText.trim()) {
     Alert.alert("Thông báo", "Vui lòng nhập bình luận.");
@@ -434,27 +463,33 @@ const handleCommentSubmit = async (postId, userIdPost, userIdActor, commentText)
   }
 
   try {
-    console.log("Gửi comment với dữ liệu:", {
-      postId,
-      userIdPost,
-      userIdActor,
-      comment: commentText,
-    });
+    if (editingCommentId) {
+      // Đang sửa bình luận
+      await updateComment(editingCommentId, commentText);
 
-    const result = await saveComment(postId, userIdPost, userIdActor, commentText);
+      // Cập nhật lại comment trong state
+      setComments(prev =>
+        prev.map(c =>
+          c.id === editingCommentId ? { ...c, comment: commentText } : c
+        )
+      );
 
-    console.log("Kết quả lưu comment:", result);
+      setEditingCommentId(null); // xóa id sửa
+      Alert.alert("Thành công", "Bình luận đã được cập nhật.");
+    } else {
+      // Thêm bình luận mới
+      await saveComment(postId, userIdPost, userIdActor, commentText);
+      Alert.alert("Thành công", "Bình luận đã được gửi.");
+    }
 
     setCommentText('');
     setModalVisible(false);
 
-    Alert.alert("Thành công", "Bình luận đã được gửi.");
   } catch (error) {
-    console.error("Lỗi khi gửi bình luận:", error);
-    Alert.alert("Lỗi", "Gửi bình luận thất bại.");
+    console.error("Lỗi khi gửi hoặc cập nhật bình luận:", error);
+    Alert.alert("Lỗi", editingCommentId ? "Cập nhật bình luận thất bại." : "Gửi bình luận thất bại.");
   }
 };
-
 
 
 // bình luan
@@ -582,6 +617,77 @@ const handleLike = async (postId, userId) => {
   }
 };
 
+// state quản lý modal sửa/xóa bình luận
+const [modalCommentFunctionVisible, setModalCommentFunctionVisible] = useState(false);
+const [selectedComment, setSelectedComment] = useState(null);
+
+
+const confirmDeleteComment = (commentId) => {
+  Alert.alert(
+    "Xác nhận xoá",
+    "Bạn có chắc muốn xoá bình luận này không?",
+    [
+      { text: "Huỷ", style: "cancel" },
+      {
+        text: "Xoá",
+        style: "destructive",
+        onPress: () => handleDeleteComment(commentId),
+      },
+    ]
+  );
+};
+
+const handleDeleteComment = async (commentId) => {
+  try {
+    await deleteComment(commentId);
+    // Cập nhật lại danh sách comments trong state, lọc bỏ comment vừa xóa
+    setComments(prevComments => prevComments.filter(c => c.id !== commentId));
+    setModalCommentFunctionVisible(false);
+    Alert.alert("Thành công", "Bình luận đã được xoá.");
+  } catch (error) {
+    console.error("Lỗi khi xóa bình luận:", error);
+    Alert.alert("Lỗi", error.message || "Xảy ra lỗi khi xóa bình luận.");
+  }
+};
+
+// update comment
+const [editCommentText, setEditCommentText] = useState('');
+
+// Khi mở modal sửa, gán text hiện tại vào editCommentText
+useEffect(() => {
+  if (modalCommentFunctionVisible && selectedComment) {
+    setEditCommentText(selectedComment.comment);
+  }
+}, [modalCommentFunctionVisible, selectedComment]);
+
+// Hàm submit cập nhật comment
+const handleUpdateComment = async () => {
+  if (!editCommentText.trim()) {
+    Alert.alert("Thông báo", "Vui lòng nhập nội dung bình luận.");
+    return;
+  }
+
+  try {
+    await updateComment(selectedComment.id, editCommentText);
+    
+    // Cập nhật lại danh sách comments trong state
+    setComments(prevComments =>
+      prevComments.map(c =>
+        c.id === selectedComment.id ? { ...c, comment: editCommentText } : c
+      )
+    );
+
+    setModalCommentFunctionVisible(false);
+    Alert.alert("Thành công", "Bình luận đã được cập nhật.");
+  } catch (error) {
+    console.error("Lỗi khi cập nhật bình luận:", error);
+    Alert.alert("Lỗi", "Cập nhật bình luận thất bại.");
+  }
+};
+  const [editingCommentId, setEditingCommentId] = useState(null);
+
+
+
   return (
 
       <SafeAreaView style={styles.container}  >
@@ -686,6 +792,7 @@ const handleLike = async (postId, userId) => {
               {/* Example of accessing idPost and idUser */}
               <Text style={{ fontSize: 10, color: "gray", marginTop: 5 }}>
                 Post ID://// {post.id} | User ID: {post.userId}
+                {/* Post Acctivity: {post.activity} */}
               </Text>
               {/* gán idPost và idUser vào mảng commentInfo */}
 
@@ -798,7 +905,7 @@ const handleLike = async (postId, userId) => {
                 Post ID: {post.id} | User ID----: {post.userId}
               </Text>
               <View style={{ flexDirection: 'row', marginTop: 10 }}>
-{/* <TouchableOpacity style={styles.likeContainer} onPress={() => handleLike(post.id, user.id)}>
+<TouchableOpacity style={styles.likeContainer} onPress={() => handleLike(post.id, item.user.id)}>
   <Ionicons
     name="heart"
     size={20}
@@ -808,7 +915,7 @@ const handleLike = async (postId, userId) => {
   <View style={styles.divider} />
   <Text style={styles.likeCount}>{post.likeCount || 0}</Text>
 </TouchableOpacity>
- */}
+
 
 
 
@@ -844,9 +951,9 @@ const handleLike = async (postId, userId) => {
                 {/* Vùng chứa các bình luận */}
                 <View style={{ flex: 1, padding: 10, backgroundColor: '#fff', marginTop: '100%' }}>
                   
-                    <View style={{ alignItems: 'center', padding: 20 }}>
+                    {/* <View style={{ alignItems: 'center', padding: 20 }}>
                       <Text>Đang tải bình luận...</Text>
-                    </View>
+                    </View> */}
                 
                        {/* render all chưa lọc bạn bè */}
                       {/* <ScrollView>
@@ -882,21 +989,28 @@ const handleLike = async (postId, userId) => {
                       </ScrollView> */}
 
 
-                <ScrollView>
-                  {loadingComments ? (
-                    <View style={{ alignItems: 'center', padding: 20 }}>
-                      <Text>Đang tải bình luận...</Text>
-                    </View>
-                  ) : filteredComments.length === 0 ? (
-                    <View style={{ alignItems: 'center', padding: 20 }}>
-                      <Image
-                        source={require('../../../assets/icon_cmt.png')}
-                        style={{ width: 200, height: 150 }}
-                      />
-                      {/* <Text>Chưa có bình luận nào từ bạn bè hoặc chính bạn.</Text> */}
-                    </View>
-                  ) : (
-                    filteredComments.map(comment => (
+               <ScrollView>
+                {loadingComments ? (
+                  <View style={{ alignItems: 'center', padding: 20 }}>
+                    <Text>Đang tải bình luận...</Text>
+                  </View>
+                ) : filteredComments.length === 0 ? (
+                  <View style={{ alignItems: 'center', padding: 20 }}>
+                    <Image
+                      source={require('../../../assets/icon_cmt.png')}
+                      style={{ width: 200, height: 150 }}
+                    />
+                    {/* <Text>Chưa có bình luận nào từ bạn bè hoặc chính bạn.</Text> */}
+                  </View>
+                ) : (
+                  filteredComments.map(comment => {
+                    const isMyComment = comment.userIdActor === user.id;
+                    const isFriendCommentOnMyPost = comment.userIdActor !== user.id &&
+                                                  friendIdsSet.has(comment.userIdActor) &&
+                                                  selectedPost?.userId === user.id;
+                    const canShowMenu = isMyComment || isFriendCommentOnMyPost;
+
+                    return (
                       <View
                         key={comment.id}
                         style={{
@@ -907,7 +1021,6 @@ const handleLike = async (postId, userId) => {
                           borderRadius: 8
                         }}
                       >
-                        {/* Lấy ảnh avart */}
                         <Image
                           source={{
                             uri:
@@ -918,27 +1031,41 @@ const handleLike = async (postId, userId) => {
                           style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10, borderWidth: 1, borderColor: '#ddd' }}
                         />
 
-                        {/* <Image
-                          source={{ uri: 'https://i.pravatar.cc/50?u=' + comment.userIdActor }}
-                          style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10, borderWidth: 1, borderColor: '#ddd' }}
-                        /> */}
                         <View
                           style={{
                             flex: 1,
-                            backgroundColor: comment.userIdActor === user.id ? '#d1f7c4' : '#f2f2f2', // Màu nền khác nếu là bình luận của user
+                            backgroundColor: isMyComment ? '#d1f7c4' : '#f2f2f2',
                             padding: 10,
-                            borderRadius: 8
+                            borderRadius: 8,
+                            flexDirection: 'row',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
                           }}
                         >
-                          <Text style={styles.commentText}>{comment.comment}</Text>
-                          <Text style={{ fontSize: 10, color: 'gray', marginTop: 4 }}>
-                            {new Date(comment.activityTime).toLocaleString()}
-                          </Text>
+                          <View style={{ flex: 1, paddingRight: 10 }}>
+                            <Text style={styles.commentText}>{comment.comment}</Text>
+                            <Text style={{ fontSize: 10, color: 'gray', marginTop: 4 }}>
+                              {new Date(comment.activityTime).toLocaleString()}
+                            </Text>
+                          </View>
+
+                          {canShowMenu && (
+                            <TouchableOpacity
+                              onPress={() => {
+                                setSelectedComment(comment);
+                                setModalCommentFunctionVisible(true);
+                              }}
+                              style={{ paddingHorizontal: 8, paddingVertical: 4 }}
+                            >
+                              <Entypo name="dots-three-vertical" size={20} color="#555" />
+                            </TouchableOpacity>
+                          )}
                         </View>
                       </View>
-                    ))
-                  )}
-                </ScrollView>
+                    );
+                  })
+                )}
+              </ScrollView>
 
 
                  
@@ -949,15 +1076,14 @@ const handleLike = async (postId, userId) => {
                       <FontAwesome name="smile-o" size={20} color="#000" />
                     </TouchableOpacity>
 
-                    <TextInput
-                      placeholder="Nhập bình luận..."
-                      style={styles.commentInput} // Ensure this style exists
-                      multiline
-                      value={commentText}
-                      onChangeText={(text) => {
-                      setCommentText(text);
-                      }}
-                    />
+<TextInput
+  placeholder={editingCommentId ? "Sửa bình luận..." : "Nhập bình luận..."}
+  style={styles.commentInput}
+  multiline
+  value={commentText}
+  onChangeText={setCommentText}
+/>
+
 
                     <TouchableOpacity>
                       <FontAwesome5 name="camera" size={20} color="#000" style={{ marginLeft: 10 }} />
@@ -1019,6 +1145,56 @@ const handleLike = async (postId, userId) => {
             </View>
           </TouchableOpacity>
         </Modal>
+
+        {/* modal hien thi xoa sua bình luan */}
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={modalCommentFunctionVisible}
+          onRequestClose={() => setModalCommentFunctionVisible(false)}
+        >
+          <TouchableOpacity
+            style={styles.overlay}
+            activeOpacity={1}
+            onPressOut={() => setModalCommentFunctionVisible(false)}
+          >
+            <View style={styles.modalContainer}>
+              {/* Nếu là comment của bạn, hiện nút sửa */}
+              {selectedComment?.userIdActor === user.id && (
+<TouchableOpacity
+  style={styles.modalOption}
+  onPress={() => {
+    setModalCommentFunctionVisible(false); // đóng modal chức năng
+    setModalVisible(true); // mở modal bình luận nếu chưa mở
+    setCommentText(selectedComment.comment); // gán nội dung comment vào ô nhập bình luận
+    setEditingCommentId(selectedComment.id); // lưu id comment đang sửa
+  }}
+>
+  <AntDesign name="edit" size={16} color="black" style={{ marginRight: 5 }} />
+  <Text style={styles.editText}>Sửa bình luận</Text>
+</TouchableOpacity>
+
+              )}
+
+              {/* Nút xoá luôn hiện, nhưng chỉ cho phép xoá khi thỏa điều kiện */}
+              {(selectedComment?.userIdActor === user.id ||
+                (friendIdsSet.has(selectedComment?.userIdActor) && selectedPost?.userId === user.id)) && (
+                  <TouchableOpacity
+                    style={styles.modalOption}
+                    onPress={() => confirmDeleteComment(selectedComment.id)}
+                  >
+                    <AntDesign name="delete" size={16} color="black" style={{ marginRight: 5 }} />
+                    <Text style={styles.deleteText}>Xoá bình luận</Text>
+                  </TouchableOpacity>
+
+              )}
+            </View>
+          </TouchableOpacity>
+        </Modal>
+
+        {/* modal sua */}
+
+
 
         </ScrollView>
       </SafeAreaView>  
@@ -1202,8 +1378,8 @@ const styles = StyleSheet.create({
 modalContainer: {
   backgroundColor: 'white',
   width: '100%',
-  borderTopLeftRadius: 15,
-  borderTopRightRadius: 15,
+  // borderTopLeftRadius: 15,
+  // borderTopRightRadius: 15,
   paddingTop: 10,
   paddingBottom: 5,
   maxHeight: '70%', // để không che hết màn hình
