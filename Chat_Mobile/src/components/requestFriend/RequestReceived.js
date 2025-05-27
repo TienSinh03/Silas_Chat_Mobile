@@ -1,9 +1,9 @@
 import React, { useMemo, useCallback } from "react";
 import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet, Dimensions } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
-import { getReqsReceived, acceptReq, rejectReq, addReceivedRequest } from "../../store/slice/friendSlice";
+import { getReqsReceived, acceptReq, rejectReq, addReceivedRequest, getMyFriends } from "../../store/slice/friendSlice";
 import Loading from "../Loading";
-import { connectWebSocket, subscribeFriendRequestReceiver, subscribeToSendFriendRequest } from "../../config/socket";
+import { connectWebSocket, disconnectWebSocket, subscribeFriendRequestReceiver, subscribeToSendFriendRequest } from "../../config/socket";
 
 
 const {width, height} = Dimensions.get("window");
@@ -56,6 +56,8 @@ const RequestReceived = ({ navigation }) => {
            const response = await dispatch(acceptReq(requestId));
 
            await dispatch(getReqsReceived());
+           dispatch(getMyFriends());
+
         } catch (error) {
             console.error("Error accepting request:", error);
         }
@@ -83,6 +85,9 @@ const RequestReceived = ({ navigation }) => {
                 dispatch(addReceivedRequest(message));
             });
         });
+        return () => {
+            disconnectWebSocket();
+        }
     }, [user?.id, dispatch]);
     
     return (

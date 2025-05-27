@@ -67,6 +67,15 @@ const friendSlice = createSlice({
             if (!state.receivedFriendRequests) {
                 state.receivedFriendRequests = [];
             }
+            if( state.receivedFriendRequests.some(req => req.requestId === action.payload.requestId)) {
+                state.receivedFriendRequests = state.receivedFriendRequests.map(req => {
+                    if(req.requestId === action.payload.requestId) {
+                        return action.payload;
+                    }
+                    return req;
+                });
+                return;
+            }
             state.receivedFriendRequests.push(action.payload);
         },
         setFriendStatus(state, action) {
@@ -142,7 +151,7 @@ const friendSlice = createSlice({
         builder.addCase(acceptReq.fulfilled, (state, action) => {
             state.isLoading = false;
             state.receivedFriendRequests = state.receivedFriendRequests.filter(item => item.requestId !== action.payload );
-            state.friends = [...state.friends, action.payload.response];
+            // state.friends = [...state.friends, action.payload.response];
         })
         builder.addCase(acceptReq.rejected, (state, action) => {
             state.isLoading = false;
@@ -179,8 +188,8 @@ const friendSlice = createSlice({
             state.isLoading = true;
         })
         builder.addCase(unfriend.fulfilled, (state, action) => {
+            state.friends = [...state.friends.filter(friend => friend.userId !== action.payload)];
             state.isLoading = false;
-            state.friends = state.friends.filter(item => item.userId !== action.payload);
         })
         builder.addCase(unfriend.rejected, (state, action) => {
             state.isLoading = false;

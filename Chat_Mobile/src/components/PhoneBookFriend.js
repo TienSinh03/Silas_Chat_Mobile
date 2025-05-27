@@ -31,7 +31,7 @@ const PhoneBookFriend = ({navigation}) => {
   const { user } = useSelector((state) => state.user);
   
 
-  console.log("friends", friends);
+  // console.log("friends", friends);
   console.log("isLoading", isLoading);
 
   const [searchText, setSearchText] = useState("");
@@ -44,25 +44,29 @@ const PhoneBookFriend = ({navigation}) => {
 
   React.useEffect(() => {
 
-    connectWebSocket(() => {
+    const setupWebSocket = async () => {
 
-      // accept friend request
-      subscribeFriendsToAcceptFriendRequest(user?.id, (message) => {
-        console.log("Nhận được tin nhắn từ WebSocket:", message);
-        dispatch(setFriends(message));
+     await connectWebSocket(() => {
+  
+        // accept friend request
+        subscribeFriendsToAcceptFriendRequest(user?.id, (message) => {
+          console.log("Nhận được tin nhắn từ WebSocket:", message);
+          dispatch(setFriends(message));
+        });
+  
+        // unfriend
+        subscribeFriendsToUnfriend(user?.id, (message) => {
+          console.log("Nhận được tin nhắn từ WebSocket unfriend:", message);
+          dispatch(setFriends_Unfriend(message));
+        });
       });
-
-      // unfriend
-      subscribeFriendsToUnfriend(user?.id, (message) => {
-        console.log("Nhận được tin nhắn từ WebSocket unfriend:", message);
-        dispatch(setFriends_Unfriend(message));
-      });
-    });
+    }
+    setupWebSocket();
 
     return () => {
       disconnectWebSocket();
     };
-  },[user?.id]);
+  },[user?.id, dispatch]);
 
   React.useEffect(() => {
     dispatch(getMyFriends());
@@ -122,6 +126,7 @@ const PhoneBookFriend = ({navigation}) => {
           onPress: async () => {
             await dispatch(unfriend(friendId)).unwrap();
             console.log("Đã xóa bạn thành công");
+            await dispatch(getMyFriends()).unwrap();
             setModalVisible(false);
           },
           style: "default",

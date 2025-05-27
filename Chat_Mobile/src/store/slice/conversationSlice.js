@@ -143,6 +143,7 @@ const conversationSlice = createSlice({
     },
     setConversationsGroup(state, action) {
       const newConversation = action.payload;
+      // state.conversation = newConversation;
 
       // Cập nhật lại conversation khi thành viên rời khỏi nhóm
       const indexConversation = state.conversations.findIndex(
@@ -151,8 +152,8 @@ const conversationSlice = createSlice({
 
       // Nếu tìm thấy conversation trong danh sách, cập nhật lại thông tin
       if (indexConversation !== -1) {
-        state.conversations[indexConversation].members =
-          newConversation.members;
+        state.conversations[indexConversation] =
+          newConversation;
       }
 
       // Nếu tìm thấy conversation trong danh sách, cập nhật lại thông tin
