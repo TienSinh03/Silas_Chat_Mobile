@@ -274,19 +274,6 @@ const SingleChatScreen = ({ navigation, route }) => {
     }
   }, [messagesLocal]);
 
-  // Kết nối WebSocket
-  useEffect(() => {
-    connectWebSocket(() => {
-      subscribeToChat(conversationId, (newMessage) => {
-        console.log("Received message:", newMessage);
-        dispatch(addMessage(newMessage));
-      });
-    });
-
-    return () => {
-      disconnectWebSocket(); // Ngắt kết nối khi component unmount
-    };
-  }, [conversationId]);
 
   // Lọc tin nhắn đã xóa của user hiện tại
   useEffect(() => {
@@ -754,6 +741,13 @@ const SingleChatScreen = ({ navigation, route }) => {
   // Kiểm tra trạng thái bạn bè khi có thay đổi real-time từ WebSocket
   useEffect(() => {
     connectWebSocket(() => {
+
+      subscribeToChat(conversationId, (newMessage) => {
+        if(!newMessage?.id) return;
+        console.log("Received message:", newMessage);
+        dispatch(addMessage(newMessage));
+      });
+
       subscribeFriendsToAcceptFriendRequest(user?.id, async (message) => {
         console.log("Nhận được tin nhắn từ WebSocket:", message);
         dispatch(setFriends(message));

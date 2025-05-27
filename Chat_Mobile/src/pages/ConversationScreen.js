@@ -26,9 +26,12 @@ const ConversationScreen = ({navigation}) => {
   const dispatch = useDispatch();
   const userProfile = useSelector(state => state.user.user);
   const user = useMemo(() => {
-          return userProfile || null;
+         if (userProfile) {
+          return userProfile;
+         }
+          return {};
   }, [userProfile]);
-  console.log("--------------" , userProfile);
+  // console.log("--------------" , userProfile);
 
 
 

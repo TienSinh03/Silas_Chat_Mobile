@@ -42,11 +42,11 @@ import ChooseLeaderScreen from "./src/pages/ChooseLeaderScreen";
 import { getToken } from "./src/utils/authHelper";
 import { AuthProvider } from "./src/contexts/AuthContext";
 import { useAuth } from "./src/contexts/AuthContext";
-import { connect, Provider, useSelector } from "react-redux";
+import { connect, Provider, useDispatch, useSelector } from "react-redux";
 import store from "./src/store/store";
 import { ToastProvider } from "react-native-toast-notifications";
 
-import { subscribeToSendFriendRequest, connectWebSocket, disconnectWebSocket } from "./src/config/socket";
+import { subscribeToSendFriendRequest, connectWebSocket, disconnectWebSocket, subscribeToDissolveGroup } from "./src/config/socket";
 import { useToast } from 'react-native-toast-notifications';
 
 import JoinGroupQR from "./src/pages/JoinGroupQR";
@@ -54,31 +54,46 @@ import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 import { showFriendRequestToast } from "./src/utils/toast";
 import TabTopMedia from "./src/navigation/TabTopMedia";
 import PostStatusScreen  from "./src/pages/blog/PostStatusScreen";
+import { Alert } from "react-native";
+import { setConversationsGroup } from "./src/store/slice/conversationSlice";
 const Stack = createStackNavigator();
 
 const AppNavigation = () => {
   const { isLoggedIn, isLoading } = useAuth();
   const toast = useToast();
-
+  const dispatch = useDispatch();
   
   const user = useSelector(state => state.user?.user);
   useEffect(() => {
     // console.log("user----", user);
     if(user?.id) {
+      const setupWebSocket = async () => {
       connectWebSocket(() => {
-        
+        console.log("WebSocket connected aaa");
         subscribeToSendFriendRequest(user?.id, (response) => {
           console.log("Received friend request:", response);
 
           showFriendRequestToast({ response, toast });
         });
+
+        // subscribeToDissolveGroup(user?.id, (response) => {
+        //     console.log("Dissolve group response:", response);
+        //     // Cập nhật lại danh sách hội thoại khi nhóm bị giải tán
+        //     dispatch(setConversationsGroup(response));
+        //     Alert.alert(
+        //       "Thông báo",
+        //       `Nhóm "${response.name}" đã bị giải tán bởi quản trị viên.` 
+        //     );
+        // });
       });
+    }
+      setupWebSocket();
 
       return () => {
         disconnectWebSocket();
       };
     }
-  }, [user?.id, connectWebSocket]);
+  }, []);
 
   if (isLoading) return null;
   return (
