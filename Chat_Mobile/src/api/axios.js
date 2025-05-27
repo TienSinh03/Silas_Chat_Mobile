@@ -7,8 +7,8 @@ const HOST_IP = "192.168.1.67"; // nhập ipconfig trên cmd để lấy địa 
 
 
 
-const chatEndpoint = `http://${HOST_IP}:8080`;
-// const chatEndpoint = 'https://api.tranminhtien.io.vn';
+// const chatEndpoint = `http://${HOST_IP}:8080`;
+const chatEndpoint = 'https://api.tranminhtien.io.vn';
 
 const instance = axios.create({
   baseURL: chatEndpoint,

@@ -54,6 +54,7 @@ import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 import { showFriendRequestToast } from "./src/utils/toast";
 import TabTopMedia from "./src/navigation/TabTopMedia";
 import PostStatusScreen  from "./src/pages/blog/PostStatusScreen";
+import CreateVoteScreen from "./src/pages/vote/CreateVoteScreen";
 const Stack = createStackNavigator();
 
 const AppNavigation = () => {
@@ -185,6 +186,12 @@ const AppNavigation = () => {
               component={MemberGroupScreen}
               options={{ headerShown: false }}
             />
+            <Stack.Screen
+              name="CreateVoteScreen"
+              component={CreateVoteScreen}
+              options={{ headerTitle: "Tạo cuộc bầu chọn" }}  
+            />
+
             <Stack.Screen
               name="JoinGroupQR"
               component={JoinGroupQR}
