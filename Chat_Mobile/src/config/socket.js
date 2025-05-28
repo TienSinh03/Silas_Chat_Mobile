@@ -33,6 +33,9 @@ export const connectWebSocket = (onConnectCallBack) => {
   stompClient = new Client({
     webSocketFactory: () => socket,
     reconnectDelay: 5000,
+  // Cấu hình heartbeat
+    heartbeatIncoming: 10000, // client kỳ vọng server gửi ping mỗi 10s
+    heartbeatOutgoing: 20000, // client gửi pong/ping mỗi 20s
 
     debug: (str) => {
       console.log(str);
@@ -249,7 +252,7 @@ export const subscribeToDissolveGroup = async (userId, onGroupDissolved) => {
       `/chat/dissolve/group/${userId}`,
       (message) => {
         if (message.body) {
-          console.log("Group dissolved:", message.body);
+          // console.log("Group dissolved:", message.body);
           onGroupDissolved(JSON.parse(message.body));
         }
       }

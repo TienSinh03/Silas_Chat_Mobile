@@ -125,29 +125,7 @@ const ConservationList = ({ category }) => {
   const [conversationsMemo, setConversationsMemo] = React.useState([]);
   // console.log("Conversations: ", conversationsMemo);
 
-  React.useEffect(() => {
-    if (!conversations) return;
-    setConversationsMemo(conversations);
-  }, [conversations]);
 
-  //   React.useEffect(() => {
-  //     if (!user?.id) return;
-
-  //     const setupWebSocket = async () => {
-  //       await connectWebSocket(() => {
-  //         subscribeToConversation(user?.id, (newMessage) => {
-  //           console.log("Received new group conversation:", newMessage);
-  //           dispatch(setConversationsGroup(newMessage));
-  //         });
-  //       });
-  //     };
-
-  //     setupWebSocket();
-
-  //     return () => {
-  //       disconnectWebSocket(); // Ngắt kết nối khi component unmount
-  //     };
-  //   }, [user?.id, dispatch]);
 
   React.useEffect(() => {
     const fetchConversations = async () => {
@@ -164,61 +142,98 @@ const ConservationList = ({ category }) => {
   React.useEffect(() => {
     if (!user?.id) return;
 
-    const setupWebSocket = async () => {
-      await connectWebSocket(() => {
+
+      console.log("WebSocket connected aaa22222");
+
+      connectWebSocket(() => {
         subscribeToConversation(user?.id, (newMessage) => {
-          //   console.log("Received new group conversation:", newMessage);
+          console.log("Received new group conversation:", newMessage);
           dispatch(setConversationsGroup(newMessage));
+          dispatch(setConversation(newMessage));
         });
 
-        // Thêm subscription cho sự kiện giải tán nhóm
-        subscribeToDissolveGroup(user?.id, (data) => {
-          console.log("Dâta", data);
-          console.log("ConversationId", data.id);
-
-          Alert.alert(
-            "Thông báo",
-            `Nhóm "${data.name}" đã bị giải tán bởi quản trị viên.`,
-            [
-              {
-                text: "OK",
-                onPress: async () => {
-                  try {
-                    // Làm mới danh sách hội thoại từ server
-                    await dispatch(getAllConversationsByUserId()).unwrap();
-                    navigation.replace("Main");
-                    console.log("Đã làm mới danh sách hội thoại");
-                  } catch (error) {
-                    console.error(
-                      "Lỗi khi làm mới danh sách hội thoại:",
-                      error
-                    );
-                  }
-                },
-              },
-            ]
-          );
-        });
-
-        console.log("user?.id", user?.id);
-
-        // Thêm subscription cho sự kiện xóa hội thoại
-        subscribeToDeleteConversation(user?.id, (deletedConversation) => {
-          console.log("Hội thoại đã bị xóa:", deletedConversation);
-
-          // Xóa conversation khỏi Redux store
-          dispatch(deleteConversation(deletedConversation.id));
-          navigation.goBack();
+        subscribeToDissolveGroup(user?.id, (response) => {
+          console.log("Dissolve group response:", response);
+          dispatch(setConversationsGroup(response));
+          Alert.alert("Thông báo", `Nhóm "${response.name}" đã bị giải tán bởi quản trị viên.`);
         });
       });
-    };
 
-    setupWebSocket();
 
     return () => {
-      disconnectWebSocket();
+      disconnectWebSocket(); // Ngắt kết nối khi component unmount hoặc user.id thay đổi
     };
-  }, [user?.id, dispatch]);
+  }, []); 
+
+
+  React.useEffect(() => {
+    if (!conversations) return;
+    setConversationsMemo(conversations);
+  }, [conversations]);
+
+  // React.useEffect(() => {
+  //   if (!user?.id) return;
+
+  //   // const setupWebSocket = async () => {
+  //      connectWebSocket(() => {
+  //       subscribeToConversation(user?.id, (newMessage) => {
+  //           console.log("Received new group conversation:", newMessage);
+  //         dispatch(setConversationsGroup(newMessage));
+  //         // dispatch(setConversation(newMessage));
+          
+  //       });
+
+  //       // Thêm subscription cho sự kiện giải tán nhóm
+  //       subscribeToDissolveGroup(user?.id, (data) => {
+  //         console.log("Dâta", data);
+  //         console.log("ConversationId", data.id);
+
+  //         Alert.alert(
+  //           "Thông báo",
+  //           `Nhóm "${data.name}" đã bị giải tán bởi quản trị viên.`,
+  //           [
+  //             {
+  //               text: "OK",
+  //               onPress: async () => {
+  //                 try {
+  //                   // Làm mới danh sách hội thoại từ server
+  //                   // await dispatch(getAllConversationsByUserId()).unwrap();
+  //                   // navigation.replace("Main");
+  //                   dispatch(setConversationsGroup(data));
+  //                   // dispatch(setConversation(newMessage));
+                    
+  //                   console.log("Đã làm mới danh sách hội thoại");
+  //                 } catch (error) {
+  //                   console.error(
+  //                     "Lỗi khi làm mới danh sách hội thoại:",
+  //                     error
+  //                   );
+  //                 }
+  //               },
+  //             },
+  //           ]
+  //         );
+  //       });
+
+  //       console.log("user?.id", user?.id);
+
+  //       // Thêm subscription cho sự kiện xóa hội thoại
+  //       subscribeToDeleteConversation(user?.id, (deletedConversation) => {
+  //         console.log("Hội thoại đã bị xóa:", deletedConversation);
+
+  //         // Xóa conversation khỏi Redux store
+  //         dispatch(deleteConversation(deletedConversation.id));
+  //         navigation.goBack();
+  //       });
+  //     });
+  //   // };
+
+  //   // setupWebSocket();
+
+  //   return () => {
+  //     disconnectWebSocket();
+  //   };
+  // }, [user?.id]);
 
   //  React.useEffect(() => {
   //     if(!user?.id) return;
