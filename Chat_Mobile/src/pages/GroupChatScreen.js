@@ -61,6 +61,8 @@ import {
 } from "../store/slice/conversationSlice";
 import VideoMessage from "../components/media.storage/VideoMessage";
 import ImageMessage from "../components/media.storage/ImageMessage";
+import Poll from "../pages/vote/PollVote"
+import { getLatestVoteByGroupId } from '../api/vote'; // Hàm gọi API backend trả về 1 vote mới nhất
 
 const GroupChatScreen = ({ navigation, route }) => {
   // tự động cuộn xuống cuối danh sách khi có tin nhắn mới
@@ -694,6 +696,22 @@ const GroupChatScreen = ({ navigation, route }) => {
     outputRange: [0, 250], // Smaller height for image/file buttons
   });
 
+  //vote
+   const [currentVote, setCurrentVote] = useState(null);
+
+  useEffect(() => {
+    const fetchLatestVote = async () => {
+      try {
+        const vote = await getLatestVoteByGroupId(conversationId);
+        setCurrentVote(vote);
+        console.log("id vote mới nhất:", vote?.voteId);
+      } catch (error) {
+        console.log('Lỗi lấy vote mới nhất:', error);
+      }
+    };
+    fetchLatestVote();
+  }, [conversationId]);
+
   return (
     <View style={{ flex: 1 }}>
       <View
@@ -739,6 +757,7 @@ const GroupChatScreen = ({ navigation, route }) => {
               </Text>
             </View>
           </View>
+
           <View
             style={{
               flexDirection: "row",
@@ -762,6 +781,8 @@ const GroupChatScreen = ({ navigation, route }) => {
               <Icon name="menu" size={width * 0.07} color="white" />
             </TouchableOpacity>
           </View>
+
+          
         </View>
 
         {/* Khi nhóm bị xóa, hiển thị banner thông báo */}
@@ -1029,9 +1050,23 @@ const GroupChatScreen = ({ navigation, route }) => {
               onContentSizeChange={() =>
                 bottomRef.current?.scrollToEnd({ animated: true })
               }
+              
             />
+            
           </View>
         </TouchableNativeFeedback>
+
+
+      {currentVote && (
+        <Poll title={currentVote.title} options={currentVote.questions} 
+        voteId={currentVote.voteId}
+        
+        />
+      )}
+ 
+ 
+
+
 
         {/* Nhập tin nhắn - Ẩn hoặc vô hiệu hóa khi nhóm bị xóa  */}
         {conversation?.restrictMessagingToAdmin && !isAdmin ? (

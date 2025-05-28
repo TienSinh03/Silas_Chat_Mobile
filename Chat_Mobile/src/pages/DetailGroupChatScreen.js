@@ -157,6 +157,10 @@ const GroupSettingsScreen = ({ navigation, route }) => {
     }
   }
   
+  // console.log("Conversation:--------1---------", conversation);
+  console.log("User:--------------2-----------", user);
+  // thanh vien nhom
+  console.log("Members:-----------4-----------", conversation?.members);
 
   return (
     <ScrollView style={{ flex: 1 }}>
@@ -206,6 +210,7 @@ const GroupSettingsScreen = ({ navigation, route }) => {
           onPress={() =>
             navigation.navigate("CreateVoteScreen", {
               members: conversation?.members,
+              user: user,
               conversationId: conversation?.id,
             })
           }
