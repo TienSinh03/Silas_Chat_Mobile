@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Alert, Modal, Pressable
+  Alert, Modal, Pressable, Image
 } from 'react-native';
 import {
   Ionicons,
@@ -18,6 +18,8 @@ import { useNavigation } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { useDispatch, useSelector } from 'react-redux';
 import {savePost, updatePost} from '../../api/postApi'; 
+import * as ImagePicker from "expo-image-picker";
+
 const PostStatusScreen = ({route}) => {
   const fonts = [
     { idFonts: 0, name: 'Fountain', key: 'f1' },
@@ -46,6 +48,7 @@ const PostStatusScreen = ({route}) => {
 
   const [text, setText] = useState('');
   const [selectedFont, setSelectedFont] = useState('Fountain');
+  const [image, setImage] = useState(null);
   const navigation = useNavigation();
 
   const fontMap = Object.fromEntries(fonts.map(f => [f.name, f.key]));
@@ -73,6 +76,25 @@ const PostStatusScreen = ({route}) => {
     }
   }, [postToEdit]);
 
+  const pickImage = async () => {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
+      });
+  
+      if(!result.canceled) {
+            const image = result.assets[0];
+            setImage({
+                uri: image.uri,
+                name: image.fileName || "avatar.jpg",
+                type: "image/jpeg",
+            });
+
+        }
+  };
+
   // SAVE
 const handlePost = async () => {
   if (!text.trim()) {
@@ -89,13 +111,21 @@ console.log('isPublic value:', isPublic);
     public: isPublic, // true: công khai, false: chỉ mình tôi
   };
   
+  const formData = new FormData();
+  formData.append("request", JSON.stringify(postData), "application/json");
+
+
 
   try {
     if(postToEdit) {
       postData.id = postToEdit.id;
       await updatePost({postId:postToEdit?.id, postData}); // Gọi API để cập nhật bài viết
     } else {
-      await savePost(postData); // Gọi API để lưu bài viết
+      if (image) {
+        formData.append("image", image);
+      }
+
+      await savePost(formData); // Gọi API để lưu bài viết
 
     }
     Alert.alert('Đã đăng', 'Nội dung của bạn đã được đăng!');
@@ -135,7 +165,7 @@ const handleSelect = (value) => {
           <Ionicons name="arrow-back" size={24} />
         </TouchableOpacity>
 
-        <Text>{userProfile.id}</Text>
+        {/* <Text>{userProfile.id}</Text> */}
 
         <View>
           <TouchableOpacity onPress={() => setModalVisible(true)}>
@@ -173,12 +203,41 @@ const handleSelect = (value) => {
       </View>
 
       {/* Input */}
+      <TouchableOpacity
+        style={{
+          backgroundColor: '#f0f8ff',  
+          padding: 15,
+          borderRadius: 10,
+          marginVertical: 10,
+          flexDirection: 'row',       
+          alignItems: 'center',       
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.2,
+          shadowRadius: 3,
+          elevation: 3,                
+        }}
+      >
+        <Entypo name="yelp" size={24} color="#1e90ff" style={{ marginRight: 10 }} />
+        <Text
+          style={{
+            flex: 1,
+            color: '#1e90ff',
+            fontSize: 16,
+            fontWeight: '600',
+          }}
+        >
+          Gợi ý: Bạn có thể đăng ảnh, video, hoặc chia sẻ cảm xúc của mình theo cách sáng tạo nhất!
+        </Text>
+      </TouchableOpacity>
+
       <TextInput
         style={[
           styles.input,
           {
             fontFamily: fontMap[selectedFont],
             color: fontColors[selectedFont][0],
+            height: image ? "40%" : "65%",
           },
         ]}
         placeholder="Bạn đang nghĩ gì?"
@@ -187,6 +246,17 @@ const handleSelect = (value) => {
         onChangeText={setText}
         multiline
       />
+
+      {/* Image Preview */}
+      {image && (
+        <View style={{ marginBottom: 20 }}>
+          <Image
+            source={{ uri: image.uri }}
+            style={{ width: '100%', height: 200, borderRadius: 12 }}
+            resizeMode="cover"
+          />
+        </View>
+      )}
 
       {/* Font Selection */}
       <ScrollView horizontal style={styles.fontRow} showsHorizontalScrollIndicator={false}>
@@ -213,13 +283,14 @@ const handleSelect = (value) => {
    
 
       {/* Options */}
-      <View style={styles.options}>
+      {/* <View style={styles.options}>
         <TouchableOpacity style={styles.option}>
           <Entypo name="music" size={20} color="#918b8b" />
           <Text> Nhạc</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.option}>
+        <TouchableOpacity style={styles.option}
+        >
           <MaterialIcons name="photo-album" size={20} color="#918b8b" />
           <Text> Album</Text>
         </TouchableOpacity>
@@ -228,14 +299,16 @@ const handleSelect = (value) => {
           <Entypo name="tag" size={20} color="#918b8b" />
           <Text> Với bạn bè</Text>
         </TouchableOpacity>
-      </View>
+      </View> */}
 
       {/* Bottom Bar */}
       <View style={styles.bottomBar}>
         <TouchableOpacity>
           <FontAwesome5 name="smile" size={24} />
         </TouchableOpacity>
-        <TouchableOpacity>
+        <TouchableOpacity 
+          onPress={pickImage}
+        >
           <MaterialIcons name="image" size={24} />
         </TouchableOpacity>
         <TouchableOpacity>
@@ -297,7 +370,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   input: {
-    height: '70%',
     textAlignVertical: 'top',
     fontSize: 16,
     marginVertical: 10,

@@ -22,7 +22,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import PhoneInput from "react-native-phone-input";
 import { useSelector, useDispatch } from "react-redux";
 import { getMyFriends } from "../store/slice/friendSlice";
-import { createConversationGroup, getAllConversationsByUserId, setConversationsGroup, updateGroupMembers } from "../store/slice/conversationSlice";
+import { createConversationGroup, getAllConversationsByUserId, setConversation, setConversationsGroup, updateGroupMembers } from "../store/slice/conversationSlice";
 import { addMemberGroupThunk } from "../store/slice/messageSlice";
 import Icon from "react-native-vector-icons/AntDesign";
 import Loading from "../components/Loading";
@@ -96,8 +96,9 @@ const CreateGroupScreen = ({navigation, route}) => {
       };
 
       const response = await dispatch(createConversationGroup(request)).unwrap();
-      
-      navigation.replace("GroupChatScreen", { conversation: response });
+      dispatch(setConversation(response));
+
+      navigation.replace("GroupChatScreen");
 
       console.log("Đã cập nhật danh sách cuộc trò chuyện.");
       setSelectedContacts([]);
