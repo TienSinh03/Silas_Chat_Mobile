@@ -7,7 +7,7 @@ import {
 } from "../store/slice/conversationSlice";
 import { getToken } from "../utils/authHelper";
 
-const HOST_IP = "10.68.1.174"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
+const HOST_IP = "10.68.1.212"; // nhập ipconfig trên cmd để lấy địa chỉ ipv4
 
 
 

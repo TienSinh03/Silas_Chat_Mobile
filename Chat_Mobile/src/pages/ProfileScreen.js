@@ -1,19 +1,21 @@
 import React, { useState, useMemo } from "react";
-import { View, Text, Image, ActivityIndicator,TouchableOpacity, StyleSheet, ScrollView, Modal, StatusBar, TextInput, Alert } from "react-native";
+import { View, Text, Image, ActivityIndicator,TouchableOpacity, StyleSheet, ScrollView, Modal, StatusBar, TextInput, Alert, Dimensions } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Platform } from 'react-native';
 import { useDispatch, useSelector } from "react-redux";
 import {updateUserProfile, updateUserProfileSuccess } from "../store/slice/userSlice";
-import { checkFriendStatus } from "../store/slice/friendSlice";
+import { acceptReq, checkFriendStatus, getMyFriends, getReqsReceived, getReqsSent, recallReq, rejectReq, sendReq } from "../store/slice/friendSlice";
 import * as ImagePicker from "expo-image-picker";
 import Loading from "../components/Loading";
 
-import { connectWebSocket, disconnectWebSocket, subscribeToUserProfile } from "../config/socket";
+import { connectWebSocket, disconnectWebSocket, subscribeToUserProfile, sendRequestToWebSocket } from "../config/socket";
 
+const { width, height } = Dimensions.get("window");
 const ProfileScreen = ({ navigation, route }) => {
     const { userReceived } = route.params || {};
+    console.log("User received:", userReceived);
     
     // const navigation = useNavigation();
     const [modalVisible, setModalVisible] = useState(false);
@@ -26,8 +28,7 @@ const ProfileScreen = ({ navigation, route }) => {
     const userProfile = useSelector(state => state.user.user);
     const isLoading = useSelector(state => state.user.isLoading);
 
-    const { friendStatus } = useSelector(state => state.friend); // Lấy trạng thái bạn bè từ Redux
-    console.log("Friend status:", friendStatus); // Kiểm tra trạng thái bạn bè
+    const { receivedFriendRequests, sentRequests } = useSelector(state => state.friend); // Lấy trạng thái bạn bè từ Redux
 
     const user = useMemo(() => userReceived || userProfile, [userReceived, userProfile]); // Lấy thông tin người dùng từ props hoặc Redux
 
@@ -41,13 +42,78 @@ const ProfileScreen = ({ navigation, route }) => {
 
     const [avatarUrl, setAvatarUrl] = useState( user?.avatar ||'');
 
+      // check friend
+      const [isFriend, setIsFriend] = useState(false);
+
+    // check trang thai ket ban va phan hoi
+    const [isSentReq, setIsSentReq] = useState(false);
+    const [isReceivedReq, setIsReceivedReq] = useState(false);
+    const [requestIdSent, setRequestIdSent] = useState(null);
+    const [requestIdReceived, setRequestIdReceived] = useState(null);
+        console.log("Friend status:", isFriend); // Kiểm tra trạng thái bạn bè
+
+    const requestsReceived = useMemo(() => {
+        if (receivedFriendRequests === null) return [];
+        return receivedFriendRequests;
+      }, [receivedFriendRequests]);
+    
+    const requestsSent = useMemo(() => {
+        if (sentRequests === null) return [];
+        return sentRequests;
+      }, [sentRequests]);
+
+      // Kiểm tra trạng thái bạn bè
+    let id = userReceived?.userId || userReceived?.id;
+    React.useEffect(() => {
+        if (!userReceived) return;
+        const checkIsFriend = async () => {
+            try {
+                const response = await dispatch(
+                    checkFriendStatus(id)
+                ).unwrap();
+                setIsFriend(response); // Cập nhật trạng thái bạn bè
+                console.log("Trạng thái bạn bè:", response);
+            } catch (error) {
+                console.log(`Lỗi khi kiểm tra trạng thái bạn bè cho:`, error);
+                setIsFriend(false); // Nếu có lỗi, coi như không phải bạn bè
+            }
+        };
+
+        if (id) {
+            checkIsFriend();
+            const isSent = requestsSent.find(
+                (req) => req?.userId === id
+            );
+            if (isSent) {
+                setIsSentReq(true);
+                setRequestIdSent(isSent?.requestId); 
+            } else {
+                setIsSentReq(false);
+                setRequestIdSent(null); 
+            }
+
+            //kiểm tra đã nhận lời mời hay chưa
+            const isReceived = requestsReceived.find(
+                (req) => req?.userId === id
+            );
+            console.log("isReceived", isReceived);
+            if (isReceived) {
+                setIsReceivedReq(true);
+                setRequestIdReceived(isReceived?.requestId);
+            } else {
+                setIsReceivedReq(false);
+                setRequestIdReceived(null);
+            }
+        }
+    }, [userReceived, dispatch]);
+
+    React.useEffect(() => {
+        dispatch(getReqsReceived());
+    }, []);
     
     React.useEffect(() => {
-        if(!user?.id) return;
-
-        dispatch(checkFriendStatus(user?.id));
-    }, [user?.id, dispatch]);
-
+        dispatch(getReqsSent());
+    }, []);
 
     React.useEffect(() => {
         if(!user?.id) return;
@@ -177,8 +243,60 @@ const ProfileScreen = ({ navigation, route }) => {
         }
     };
 
+    // Gửi lời mời kết bạn
+    const handleSendRequest = async (friendId) => {
+        try {
+            sendRequestToWebSocket({ receiverId: friendId });
+            setIsSentReq(true);
+            dispatch(getReqsSent());
+        } catch (error) {
+        console.log("Lỗi khi gửi lời mời kết bạn:", error);
+        Alert.alert(
+            "Thông báo",
+            error || "Không thể gửi lời mời kết bạn.",
+            [{ text: "OK" }],
+            { cancelable: false }
+        );
+        }
+    };
 
-    
+    //Thu hồi lời mời kết bạn
+    const handleRecallRes = (requestId) => {
+        try {
+             dispatch(recallReq(requestId));
+             dispatch(getReqsSent());
+             setIsSentReq(false);
+        } catch (error) {
+            console.error("Error recalling request:", error); 
+        }
+    }
+
+    const handleAcceptReq = (requestId) => {
+        try {
+
+            dispatch(acceptReq(requestId));
+
+            dispatch(getReqsReceived());
+            dispatch(getMyFriends());
+            setIsReceivedReq(false);
+            setIsFriend(true)
+        } catch (error) {
+            console.error("Error accepting request:", error);
+        }
+    }
+
+    const handleRejecttReq = (requestId) => {
+        try {
+
+            dispatch(rejectReq(requestId));
+
+            dispatch(getReqsReceived());
+            setIsReceivedReq(false);
+           
+        } catch (error) {
+            console.error("Error rejecting request:", error);
+        }
+    }  
 
     return (
         <ScrollView style={styles.container}>
@@ -554,24 +672,71 @@ const ProfileScreen = ({ navigation, route }) => {
                 <View style={styles.actions}>
                 
                     <TouchableOpacity
-                        style={[styles.button, { marginTop: 20, alignSelf: "center"}]}
+                        style={[styles.button, {marginTop: 10, padding: 10, alignSelf: "center",position: isReceivedReq ? "absolute" : "relative", right: isReceivedReq ? 0 : "auto", top: isReceivedReq ? 350 : "auto" }]}
                             onPress={() => {
                                 
                             }}
                     >
-                        <Text style={styles.buttonText}>Nhắn tin</Text>
+                        <View style={{ flexDirection: "row", alignItems: "center" }}>
+                            <Ionicons name="chatbubbles-outline" size={25} color={"white"}/>
+                            <Text style={styles.buttonText}>  Nhắn tin</Text>
+                        </View>
                     </TouchableOpacity>
 
-                    <TouchableOpacity
-                        style={[styles.button, { marginTop: 20, alignSelf: "center", display: !friendStatus ? "flex" : "none", }]}
-                            onPress={() => {
-                                
-                            }}
-                        disabled={user?.id !== userProfile?.id} // Disable button if not the same user
-                        aria-hidden={user?.id !== userProfile?.id}
-                    >
-                        <Text style={styles.buttonText}>Kết bạn</Text>
-                    </TouchableOpacity>
+                    {/* Hiển thị nút "Hủy lời mời" nếu đã gửi lời mời kết bạn */}
+                    {!isFriend && (
+                        isSentReq ? (
+
+                            <View
+                                style={[styles.button, { marginTop: 10, alignSelf: "center", padding: 10, backgroundColor: "#E9EBED" }]}
+                                    onPress={() => {
+                                        
+                                    }}
+                                disabled={user?.id !== userProfile?.id} 
+                                aria-hidden={user?.id !== userProfile?.id}
+                            >
+                                <TouchableOpacity style={{ flexDirection: "row", alignItems: "center" }}
+                                    onPress={() => handleRecallRes(requestIdSent)}
+                                >
+                                    <Ionicons name="person-remove-outline" size={25} color={"#141415"}/>
+                                    <Text style={[styles.buttonText, {color:"#141415"}]}>Thu hồi lời mời</Text>
+                                </TouchableOpacity>
+                            </View>
+                        ) : isReceivedReq ? (
+                            <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 10, gap: 10 }}>
+                                <TouchableOpacity style={{ backgroundColor: "#D6E9FF", paddingVertical: 10, paddingHorizontal: width*0.1 ,borderRadius: 15 }} 
+                                    onPress={() => {
+                                        handleAcceptReq(requestIdReceived);
+                                    }}
+                                >
+                                    <Text style={{color: "#006AF5"}}>Xác nhận</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={{ backgroundColor: "#FED8D7", paddingVertical: 10, borderRadius: 15, paddingHorizontal: width*0.1 }} 
+                                    onPress={() => {
+                                        handleRejecttReq(requestIdReceived);
+                                    }}
+                                >
+                                    <Text style={{color: "#DC1F18"}}>Từ chối</Text>
+                                </TouchableOpacity>
+                            </View>                            
+                        ) : (
+                            <View
+                                style={[styles.button, { marginTop: 10, alignSelf: "center", padding: 10}]}
+                                    
+                                disabled={user?.id !== userProfile?.id} 
+                                aria-hidden={user?.id !== userProfile?.id}
+                            >
+                                <TouchableOpacity style={{ flexDirection: "row", alignItems: "center" }} 
+                                    onPress={() => {
+                                        handleSendRequest(id)
+                                    }}
+                                >
+                                    <Ionicons name="person-add-outline" size={25} color={"white"}/>
+                                    <Text style={styles.buttonText}> Kết bạn</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )
+                    )}
 
                 </View>
             )}
@@ -608,8 +773,8 @@ const styles = StyleSheet.create({
         color: "#000000",
         // textDecorationLine: "underline",
     },
-    actions: { flexDirection: "row", justifyContent: "center", marginTop: 20 },
-    button: { flexDirection: "row", alignItems: "center", backgroundColor: "#007AFF", padding: 10, borderRadius: 5, marginHorizontal: 5 },
+    actions: { flexDirection: "row", justifyContent: "center", marginTop: 10},
+    button: { flexDirection: "row", alignItems: "center", backgroundColor: "#007AFF", borderRadius: 15, marginHorizontal: 5 },
     buttonText: { color: "white", marginLeft: 5 },
     menu: { marginTop: 20 },
     menuItem: { flexDirection: "row", alignItems: "center", padding: 15, borderBottomWidth: 1, borderBottomColor: "#ddd" },
