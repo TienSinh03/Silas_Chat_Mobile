@@ -7,6 +7,8 @@ import {
   Image,
   StyleSheet,
   Alert,
+  RefreshControl,
+  ScrollView
 } from "react-native";
 
 import { useNavigation } from "@react-navigation/native";
@@ -125,6 +127,18 @@ const ConservationList = ({ category }) => {
   const [conversationsMemo, setConversationsMemo] = React.useState([]);
   // console.log("Conversations: ", conversationsMemo);
 
+  // refresh conversations
+  const [refreshing, setRefreshing] = useState(false);
+  const fetchConversations = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await dispatch(getAllConversationsByUserId()).unwrap();
+      setRefreshing(false);
+    } catch (error) {
+      console.error("Failed to fetch conversations: ", error);
+      setRefreshing(false);
+    }
+  }, [dispatch]);
 
 
   React.useEffect(() => {
@@ -260,13 +274,17 @@ const ConservationList = ({ category }) => {
 
   return (
     <View style={{ flex: 1 }}>
-      <FlatList
-        data={conversationsMemo}
-        renderItem={({ item }) => (
-          <ConservationItem item={item} user={user} dispatch={dispatch}  setConversation={setConversation}/>
-        )}
-        keyExtractor={(item) => item?.id}
-      />
+
+        <FlatList
+          data={conversationsMemo}
+          renderItem={({ item }) => (
+            <ConservationItem item={item} user={user} dispatch={dispatch}  setConversation={setConversation}/>
+          )}
+          keyExtractor={(item) => item?.id}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={fetchConversations} />
+          }
+        />
     </View>
   );
 };

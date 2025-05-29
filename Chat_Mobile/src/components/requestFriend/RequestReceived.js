@@ -1,5 +1,5 @@
-import React, { useMemo, useCallback } from "react";
-import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet, Dimensions } from "react-native";
+import React, { useMemo, useCallback, useState } from "react";
+import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet, Dimensions, RefreshControl } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
 import { getReqsReceived, acceptReq, rejectReq, addReceivedRequest, getMyFriends } from "../../store/slice/friendSlice";
 import Loading from "../Loading";
@@ -48,7 +48,18 @@ const RequestReceived = ({ navigation }) => {
         return receivedFriendRequests;
     }, [receivedFriendRequests]);
     
-    console.log("requests", requests);
+    const [refreshing, setRefreshing] = useState(false);
+    const fetchConversations = useCallback(async () => {
+        setRefreshing(true);
+        try {
+            await dispatch(getReqsReceived()).unwrap();
+            setRefreshing(false);
+        } catch (error) {
+            console.error("Failed to fetch conversations: ", error);
+        } finally {
+            setRefreshing(false);
+        }
+    }, [dispatch]);
 
     const handleAcceptReq = useCallback(async (requestId) => {
         try {
@@ -100,6 +111,9 @@ const RequestReceived = ({ navigation }) => {
                         accept:  (requestId) => handleAcceptReq(requestId), 
                         reject:  (requestId) => handleRejecttReq(requestId) })}
                 keyExtractor={item => item?.requestId || Math.random().toString()}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={fetchConversations} />
+                }
             />
             <Loading loading={isLoading} />
         </View>
