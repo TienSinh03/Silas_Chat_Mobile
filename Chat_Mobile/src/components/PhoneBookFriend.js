@@ -11,6 +11,7 @@ import {
   Modal,
   Dimensions,
   Alert,
+  RefreshControl
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
 import IconF6 from "react-native-vector-icons/FontAwesome6";
@@ -37,6 +38,18 @@ const PhoneBookFriend = ({navigation}) => {
   const [searchText, setSearchText] = useState("");
   const [isModalVisible, setModalVisible] = useState(false);
   const [selectedFriend, setSelectedFriend] = useState(null);
+
+  const [refreshing, setRefreshing] = useState(false);
+  const fetchConversations = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await dispatch(getMyFriends()).unwrap();
+      setRefreshing(false);
+    } catch (error) {
+      console.error("Failed to fetch conversations: ", error);
+      setRefreshing(false);
+    }
+  }, [dispatch]);  
 
   // const filteredContacts = friends.filter((contact) =>
   //   contact.displayName.toLowerCase().includes(searchText.toLowerCase())
@@ -196,6 +209,10 @@ const PhoneBookFriend = ({navigation}) => {
               </View>
             </TouchableOpacity>
           )}
+
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={fetchConversations} />
+          }
         />
         <Loading isLoading={isLoading} />
       </View>
