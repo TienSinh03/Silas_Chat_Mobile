@@ -38,3 +38,24 @@ export const sendVoteOption = async ({ voteId, questionContent, userId }) => {
     throw error;
   }
 };
+
+// http://localhost:8080/api/v1/vote/add-question?voteId=6837042ff78dbb6094699a98&questionContent=T6
+export const addVoteQuestion = async ({ voteId, questionContent }) => {
+  try {
+    const response = await instance.post('/api/v1/vote/add-question', null, {
+      params: { voteId, questionContent },
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+// Get vote by ID
+export const getVoteById = async (voteId) => {
+  try {
+    const response = await instance.get(`/api/v1/vote/${voteId}`);
+    return response.data; // trả về dữ liệu vote
+  } catch (error) {
+    throw error.response?.data || error.message || "Lỗi khi lấy thông tin vote";
+  }
+};
