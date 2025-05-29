@@ -6,7 +6,10 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Alert, Modal, Pressable, Image
+  Alert,
+  Modal,
+  Pressable,
+  Image
 } from 'react-native';
 import {
   Ionicons,
@@ -17,10 +20,12 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { useDispatch, useSelector } from 'react-redux';
-import {savePost, updatePost} from '../../api/postApi'; 
+import { savePost, updatePost } from '../../api/postApi';
 import * as ImagePicker from "expo-image-picker";
+import { GEMINI_API_URL } from "@env";
 
-const PostStatusScreen = ({route}) => {
+const PostStatusScreen = ({ route }) => {
+
   const fonts = [
     { idFonts: 0, name: 'Fountain', key: 'f1' },
     { idFonts: 1, name: 'Pixel', key: 'f2' },
@@ -33,20 +38,22 @@ const PostStatusScreen = ({route}) => {
   ];
 
   const fontColors = {
-    Fountain: ['#FF6347', '#FFA07A'],     
-    Pixel: ['#1E90FF', '#87CEFA'],        
-    Vintage: ['#8B4513', '#D2B48C'],      
-    Terminal: ['#32CD32', '#7CFC00'],     
-    Florence: ['#BA55D3', '#DDA0DD'],     
-    Retro: ['#FFD700', '#FFA500'],       
-    Graffiti: ['#DC143C', '#FF69B4'],     
-    Signature: ['#000000', '#696969'],    
+    Fountain: ['#FF6347', '#FFA07A'],
+    Pixel: ['#1E90FF', '#87CEFA'],
+    Vintage: ['#8B4513', '#D2B48C'],
+    Terminal: ['#32CD32', '#7CFC00'],
+    Florence: ['#BA55D3', '#DDA0DD'],
+    Retro: ['#FFD700', '#FFA500'],
+    Graffiti: ['#DC143C', '#FF69B4'],
+    Signature: ['#000000', '#696969'],
   };
 
   const { postToEdit } = route.params || {};
   console.log("Nhật ký: postToEdit", postToEdit);
 
   const [text, setText] = useState('');
+  const [keyword, setKeyword] = useState('');
+  const [suggestion, setSuggestion] = useState('');
   const [selectedFont, setSelectedFont] = useState('Fountain');
   const [image, setImage] = useState(null);
   const navigation = useNavigation();
@@ -77,85 +84,147 @@ const PostStatusScreen = ({route}) => {
   }, [postToEdit]);
 
   const pickImage = async () => {
-      let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 1,
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      const image = result.assets[0];
+      setImage({
+        uri: image.uri,
+        name: image.fileName || "avatar.jpg",
+        type: "image/jpeg",
       });
-  
-      if(!result.canceled) {
-            const image = result.assets[0];
-            setImage({
-                uri: image.uri,
-                name: image.fileName || "avatar.jpg",
-                type: "image/jpeg",
-            });
-
-        }
-  };
-
-  // SAVE
-const handlePost = async () => {
-  if (!text.trim()) {
-    Alert.alert('Thông báo', 'Vui lòng nhập nội dung trước khi đăng.');
-    return;
-  }
-console.log('isPublic value:', isPublic);
-
-  const selectedFontObj = fonts.find(f => f.name === selectedFont);
-  const postData = {
-    userId: userProfile.id,
-    content: text,
-    fonts: selectedFontObj.idFonts, // Save as integer (e.g., 2 for Vintage)
-    public: isPublic, // true: công khai, false: chỉ mình tôi
-  };
-  
-  const formData = new FormData();
-  formData.append("request", JSON.stringify(postData), "application/json");
-
-
-
-  try {
-    if(postToEdit) {
-      postData.id = postToEdit.id;
-      await updatePost({postId:postToEdit?.id, postData}); // Gọi API để cập nhật bài viết
-    } else {
-      if (image) {
-        formData.append("image", image);
-      }
-
-      await savePost(formData); // Gọi API để lưu bài viết
-
     }
-    Alert.alert('Đã đăng', 'Nội dung của bạn đã được đăng!');
-    navigation.goBack({ reload: true });
-  } catch (error) {
-    console.error('Lỗi khi đăng bài:', error);
-    Alert.alert('Lỗi', 'Không thể đăng bài viết. Vui lòng thử lại.');
+  };
+
+  // Hàm gọi Gemini API (thay bằng API thật của bạn)
+// const fetchSuggestion = async (keyword) => {
+//   const apiKey = 'AIzaSyDXYjSgtX6Eek4Loi82kRGjB6s7L7Rog3E'; // Thay bằng API key thật của bạn
+//   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+//   const response = await fetch(endpoint, {
+//     method: 'POST',
+//     headers: {
+//       'Content-Type': 'application/json',
+//     },
+//     body: JSON.stringify({
+//       contents: [
+//         {
+//           parts: [
+//             { text: `Viết nội dung gợi ý cho từ khóa: "${keyword}"` }
+//           ]
+//         }
+//       ]
+//     }),
+//   });
+
+//   if (!response.ok) {
+//     const errorText = await response.text();
+//     throw new Error('Lỗi khi gọi Gemini API: ' + errorText);
+//   }
+
+//   const data = await response.json();
+
+//   // Dữ liệu trả về có thể trong data?.candidates[0]?.output hay data?.candidates[0]?.content.parts[0].text
+//   // Theo tài liệu, nội dung có thể trong data?.candidates[0]?.content.parts[0].text
+//   return data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Không có gợi ý';
+// };
+const fetchSuggestion = async (keyword) => {
+  const endpoint = `${GEMINI_API_URL}`;
+
+  const promptText = `Viết nội dung gợi ý cho từ khóa: "${keyword}" trong khoảng 100 từ, có #hashtag. Mỗi câu bắt đầu bằng các biểu tượng ngẫu nhiên 👉, ✨, 🔥, 💡, 🌟`;
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [
+        { parts: [ { text: promptText } ] }
+      ],
+      // Không thêm maxOutputTokens
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error('Lỗi khi gọi Gemini API: ' + errorText);
   }
+
+  const data = await response.json();
+
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Không có gợi ý';
 };
 
-  // quyền xem
-  const [privacy, setPrivacy] = useState('Quyền xem');
-  const [isPublic, setIsPublic] = useState(true); // true: công khai, false: chỉ mình tôi
-  const [modalVisible, setModalVisible] = useState(false);
 
-const handleSelect = (value) => {
-  setPrivacy(value); // Thêm dòng này để cập nhật giao diện
-  // setPrivacyLabel(value); // Removed as it was undefined
-  setIsPublic(value === 'Công khai'); // true nếu công khai, ngược lại là false
-  setModalVisible(false);
-};
 
-  // lấy user hiện tại từ Redux store
+  // Xử lý khi nhấn nút Gợi ý
+  const handleSuggest = async () => {
+    if (!keyword.trim()) {
+      Alert.alert('Thông báo', 'Vui lòng nhập từ khóa để gợi ý');
+      return;
+    }
+    try {
+      const result = await fetchSuggestion(keyword.trim());
+      setSuggestion(result);
+      setText(result); // Đẩy nội dung gợi ý vào ô nhập nội dung
+    } catch (error) {
+      Alert.alert('Lỗi', error.message || 'Không lấy được gợi ý');
+    }
+  };
+
+  // Redux
   const dispatch = useDispatch();
   const userProfile = useSelector(state => state.user.user);
-  const user = useMemo(() => {
-          return userProfile || null;
-  }, [userProfile]);
-  console.log("Nhật ký: USER hiện tại--------------------" , userProfile);
+  const user = useMemo(() => userProfile || null, [userProfile]);
 
+  const [privacy, setPrivacy] = useState('Quyền xem');
+  const [isPublic, setIsPublic] = useState(true);
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const handleSelect = (value) => {
+    setPrivacy(value);
+    setIsPublic(value === 'Công khai');
+    setModalVisible(false);
+  };
+
+  const handlePost = async () => {
+    if (!text.trim()) {
+      Alert.alert('Thông báo', 'Vui lòng nhập nội dung trước khi đăng.');
+      return;
+    }
+
+    const selectedFontObj = fonts.find(f => f.name === selectedFont);
+    const postData = {
+      userId: userProfile.id,
+      content: text,
+      fonts: selectedFontObj.idFonts,
+      public: isPublic,
+    };
+
+    const formData = new FormData();
+    formData.append("request", JSON.stringify(postData), "application/json");
+
+    try {
+      if (postToEdit) {
+        postData.id = postToEdit.id;
+        await updatePost({ postId: postToEdit?.id, postData });
+      } else {
+        if (image) {
+          formData.append("image", image);
+        }
+        await savePost(formData);
+      }
+      Alert.alert('Đã đăng', 'Nội dung của bạn đã được đăng!');
+      navigation.goBack({ reload: true });
+    } catch (error) {
+      console.error('Lỗi khi đăng bài:', error);
+      Alert.alert('Lỗi', 'Không thể đăng bài viết. Vui lòng thử lại.');
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -164,8 +233,6 @@ const handleSelect = (value) => {
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Ionicons name="arrow-back" size={24} />
         </TouchableOpacity>
-
-        {/* <Text>{userProfile.id}</Text> */}
 
         <View>
           <TouchableOpacity onPress={() => setModalVisible(true)}>
@@ -184,11 +251,11 @@ const handleSelect = (value) => {
                   <Text style={styles.optionText}>
                     <FontAwesome5 name="user-friends" size={16} color="#007AFF" />
                     Công khai
-                    </Text>
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => handleSelect('Chỉ mình tôi')}>
                   <Text style={styles.optionText}>
-                    <FontAwesome5 name="lock" size={16} color="#007AFF"  />
+                    <FontAwesome5 name="lock" size={16} color="#007AFF" />
                     Chỉ mình tôi
                   </Text>
                 </TouchableOpacity>
@@ -202,35 +269,40 @@ const handleSelect = (value) => {
         </TouchableOpacity>
       </View>
 
-      {/* Input */}
-      <TouchableOpacity
-        style={{
-          backgroundColor: '#f0f8ff',  
-          padding: 15,
-          borderRadius: 10,
-          marginVertical: 10,
-          flexDirection: 'row',       
-          alignItems: 'center',       
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.2,
-          shadowRadius: 3,
-          elevation: 3,                
-        }}
-      >
-        <Entypo name="yelp" size={24} color="#1e90ff" style={{ marginRight: 10 }} />
-        <Text
+      {/* Nhập từ khóa + nút Gợi ý */}
+      <View style={{ flexDirection: 'row', marginVertical: 10, alignItems: 'center' }}>
+        <TextInput
+          style={[styles.input, { flex: 1, marginRight: 10, height: 40, paddingVertical: 5 }]}
+          placeholder="Nhập từ khóa để gợi ý"
+          value={keyword}
+          onChangeText={setKeyword}
+        />
+        <TouchableOpacity
           style={{
-            flex: 1,
-            color: '#1e90ff',
-            fontSize: 16,
-            fontWeight: '600',
+            backgroundColor: '#1e90ff',
+            paddingHorizontal: 15,
+            paddingVertical: 10,
+            borderRadius: 8,
           }}
+          onPress={handleSuggest}
         >
-          Gợi ý: Bạn có thể đăng ảnh, video, hoặc chia sẻ cảm xúc của mình theo cách sáng tạo nhất!
-        </Text>
-      </TouchableOpacity>
+          <Text style={{ color: 'white', fontWeight: 'bold' }}>Gợi ý</Text>
+        </TouchableOpacity>
+      </View>
 
+      {/* Hiển thị gợi ý */}
+      {/* {suggestion ? (
+        <View style={{
+          backgroundColor: '#e0f7fa',
+          padding: 10,
+          borderRadius: 8,
+          marginBottom: 10,
+        }}>
+          <Text style={{ color: '#00796b' }}>Gợi ý: {suggestion}</Text>
+        </View>
+      ) : null} */}
+
+      {/* Input nội dung post */}
       <TextInput
         style={[
           styles.input,
@@ -280,33 +352,12 @@ const handleSelect = (value) => {
         ))}
       </ScrollView>
 
-   
-
-      {/* Options */}
-      {/* <View style={styles.options}>
-        <TouchableOpacity style={styles.option}>
-          <Entypo name="music" size={20} color="#918b8b" />
-          <Text> Nhạc</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.option}
-        >
-          <MaterialIcons name="photo-album" size={20} color="#918b8b" />
-          <Text> Album</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.option}>
-          <Entypo name="tag" size={20} color="#918b8b" />
-          <Text> Với bạn bè</Text>
-        </TouchableOpacity>
-      </View> */}
-
       {/* Bottom Bar */}
       <View style={styles.bottomBar}>
         <TouchableOpacity>
           <FontAwesome5 name="smile" size={24} />
         </TouchableOpacity>
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={pickImage}
         >
           <MaterialIcons name="image" size={24} />
@@ -347,7 +398,6 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.3)',
-    // justifyContent: 'center',
     marginBottom: 'auto',
     alignItems: 'center',
   },
@@ -401,18 +451,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#1e90ff',
     borderColor: '#1e90ff',
     borderWidth: 1,
-  },
-  options: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 25,
-  },
-  option: {
-    flexDirection: 'row',
-    padding: 5,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#918b8b',
   },
   bottomBar: {
     flexDirection: 'row',
