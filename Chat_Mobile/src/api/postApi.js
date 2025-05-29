@@ -60,7 +60,11 @@ export const getUsersWithPosts = async () => {
 // save
 export const savePost = async (postData) => {
   try {
-    const response = await instance.post('/api/v1/posts/save', postData);
+    const response = await instance.post('/api/v1/posts/save', postData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+    });
     return response.data;
   } catch (error) {
     console.error("Error saving post:", error.response?.data || error.message);

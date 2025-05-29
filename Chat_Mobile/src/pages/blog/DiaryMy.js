@@ -793,13 +793,21 @@ const handleUpdateComment = async () => {
               
               <Text style={[styles.postContent, { fontFamily: getFontKey(post.fonts) }]}>
                   {post.content}
-              </Text>              
+              </Text>        
+
+              {post.imageUrl && (
+                <Image
+                  source={{ uri: post.imageUrl }}
+                  style={{ width: '100%', height: 200, borderRadius: 12 }}
+                  resizeMode="cover"
+                />
+              )}      
 
               {/* Example of accessing idPost and idUser */}
-              <Text style={{ fontSize: 10, color: "gray", marginTop: 5 }}>
-                Post ID://// {post.id} | User ID: {post.userId}
+              {/* <Text style={{ fontSize: 10, color: "gray", marginTop: 5 }}> */}
+                {/* Post ID://// {post.id} | User ID: {post.userId} */}
                 {/* Post Acctivity: {post.activity} */}
-              </Text>
+              {/* </Text> */}
               {/* gán idPost và idUser vào mảng commentInfo */}
 
               <View style={{ flexDirection: 'row', marginTop: 10 }}>
@@ -907,9 +915,9 @@ const handleUpdateComment = async () => {
                     {post.content}
                 </Text>
 
-              <Text style={{ fontSize: 10, color: "gray", marginTop: 5 }}>
+              {/* <Text style={{ fontSize: 10, color: "gray", marginTop: 5 }}>
                 Post ID: {post.id} | User ID----: {post.userId}
-              </Text>
+              </Text> */}
               <View style={{ flexDirection: 'row', marginTop: 10 }}>
 <TouchableOpacity style={styles.likeContainer} onPress={() => handleLike(post.id, item.user.id)}>
   <Ionicons
