@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, Image, ScrollView } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { sendVoteOption } from '../../api/vote';
+import { sendVoteOption, getVoteById } from '../../api/vote';
 import { getUserById } from '../../api/userApi';
 //pluscircleo
 import {
@@ -13,6 +13,8 @@ import {
   FontAwesome
 } from '@expo/vector-icons';
 
+import QuestionModalDetail from './QuestionModalDetail'; // Assuming this is the correct path to your modal component
+
 const Poll = ({ voteId, title, options, onVoteSuccess }) => {
   const dispatch = useDispatch();
   const userProfile = useSelector(state => state.user.user);
@@ -20,14 +22,49 @@ const Poll = ({ voteId, title, options, onVoteSuccess }) => {
 
   const [selectedOption, setSelectedOption] = useState(null);
   const [loading, setLoading] = useState(false);
+  
+  // modal them question
+  const [modalVisible, setModalVisible] = useState(false);
+  const [loadingAddOption, setLoadingAddOption] = useState(false);
+  const [localOptions, setLocalOptions] = useState(options);
+
+
+    const handleQuestionAdded = (updatedVote) => {
+    if (updatedVote?.questions) {
+      setLocalOptions(updatedVote.questions);
+    }
+  };
+
+  // lay vote theo id
+  
+  useEffect(() => {
+    if (voteId) {
+      const fetchVote = async () => {
+        try {
+          const response = await getVoteById(voteId);
+          console.log('Vote data fetched:=================================', response);
+          console.log('99999999999999999999999999', response.addOption);
+          if (response.status === 'SUCCESS' && response.response) {
+            setLocalOptions(response.response.questions || []);
+          }
+        } catch (error) {
+          console.error('Error fetching vote by ID:', error);
+          Alert.alert('Lỗi', 'Không thể tải thông tin bình chọn');
+        }
+      }
+      fetchVote();
+    }
+  }, [voteId]);
+
 
   // Log user info
   console.log("Nhật ký: USER hiện tại------1111--------------", userProfile);
   console.log("User ID:+++++++++++++++++++++++", userProfile?.id);
   console.log("Vote ID:-------222---------", voteId);
   console.log("Options:", options);
-  console.log("Selected Option:", selectedOption);
-  console.log("Title:", title);
+  console.log("Selected Option:=====================", selectedOption);
+  console.log("Title:------------", title);
+  console.log("Local Options:", localOptions);
 
   // Map lưu userId -> user info (avatar,...)
   const [userMap, setUserMap] = useState({});
@@ -102,9 +139,26 @@ const Poll = ({ voteId, title, options, onVoteSuccess }) => {
     <View style={styles.container}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12,  borderBottomWidth: 1,borderBottomColor: '#007bff',paddingBottom: 4, }}>
           <Text style={styles.title}>{title || 'Bình chọn'}</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <AntDesign name="pluscircleo" size={24} color="#007bff" />
-                <FontAwesome name="folder" size={24} color="#007bff" />
+          <View  >
+                {/* // nếu  */}
+                <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 4, }} onPress={() => setModalVisible(true)}>
+                  <AntDesign name="pluscircleo" size={24} color="#007bff" />
+                  {/* <FontAwesome name="folder" size={20} color="#007bff" /> */}
+                  {/* <Text style={{ color: '#007bff', fontSize: 14, fontWeight: 'bold' }}>Chi tiết bình chọn</Text> */}
+                </TouchableOpacity>
+
+                <QuestionModalDetail
+                  visible={modalVisible}
+                  onClose={() => setModalVisible(false)}
+                  voteId={voteId}
+                  title={title}
+                  options={options}
+                  userMap={userMap}
+                  loadingAddOption={loadingAddOption}
+                  setLoadingAddOption={setLoadingAddOption}
+                  onQuestionAdded={handleQuestionAdded}
+                  />
+
           </View>
 
         </View>
