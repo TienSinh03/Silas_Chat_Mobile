@@ -79,7 +79,7 @@ const DetailSingleChatScreen = ({navigation, route}) => {
             /> */}
 
             {/* Ảnh, file, link */}
-            <View style={styles.section}>
+            {/* <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Ảnh, file, link</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     {[1, 2, 3, 4].map((item, index) => (
@@ -90,7 +90,12 @@ const DetailSingleChatScreen = ({navigation, route}) => {
                         />
                     ))}
                 </ScrollView>
-            </View>
+            </View> */}
+            
+            <TouchableOpacity style={styles.optionRow}  onPress={() => navigation.navigate("TabTopMedia")}>
+                <Ionicons name="folder" size={20} color="#8F9499" />
+                <Text style={styles.optionText}>Ảnh, file, link</Text>
+            </TouchableOpacity>
 
             {/* Tạo nhóm & Thêm vào nhóm */}
             <TouchableOpacity style={styles.optionRow}>

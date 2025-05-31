@@ -1,8 +1,9 @@
-import React, {useMemo} from "react";
-import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet, Dimensions } from "react-native";
+import React, {useMemo, useState} from "react";
+import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet, Dimensions, RefreshControl } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
 import { getReqsSent, recallReq } from "../../store/slice/friendSlice";
 import Loading from "../Loading";
+import { connectWebSocket, subscribeFriendsToAcceptFriendRequest } from "../../config/socket";
 
 
 const {width, height} = Dimensions.get("window");
@@ -26,12 +27,25 @@ const renderItem = ({ item, recall }) => (
 const RequestSent = ({ navigation }) => {
     const dispatch = useDispatch();
     const { sentRequests, isLoading } = useSelector(state => state.friend);
+    const { user } = useSelector((state) => state.user);
+    
     const  requests = useMemo(() => {
         if(sentRequests === null) return [];
         return sentRequests;
     }, [sentRequests]);
     
-    console.log("requests", requests);
+    const [refreshing, setRefreshing] = useState(false);
+    const fetchConversations = React.useCallback(async () => {
+        setRefreshing(true);
+        try {
+            await dispatch(getReqsSent()).unwrap();
+            setRefreshing(false);
+        } catch (error) {
+            console.error("Failed to fetch conversations: ", error);
+        } finally {
+            setRefreshing(false);
+        }
+    }, [dispatch]);
 
     const handleRecallRes = React.useCallback(async (requestId) => {
         try {
@@ -45,6 +59,15 @@ const RequestSent = ({ navigation }) => {
     React.useEffect(() => {
         dispatch(getReqsSent());
     }, [dispatch]);
+
+    React.useEffect(() => {
+            connectWebSocket(() => {
+                subscribeFriendsToAcceptFriendRequest(user?.id, (message) => {
+                    console.log("Nhận được tin nhắn từ WebSocket:", message);
+                    dispatch(getReqsSent());
+                });
+            });
+        }, [user?.id, dispatch]);
     
     return (
         <View style={styles.container}>
@@ -58,6 +81,9 @@ const RequestSent = ({ navigation }) => {
                 
                 keyExtractor={item => item.requestId}
                 extraData={sentRequests}  
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={fetchConversations} />
+                }
             />
             <Loading loading={isLoading} /> 
         </View>
